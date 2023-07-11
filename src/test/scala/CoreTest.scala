@@ -1,10 +1,6 @@
 import chisel3._
-import chisel3.util._
 import chiseltest._
 import org.scalatest.flatspec._
-import hajime.common._
-import hajime.simple4Stage._
-import hajime.common.ScalarOpConstants._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   it should "not act sussy" in {
