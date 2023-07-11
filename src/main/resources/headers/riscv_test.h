@@ -3,7 +3,7 @@
 #ifndef _ENV_PHYSICAL_SINGLE_CORE_H
 #define _ENV_PHYSICAL_SINGLE_CORE_H
 
-#include "./encoding.h"
+// #include "./encoding.h"
 
 //-----------------------------------------------------------------------
 // Begin Macro
