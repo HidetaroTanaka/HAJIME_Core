@@ -25,7 +25,7 @@ class Icache_model extends Module {
   }
 
   val mem = SyncReadMem(4096, UInt(8.W))
-  loadMemoryFromFile(mem, "src/main/resources/dump.hex")
+  loadMemoryFromFile(mem, "src/main/resources/addi_dump_inst.hex")
 
   val readData_vec = Wire(Vec(4, UInt(8.W)))
   readData_vec.foreach(_ := 0.U)
