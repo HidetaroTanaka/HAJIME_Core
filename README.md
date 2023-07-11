@@ -1,5 +1,11 @@
-Chisel Project Template
+HAJIME Core
 =======================
+
+**H**ighly **A**d**J**usted **IM**plementation for **E**mbedded Core (I actually took this name from random Visual Novel game)
+
+The core's goal is to provide some RISC-V implementation (SMT and Vector is planned in my imagination) for embedded environment.
+
+***
 
 You've done the [Chisel Bootcamp](https://github.com/freechipsproject/chisel-bootcamp), and now you
 are ready to start your own Chisel project.  The following procedure should get you started

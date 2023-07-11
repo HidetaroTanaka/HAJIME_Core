@@ -129,6 +129,11 @@ local.properties
 *.x86_64
 # *.hex
 
+# Chisel Outputs
+*.anno.json
+*.fir
+*.v
+
 # Debug files
 *.dSYM/
 ### SBT template
