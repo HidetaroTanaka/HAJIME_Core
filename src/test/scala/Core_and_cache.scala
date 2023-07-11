@@ -14,7 +14,7 @@ class Core_and_cache extends Module {
 
   val core = Module(Core(xprlen = 64, debug = true))
   val icache = Module(new Icache_model)
-  val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000))
+  val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000))
 
   core.io.icache_axi4lite <> icache.io
   core.io.dcache_axi4lite <> dcache.io
