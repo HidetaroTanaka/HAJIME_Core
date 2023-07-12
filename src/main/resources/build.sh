@@ -8,5 +8,5 @@ riscv64-unknown-elf-objcopy --dump-section .data=$1_data.bin $1.out
 riscv64-unknown-elf-objcopy --dump-section .text.init=$1_inst.bin $1.out
 hexdump -v -e '1/1 "%02x" "\n"' $1_data.bin > $1_data.hex
 hexdump -v -e '1/1 "%02x" "\n"' $1_inst.bin > $1_inst.hex
-hexdump -v -e '1/1 "%02x" "\n"' $1.bin > $1_dump.hex
+# hexdump -v -e '1/1 "%02x" "\n"' $1.bin > $1_dump.hex
 rm *.out *.bin

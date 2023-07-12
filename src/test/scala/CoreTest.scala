@@ -3,7 +3,7 @@ import chiseltest._
 import org.scalatest.flatspec._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
-  val instList = Seq("add", "addi")
+  val instList = Seq("add", "addi", "addiw", "addw", "and", "andi", "auipc")
   for(e <- instList) {
     it should s"pass the test ${e}" in {
       test(new Core_and_cache(testname = e, initialiseDmem = false)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
