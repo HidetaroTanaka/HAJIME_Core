@@ -8,6 +8,7 @@ class Core_and_cache(testname: String, initialiseDmem: Boolean) extends Module {
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
     val debug = Output(UInt(64.W))
+    val performance_counters = new Performance_CountersIO(64)
     val debug_retired_inst = Output(Valid(UInt(32.W)))
     val debug_abi_map = Output(new debug_map_physical_to_abi(64))
   })
@@ -21,6 +22,7 @@ class Core_and_cache(testname: String, initialiseDmem: Boolean) extends Module {
   core.io.dcache_axi4lite <> dcache.io
 
   core.io.reset_vector := io.reset_vector
+  io.performance_counters := core.io.performance_counters
   io.debug := dcache.debug
   io.debug_retired_inst := core.io.debug_retired_inst.get
   io.debug_abi_map := core.io.debug_abi_map.get

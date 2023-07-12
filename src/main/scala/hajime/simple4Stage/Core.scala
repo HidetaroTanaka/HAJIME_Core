@@ -7,11 +7,17 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common.ScalarOpConstants._
 import hajime.common._
 
+class Performance_CountersIO(xprlen: Int) extends Bundle {
+  val cycle_count = Output(UInt(xprlen.W))
+  val retired_inst_count = Output(UInt(xprlen.W))
+}
+
 class CoreIO(xprlen: Int, debug: Boolean = true) extends Bundle {
   val icache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = RISCV_Consts.INST_LEN)
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
   // val hartid = Input(UInt(xprlen.W))
   val reset_vector = Input(UInt(xprlen.W))
+  val performance_counters = new Performance_CountersIO(xprlen)
   val debug_retired_inst = if(debug) Some(Output(Valid(UInt(32.W)))) else None
   val debug_abi_map = if(debug) Some(Output(new debug_map_physical_to_abi(xprlen))) else None
 }
@@ -24,6 +30,7 @@ class Core(xprlen: Int, debug: Boolean = true) extends Module {
   io.dcache_axi4lite <> cpu.io.dcache_axi4lite
   frontend.io.reset_vector := io.reset_vector
   cpu.io.frontend <> frontend.io.cpu
+  io.performance_counters := cpu.io.performance_counters
   if(debug) {
     io.debug_retired_inst.get := cpu.io.debug_retired_inst.get
     io.debug_abi_map.get := cpu.io.debug_abi_map.get
@@ -44,6 +51,7 @@ class CPUIO(xprlen: Int, debug: Boolean) extends Bundle {
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
   val debug_retired_inst = if(debug) Some(Output(Valid(UInt(RISCV_Consts.INST_LEN.W)))) else None
   val debug_abi_map = if(debug) Some(Output(new debug_map_physical_to_abi(xprlen))) else None
+  val performance_counters = new Performance_CountersIO(xprlen)
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
 
@@ -103,6 +111,9 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
 
   val cycle_count = RegInit(0.U(xprlen.W))
   cycle_count := cycle_count + 1.U(xprlen.W)
+  val retired_inst_count = RegInit(0.U(xprlen.W))
+  io.performance_counters.cycle_count := cycle_count
+  io.performance_counters.retired_inst_count := retired_inst_count
 
   val fence_in_pipeline = RegInit(false.B)
 
@@ -211,7 +222,7 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
 
   val EX_WB_REG = Reg(Valid(new EX_WB_IO(xprlen)))
 
-  EX_WB_REG.valid := ID_EX_REG.valid && !branch_evaluator.io.out.valid
+  EX_WB_REG.valid := ID_EX_REG.valid // && !branch_evaluator.io.out.valid
   EX_WB_REG.bits.bypassSignals.rd_index := ID_EX_REG.bits.bypassSignals.rd_index
   EX_WB_REG.bits.dataSignals.EX_ALU_val := alu.io.out
   EX_WB_REG.bits.dataSignals.EX_noALU_val := ID_noALU_val
@@ -229,7 +240,8 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
     WB_NOALU -> EX_WB_REG.bits.dataSignals.EX_noALU_val,
     WB_MEM -> ldstUnit.io.cpu.resp.bits.data,
   ))
-  rf.io.req.valid := EX_WB_REG.valid && EX_WB_REG.bits.bypassSignals.rd_index.valid && (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl =/= WB_MEM || (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl === WB_MEM && ldstUnit.io.cpu.resp.valid))
+  val WB_inst_can_retire = EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl =/= WB_MEM || (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl === WB_MEM && ldstUnit.io.cpu.resp.valid))
+  rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.bypassSignals.rd_index.valid
   rf.io.req.bits.data := WB_RF_value
   rf.io.req.bits.rd := EX_WB_REG.bits.bypassSignals.rd_index.bits
 
@@ -245,6 +257,7 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
     fence_in_pipeline := false.B
   }
 
+  retired_inst_count := retired_inst_count + WB_inst_can_retire
   if(debug) io.debug_retired_inst.get.bits := EX_WB_REG.bits.debug_inst.get & Fill(32, EX_WB_REG.valid)
   if(debug) io.debug_retired_inst.get.valid := EX_WB_REG.valid
   if(debug) io.debug_abi_map.get := rf.io.debug_abi_map.get
