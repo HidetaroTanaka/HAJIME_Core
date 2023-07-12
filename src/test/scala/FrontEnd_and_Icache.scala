@@ -7,7 +7,7 @@ class FrontEnd_and_Icache extends Module{
     val reset_vector = Input(UInt(64.W))
   })
   val frontend = Module(new Frontend(xprlen = 64))
-  val iCache = Module(new Icache_model)
+  val iCache = Module(new Icache_model(hexfileName = "src/main/resources/addi_dump_inst.hex"))
   frontend.io.icache_axi4lite <> iCache.io
   frontend.io.reset_vector := io.reset_vector
   frontend.io.cpu <> io.cpu

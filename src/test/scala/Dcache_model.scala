@@ -6,7 +6,7 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common._
 
 // This actually isn't compatible with AXI4-Lite, but anyway
-class Dcache_model(dcacheBaseAddr: Int, tohost: Int) extends Module {
+class Dcache_model(dcacheBaseAddr: Int, tohost: Int, hexfileName: String) extends Module {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 64)))
   val debug = IO(Output(UInt(64.W)))
   val debug_reg = RegInit(0.U(64.W))
@@ -23,7 +23,7 @@ class Dcache_model(dcacheBaseAddr: Int, tohost: Int) extends Module {
   // 0x000 ~ 0xFFF
   // D$ Address space from Core: 0x00004000 ~ 0x00004FFF
   val mem = SyncReadMem(4096, UInt(8.W))
-  // loadMemoryFromFile(mem, "src/main/resources/datamem.hex")
+  if(hexfileName != null) loadMemoryFromFile(mem, hexfileName)
 
   val readData_vec = Wire(Vec(8, UInt(8.W)))
   readData_vec.foreach(_ := 0.U(8.W))
@@ -51,7 +51,7 @@ class Dcache_model(dcacheBaseAddr: Int, tohost: Int) extends Module {
   io.b.valid := RegNext(io.aw.valid && io.w.valid)
 }
 
-object DcacheConverter extends App {
-  // circt.stage.ChiselStage.emitSystemVerilogFile(new Dcache_model(dcacheBaseAddr = 0x00004000))
-  (new ChiselStage).emitVerilog(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+object Dcache_model extends App {
+  def apply(dcacheBaseAddr: Int, tohost: Int, hexfileName: String) = new Dcache_model(dcacheBaseAddr, tohost, hexfileName)
+  (new ChiselStage).emitVerilog(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000, hexfileName = null), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
 }
