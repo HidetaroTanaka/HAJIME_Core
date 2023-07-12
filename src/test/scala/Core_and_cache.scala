@@ -13,9 +13,9 @@ class Core_and_cache(testname: String, initialiseDmem: Boolean) extends Module {
   })
 
   val core = Module(Core(xprlen = 64, debug = true))
-  val icache = Module(new Icache_model(hexfileName = s"src/main/resources/${testname}_dump_inst.hex"))
+  val icache = Module(new Icache_model(hexfileName = s"src/main/resources/${testname}_inst.hex"))
   val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000,
-    if(initialiseDmem) s"src/main/resources/${testname}_dump_data.hex" else null))
+    if(initialiseDmem) s"src/main/resources/${testname}_data.hex" else null))
 
   core.io.icache_axi4lite <> icache.io
   core.io.dcache_axi4lite <> dcache.io

@@ -1,5 +1,5 @@
 
-test.out:     file format elf64-littleriscv
+addi.out:     file format elf64-littleriscv
 
 
 Disassembly of section .text.init:
