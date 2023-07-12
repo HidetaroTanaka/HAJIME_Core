@@ -253,6 +253,10 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
 
   when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.toWB.fence) {
     fence_in_pipeline := true.B
+    io.frontend.resp.ready := false.B
+    when(!bypassingUnit.io.ID.out.stall) {
+      ID_EX_REG.valid := false.B
+    }
   } .elsewhen(EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.fence) {
     fence_in_pipeline := false.B
   }
