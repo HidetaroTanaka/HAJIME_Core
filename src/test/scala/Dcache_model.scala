@@ -27,13 +27,12 @@ class Dcache_model(dcacheBaseAddr: Int, tohost: Int, hexfileName: String) extend
 
   val readData_vec = Wire(Vec(8, UInt(8.W)))
   readData_vec.foreach(_ := 0.U(8.W))
-
   // Read
-  when(io.ar.valid) {
-    for((d,i) <- readData_vec.zipWithIndex) {
-      d := mem.read(internalReadAddr + i.U)
-    }
-  } .elsewhen(io.aw.valid && io.w.valid) {
+  for ((d, i) <- readData_vec.zipWithIndex) {
+    d := mem.read(internalReadAddr + i.U)
+  }
+
+  when(io.aw.valid && io.w.valid) {
     val strb = io.w.bits.strb.asBools
     for((mask,i) <- strb.zipWithIndex) {
       when(mask) {

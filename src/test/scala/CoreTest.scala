@@ -5,7 +5,8 @@ import org.scalatest.flatspec._
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
     "add", "addi", "addiw", "addw", "and", "andi", "auipc",
-    "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr")
+    "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr"
+  )
   for(e <- instList_noDmem) {
     it should s"pass the test ${e}" in {
       test(new Core_and_cache(testname = e, initialiseDmem = false)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
