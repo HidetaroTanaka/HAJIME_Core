@@ -6,7 +6,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
     "add", "addi", "addiw", "addw", "and", "andi", "auipc",
     "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr",
-    "lui"
+    "lui", "or", "ori"
   )
   for(e <- instList_noDmem) {
     it should s"pass the test ${e}" in {
@@ -22,7 +22,8 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
   val instList_withDmem = Seq(
-    "lb", "lbu", "ld", "lh", "lhu", "lw", "lwu", // "ma_data"
+    "lb", "lbu", "ld", "lh", "lhu", "lw", "lwu", // "ma_data",
+    "sb", "sd", "sh",
   )
   for(e <- instList_withDmem) {
     it should s"pass the test ${e}" in {
