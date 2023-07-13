@@ -5,7 +5,8 @@ import org.scalatest.flatspec._
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
     "add", "addi", "addiw", "addw", "and", "andi", "auipc",
-    "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr"
+    "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr",
+    "lui"
   )
   for(e <- instList_noDmem) {
     it should s"pass the test ${e}" in {
@@ -16,12 +17,12 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         }
         // c.io.debug.expect("h01".U(64.W))
         c.io.debug_abi_map.gp.expect("h01".U(64.W))
-        println(s"${e} inst test passed.")
+        if(c.io.debug_abi_map.gp.peek().litValue == 1) println(s"${e} inst test passed.")
       }
     }
   }
   val instList_withDmem = Seq(
-    "lb"
+    "lb", "lbu", "ld", "lh", "lhu", "lw", "lwu", // "ma_data"
   )
   for(e <- instList_withDmem) {
     it should s"pass the test ${e}" in {

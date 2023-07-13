@@ -43,10 +43,10 @@ class Frontend(xprlen: Int) extends Module {
   val pc_reg = RegInit(io.reset_vector)
   val addr_req_to_axi_ar = MuxCase(pc_reg+4.U(xprlen.W), Seq(
     io.cpu.req.valid -> io.cpu.req.bits.pc,
-    (!RegNext(io.icache_axi4lite.ar.ready) || !io.icache_axi4lite.r.valid) -> pc_reg,
+    (!RegNext(io.icache_axi4lite.ar.ready) || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg,
   ))
 
-  when(io.icache_axi4lite.r.valid && io.cpu.resp.ready) {
+  when(io.icache_axi4lite.r.valid || io.cpu.resp.ready) {
     pc_reg := addr_req_to_axi_ar
   }
 

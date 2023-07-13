@@ -149,7 +149,7 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   rf.io.rs2 := decoded_inst.rs2
 
   val ID_inst_valid = decoder.io.out.valid && io.frontend.resp.valid
-  ID_EX_REG.valid := ID_inst_valid
+  ID_EX_REG.valid := ID_inst_valid && io.frontend.resp.ready
   ID_EX_REG.bits.dataSignals.ID_noALU_val := MuxLookup(decoder.io.out.bits.NOALU_ctrl, 0.U)(
     Seq(
       NOALU_IMMU -> decoded_inst.u_imm,
