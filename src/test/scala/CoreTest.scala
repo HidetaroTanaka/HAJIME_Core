@@ -4,9 +4,11 @@ import org.scalatest.flatspec._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
+    "simple",
     "add", "addi", "addiw", "addw", "and", "andi", "auipc",
     "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr",
-    "lui", "or", "ori"
+    "lui", "or", "ori", "sll", "slli", "slliw", "sllw",
+    "slt", "slti", "sltiu", "sltu",
   )
   for(e <- instList_noDmem) {
     it should s"pass the test ${e}" in {
@@ -17,7 +19,8 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         }
         // c.io.debug.expect("h01".U(64.W))
         c.io.debug_abi_map.gp.expect("h01".U(64.W))
-        if(c.io.debug_abi_map.gp.peek().litValue == 1) println(s"${e} inst test passed.")
+        val gp_val = c.io.debug_abi_map.gp.peek().litValue
+        if(gp_val == 1) println(s"${e} test passed.") else println(s"${e} test failed at ${gp_val}")
       }
     }
   }
@@ -34,7 +37,8 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         }
         // c.io.debug.expect("h01".U(64.W))
         c.io.debug_abi_map.gp.expect("h01".U(64.W))
-        println(s"${e} inst test passed.")
+        val gp_val = c.io.debug_abi_map.gp.peek().litValue
+        if (gp_val == 1) println(s"${e} test passed.") else println(s"${e} test failed at ${gp_val}")
       }
     }
   }
