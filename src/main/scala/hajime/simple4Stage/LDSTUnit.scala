@@ -35,7 +35,7 @@ class LDSTUnit(xprlen: Int) extends Module {
   val strb_width = xprlen/8
 
   val req_reg = Reg(chiselTypeOf(io.cpu.req.bits))
-  when(io.cpu.req.ready && io.cpu.resp.valid) {
+  when(io.cpu.req.ready && io.cpu.req.valid) {
     req_reg := io.cpu.req.bits
   }
 
