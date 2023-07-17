@@ -84,6 +84,7 @@ class BypassingUnit(xprlen: Int) extends Module {
     )
   // ID, EXステージが共にvalidであり、かつEXステージがストールまたはEXステージのrdからIDステージのrs1またはrs2へ値をフォワーディングする必要があるが、
   // EXステージのrdレジスタの値がvalidでない場合（例：メモリロード等）にストール
+  // TODO: This signal is acting sus in sb test
   io.ID.out.stall := io.ID.in.valid && io.EX.in.valid && (io.EX.out.stall ||
     (((EX_rd_index_and_ID_rs1_index_matches_and_not_zero && io.ID.in.bits.rs1_index.valid) ||
       (EX_rd_index_and_ID_rs2_index_matches_and_not_zero && io.ID.in.bits.rs2_index.valid)) &&

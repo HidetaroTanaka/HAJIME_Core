@@ -5,6 +5,16 @@ HAJIME Core
 
 The core's goal is to provide some RISC-V implementation (SMT and Vector is planned in my imagination) for embedded environment.
 
+This repository requires `riscv-gnu-toolchain` to be installed if you want to run your own RISC-V program.
+
+### Building this repository
+Use Ubuntu and sbt (IntelliJ is recommended). And fetch submodules as this:
+```bash
+$ git clone https://github.com/HidetaroTanaka/HAJIME_Core
+$ cd HAJIME_Core
+$ git submodule update --init --recursive
+```
+
 ***
 
 You've done the [Chisel Bootcamp](https://github.com/freechipsproject/chisel-bootcamp), and now you
