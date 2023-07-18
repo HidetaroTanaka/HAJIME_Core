@@ -21,6 +21,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         c.io.debug.expect("h01".U(64.W))
         val toHost_Value = c.io.debug.peek().litValue
         if(toHost_Value == 1) println(s"${e} test passed.") else println(s"${e} test failed at ${toHost_Value}")
+        println(s"IPC for ${e} test: ${c.io.performance_counters.retired_inst_count.peek().litValue.toDouble / c.io.performance_counters.cycle_count.peek().litValue.toDouble}")
       }
     }
   }
@@ -38,6 +39,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         c.io.debug.expect("h01".U(64.W))
         val toHost_Value = c.io.debug.peek().litValue
         if (toHost_Value == 1) println(s"${e} test passed.") else println(s"${e} test failed at ${toHost_Value}")
+        println(s"IPC for ${e} test: ${c.io.performance_counters.retired_inst_count.peek().litValue.toDouble / c.io.performance_counters.cycle_count.peek().litValue.toDouble}")
       }
     }
   }

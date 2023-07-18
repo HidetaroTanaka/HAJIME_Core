@@ -56,10 +56,11 @@ class Icache_model(hexfileName: String) extends Module {
     }
     )
 
+  val retain_r_channel = RegNext(io.r.valid && !io.r.ready)
   io.r.bits.data := Cat(readData_vec.reverse)
   io.r.bits.resp := 0.U(3.W)
   io.r.valid := {
-    RegNext(io.ar.valid && io.ar.ready) && (if (R_HAS_ACCESS_DELAY) {
+    (RegNext(io.ar.valid && io.ar.ready) || retain_r_channel) && (if (R_HAS_ACCESS_DELAY) {
       !internal_hash1 || (internal_hash1 && hash1_reg)
     } else {
       true.B

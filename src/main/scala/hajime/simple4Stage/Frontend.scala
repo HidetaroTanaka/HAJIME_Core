@@ -43,10 +43,12 @@ class Frontend(xprlen: Int) extends Module {
   val pc_reg = RegInit(io.reset_vector)
   val addr_req_to_axi_ar = MuxCase(pc_reg+4.U(xprlen.W), Seq(
     io.cpu.req.valid -> io.cpu.req.bits.pc,
-    (!RegNext(io.icache_axi4lite.ar.ready) || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg,
+    // if AXI AR is not ready, or AXI R is not valid, or CPU is not ready, retain PC
+    (!io.icache_axi4lite.ar.ready || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg,
   ))
 
-  when(io.icache_axi4lite.r.valid || io.cpu.resp.ready) {
+  // If CPU gets instruction from Frontend, move PC to next one
+  when(io.cpu.resp.valid || io.cpu.resp.ready) {
     pc_reg := addr_req_to_axi_ar
   }
 
