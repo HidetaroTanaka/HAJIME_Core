@@ -1,0 +1,2 @@
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64i -mabi=lp64 -o median.riscv ./median/median.c ./median/median_main.c  ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+riscv64-unknown-elf-objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data median.riscv > median.dump
