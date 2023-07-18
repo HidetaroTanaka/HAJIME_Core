@@ -4,19 +4,18 @@ import chisel3.util._
 import hajime.common.RISCV_Consts
 import hajime.simple4Stage._
 
-class Core_and_cache(testname: String, initialiseDmem: Boolean) extends Module {
+class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String) extends Module {
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
-    val debug = Output(UInt(64.W))
+    val debug = ValidIO(UInt(64.W))
     val performance_counters = new Performance_CountersIO(64)
     val debug_retired_inst = Output(Valid(UInt(32.W)))
     val debug_abi_map = Output(new debug_map_physical_to_abi(64))
   })
 
   val core = Module(Core(xprlen = 64, debug = true))
-  val icache = Module(new Icache_model(hexfileName = s"src/main/resources/${testname}_inst.hex"))
-  val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000,
-    if(initialiseDmem) s"src/main/resources/${testname}_data.hex" else null))
+  val icache = Module(new Icache_model(hexfileName = icache_hexfilename))
+  val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = 0x00001000, hexfileName = dcache_hexfilename))
 
   core.io.icache_axi4lite <> icache.io
   core.io.dcache_axi4lite <> dcache.io
@@ -29,6 +28,6 @@ class Core_and_cache(testname: String, initialiseDmem: Boolean) extends Module {
 }
 
 object Core_and_cache extends App {
-  def apply(testname: String, initialiseDmem: Boolean): Core_and_cache = new Core_and_cache(testname, initialiseDmem)
-  (new ChiselStage).emitVerilog(apply(testname = "addi", initialiseDmem = false), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  def apply(icache_hexfilename: String, dcache_hexfilename: String): Core_and_cache = new Core_and_cache(icache_hexfilename, dcache_hexfilename)
+  (new ChiselStage).emitVerilog(apply(icache_hexfilename = null, dcache_hexfilename = null), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
 }

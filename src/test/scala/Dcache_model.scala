@@ -8,9 +8,15 @@ import hajime.common._
 // This actually isn't compatible with AXI4-Lite, but anyway
 class Dcache_model(dcacheBaseAddr: Int, tohost: Int, hexfileName: String) extends Module {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 64)))
-  val debug = IO(Output(UInt(64.W)))
-  val debug_reg = RegInit(0.U(64.W))
+  val debug = IO(ValidIO(UInt(64.W)))
+
+  val default_debug = Wire(Valid(UInt(64.W)))
+  default_debug.bits := 0.U(64.W)
+  default_debug.valid := false.B
+
+  val debug_reg = RegInit(default_debug)
   debug := debug_reg
+  debug_reg.valid := false.B
 
   io := DontCare
 
@@ -40,7 +46,8 @@ class Dcache_model(dcacheBaseAddr: Int, tohost: Int, hexfileName: String) extend
       }
     }
     when(io.aw.bits.addr === tohost.U) {
-      debug_reg := io.w.bits.data
+      debug_reg.bits := io.w.bits.data
+      debug_reg.valid := true.B
     }
   }
 

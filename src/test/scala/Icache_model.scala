@@ -24,6 +24,7 @@ class Icache_model(hexfileName: String) extends Module {
     ar_addr_reg.valid := false.B
   }
 
+  // 0x0000_0000 ~ 0x00000FFF
   val mem = SyncReadMem(4096, UInt(8.W))
   if(hexfileName != null) loadMemoryFromFile(mem, hexfileName)
 

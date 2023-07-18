@@ -32,6 +32,7 @@ SECTIONS
   /* data segment */
   . = ALIGN(0x4000);
   .data : { *(.data) }
+  .rodata : { *(.rodata) }
 
   .sdata : {
     __global_pointer$ = . + 0x800;

@@ -1,0 +1,411 @@
+
+helloworld.riscv:     file format elf64-littleriscv
+
+
+Disassembly of section .text.init:
+
+0000000000000000 <_start>:
+   0:	00000093          	li	ra,0
+   4:	00000113          	li	sp,0
+   8:	00000193          	li	gp,0
+   c:	00000213          	li	tp,0
+  10:	00000293          	li	t0,0
+  14:	00000313          	li	t1,0
+  18:	00000393          	li	t2,0
+  1c:	00000413          	li	s0,0
+  20:	00000493          	li	s1,0
+  24:	00000513          	li	a0,0
+  28:	00000593          	li	a1,0
+  2c:	00000613          	li	a2,0
+  30:	00000693          	li	a3,0
+  34:	00000713          	li	a4,0
+  38:	00000793          	li	a5,0
+  3c:	00000813          	li	a6,0
+  40:	00000893          	li	a7,0
+  44:	00000913          	li	s2,0
+  48:	00000993          	li	s3,0
+  4c:	00000a13          	li	s4,0
+  50:	00000a93          	li	s5,0
+  54:	00000b13          	li	s6,0
+  58:	00000b93          	li	s7,0
+  5c:	00000c13          	li	s8,0
+  60:	00000c93          	li	s9,0
+  64:	00000d13          	li	s10,0
+  68:	00000d93          	li	s11,0
+  6c:	00000e13          	li	t3,0
+  70:	00000e93          	li	t4,0
+  74:	00000f13          	li	t5,0
+  78:	00000f93          	li	t6,0
+  7c:	00004197          	auipc	gp,0x4
+  80:	7e018193          	add	gp,gp,2016 # 485c <__global_pointer$>
+  84:	00004217          	auipc	tp,0x4
+  88:	01720213          	add	tp,tp,23 # 409b <_end+0x3f>
+  8c:	fc027213          	and	tp,tp,-64
+  90:	00005137          	lui	sp,0x5
+  94:	fff1011b          	addw	sp,sp,-1 # 4fff <__global_pointer$+0x7a3>
+  98:	00000513          	li	a0,0
+  9c:	00100593          	li	a1,1
+  a0:	1a80006f          	j	248 <_init>
+  a4:	00000013          	nop
+  a8:	00000013          	nop
+  ac:	00000013          	nop
+
+Disassembly of section .text:
+
+00000000000000b0 <thread_entry>:
+  b0:	00051063          	bnez	a0,b0 <thread_entry>
+  b4:	00008067          	ret
+
+00000000000000b8 <int32ToHex>:
+  b8:	03000793          	li	a5,48
+  bc:	00f57513          	and	a0,a0,15
+  c0:	00251693          	sll	a3,a0,0x2
+  c4:	00004617          	auipc	a2,0x4
+  c8:	f3c60613          	add	a2,a2,-196 # 4000 <fromhost+0x2fc0>
+  cc:	00f58023          	sb	a5,0(a1)
+  d0:	07800793          	li	a5,120
+  d4:	00f580a3          	sb	a5,1(a1)
+  d8:	00158893          	add	a7,a1,1
+  dc:	00958793          	add	a5,a1,9
+  e0:	00f00813          	li	a6,15
+  e4:	00c686b3          	add	a3,a3,a2
+  e8:	08a86c63          	bltu	a6,a0,180 <int32ToHex+0xc8>
+  ec:	0006a703          	lw	a4,0(a3)
+  f0:	00c70733          	add	a4,a4,a2
+  f4:	00070067          	jr	a4
+  f8:	03100713          	li	a4,49
+  fc:	00e78023          	sb	a4,0(a5)
+ 100:	fff78793          	add	a5,a5,-1
+ 104:	ff1792e3          	bne	a5,a7,e8 <int32ToHex+0x30>
+ 108:	00058523          	sb	zero,10(a1)
+ 10c:	00008067          	ret
+ 110:	04600713          	li	a4,70
+ 114:	fe9ff06f          	j	fc <int32ToHex+0x44>
+ 118:	04500713          	li	a4,69
+ 11c:	fe1ff06f          	j	fc <int32ToHex+0x44>
+ 120:	04400713          	li	a4,68
+ 124:	fd9ff06f          	j	fc <int32ToHex+0x44>
+ 128:	04300713          	li	a4,67
+ 12c:	fd1ff06f          	j	fc <int32ToHex+0x44>
+ 130:	04200713          	li	a4,66
+ 134:	fc9ff06f          	j	fc <int32ToHex+0x44>
+ 138:	04100713          	li	a4,65
+ 13c:	fc1ff06f          	j	fc <int32ToHex+0x44>
+ 140:	03900713          	li	a4,57
+ 144:	fb9ff06f          	j	fc <int32ToHex+0x44>
+ 148:	03800713          	li	a4,56
+ 14c:	fb1ff06f          	j	fc <int32ToHex+0x44>
+ 150:	03700713          	li	a4,55
+ 154:	fa9ff06f          	j	fc <int32ToHex+0x44>
+ 158:	03600713          	li	a4,54
+ 15c:	fa1ff06f          	j	fc <int32ToHex+0x44>
+ 160:	03500713          	li	a4,53
+ 164:	f99ff06f          	j	fc <int32ToHex+0x44>
+ 168:	03400713          	li	a4,52
+ 16c:	f91ff06f          	j	fc <int32ToHex+0x44>
+ 170:	03300713          	li	a4,51
+ 174:	f89ff06f          	j	fc <int32ToHex+0x44>
+ 178:	03200713          	li	a4,50
+ 17c:	f81ff06f          	j	fc <int32ToHex+0x44>
+ 180:	03000713          	li	a4,48
+ 184:	f79ff06f          	j	fc <int32ToHex+0x44>
+
+0000000000000188 <putchar_tohost>:
+ 188:	00001797          	auipc	a5,0x1
+ 18c:	e787b783          	ld	a5,-392(a5) # 1000 <tohost>
+ 190:	00a78023          	sb	a0,0(a5)
+ 194:	00000513          	li	a0,0
+ 198:	00008067          	ret
+
+000000000000019c <printstr>:
+ 19c:	00054783          	lbu	a5,0(a0)
+ 1a0:	02078263          	beqz	a5,1c4 <printstr+0x28>
+ 1a4:	00001697          	auipc	a3,0x1
+ 1a8:	e5c68693          	add	a3,a3,-420 # 1000 <tohost>
+ 1ac:	00054703          	lbu	a4,0(a0)
+ 1b0:	0006b783          	ld	a5,0(a3)
+ 1b4:	00150513          	add	a0,a0,1
+ 1b8:	00e78023          	sb	a4,0(a5)
+ 1bc:	00054783          	lbu	a5,0(a0)
+ 1c0:	fe0796e3          	bnez	a5,1ac <printstr+0x10>
+ 1c4:	00008067          	ret
+
+00000000000001c8 <exit>:
+ 1c8:	fe010113          	add	sp,sp,-32
+ 1cc:	00813823          	sd	s0,16(sp)
+ 1d0:	00113c23          	sd	ra,24(sp)
+ 1d4:	00004797          	auipc	a5,0x4
+ 1d8:	e7c7c783          	lbu	a5,-388(a5) # 4050 <fromhost+0x3010>
+ 1dc:	00001417          	auipc	s0,0x1
+ 1e0:	e2440413          	add	s0,s0,-476 # 1000 <tohost>
+ 1e4:	02078663          	beqz	a5,210 <exit+0x48>
+ 1e8:	00004797          	auipc	a5,0x4
+ 1ec:	e6878793          	add	a5,a5,-408 # 4050 <fromhost+0x3010>
+ 1f0:	00001417          	auipc	s0,0x1
+ 1f4:	e1040413          	add	s0,s0,-496 # 1000 <tohost>
+ 1f8:	0007c603          	lbu	a2,0(a5)
+ 1fc:	00043683          	ld	a3,0(s0)
+ 200:	00178793          	add	a5,a5,1
+ 204:	0007c703          	lbu	a4,0(a5)
+ 208:	00c68023          	sb	a2,0(a3)
+ 20c:	fe0716e3          	bnez	a4,1f8 <exit+0x30>
+ 210:	00010593          	mv	a1,sp
+ 214:	ea5ff0ef          	jal	b8 <int32ToHex>
+ 218:	00014783          	lbu	a5,0(sp)
+ 21c:	02078063          	beqz	a5,23c <exit+0x74>
+ 220:	00010793          	mv	a5,sp
+ 224:	0007c603          	lbu	a2,0(a5)
+ 228:	00043683          	ld	a3,0(s0)
+ 22c:	00178793          	add	a5,a5,1
+ 230:	0007c703          	lbu	a4,0(a5)
+ 234:	00c68023          	sb	a2,0(a3)
+ 238:	fe0716e3          	bnez	a4,224 <exit+0x5c>
+ 23c:	00043783          	ld	a5,0(s0)
+ 240:	00078023          	sb	zero,0(a5)
+ 244:	0000006f          	j	244 <exit+0x7c>
+
+0000000000000248 <_init>:
+ 248:	ff010113          	add	sp,sp,-16
+ 24c:	00000593          	li	a1,0
+ 250:	00000513          	li	a0,0
+ 254:	00113423          	sd	ra,8(sp)
+ 258:	1e4000ef          	jal	43c <main>
+ 25c:	f6dff0ef          	jal	1c8 <exit>
+
+0000000000000260 <memcpy>:
+ 260:	00b567b3          	or	a5,a0,a1
+ 264:	00c7e7b3          	or	a5,a5,a2
+ 268:	0077f793          	and	a5,a5,7
+ 26c:	00c50833          	add	a6,a0,a2
+ 270:	02078463          	beqz	a5,298 <memcpy+0x38>
+ 274:	00c58633          	add	a2,a1,a2
+ 278:	00050793          	mv	a5,a0
+ 27c:	0b057663          	bgeu	a0,a6,328 <memcpy+0xc8>
+ 280:	0005c703          	lbu	a4,0(a1)
+ 284:	00158593          	add	a1,a1,1
+ 288:	00178793          	add	a5,a5,1
+ 28c:	fee78fa3          	sb	a4,-1(a5)
+ 290:	fec598e3          	bne	a1,a2,280 <memcpy+0x20>
+ 294:	00008067          	ret
+ 298:	04050693          	add	a3,a0,64
+ 29c:	0906f863          	bgeu	a3,a6,32c <memcpy+0xcc>
+ 2a0:	00058713          	mv	a4,a1
+ 2a4:	00068793          	mv	a5,a3
+ 2a8:	00073383          	ld	t2,0(a4)
+ 2ac:	00873283          	ld	t0,8(a4)
+ 2b0:	01073f83          	ld	t6,16(a4)
+ 2b4:	01873f03          	ld	t5,24(a4)
+ 2b8:	02073e83          	ld	t4,32(a4)
+ 2bc:	02873e03          	ld	t3,40(a4)
+ 2c0:	03073303          	ld	t1,48(a4)
+ 2c4:	03873883          	ld	a7,56(a4)
+ 2c8:	04078793          	add	a5,a5,64
+ 2cc:	f877b023          	sd	t2,-128(a5)
+ 2d0:	f857b423          	sd	t0,-120(a5)
+ 2d4:	f9f7b823          	sd	t6,-112(a5)
+ 2d8:	f9e7bc23          	sd	t5,-104(a5)
+ 2dc:	fbd7b023          	sd	t4,-96(a5)
+ 2e0:	fbc7b423          	sd	t3,-88(a5)
+ 2e4:	fa67b823          	sd	t1,-80(a5)
+ 2e8:	fb17bc23          	sd	a7,-72(a5)
+ 2ec:	04070713          	add	a4,a4,64
+ 2f0:	fb07ece3          	bltu	a5,a6,2a8 <memcpy+0x48>
+ 2f4:	fbf60613          	add	a2,a2,-65
+ 2f8:	fc067793          	and	a5,a2,-64
+ 2fc:	04078793          	add	a5,a5,64
+ 300:	fc067613          	and	a2,a2,-64
+ 304:	00f585b3          	add	a1,a1,a5
+ 308:	00c687b3          	add	a5,a3,a2
+ 30c:	f907f4e3          	bgeu	a5,a6,294 <memcpy+0x34>
+ 310:	0005b703          	ld	a4,0(a1)
+ 314:	00878793          	add	a5,a5,8
+ 318:	00858593          	add	a1,a1,8
+ 31c:	fee7bc23          	sd	a4,-8(a5)
+ 320:	ff07e8e3          	bltu	a5,a6,310 <memcpy+0xb0>
+ 324:	00008067          	ret
+ 328:	00008067          	ret
+ 32c:	00050793          	mv	a5,a0
+ 330:	fddff06f          	j	30c <memcpy+0xac>
+
+0000000000000334 <memset>:
+ 334:	00c567b3          	or	a5,a0,a2
+ 338:	0077f793          	and	a5,a5,7
+ 33c:	00c50633          	add	a2,a0,a2
+ 340:	0ff5f593          	zext.b	a1,a1
+ 344:	00078e63          	beqz	a5,360 <memset+0x2c>
+ 348:	00050793          	mv	a5,a0
+ 34c:	04c57263          	bgeu	a0,a2,390 <memset+0x5c>
+ 350:	00178793          	add	a5,a5,1
+ 354:	feb78fa3          	sb	a1,-1(a5)
+ 358:	fef61ce3          	bne	a2,a5,350 <memset+0x1c>
+ 35c:	00008067          	ret
+ 360:	00859713          	sll	a4,a1,0x8
+ 364:	00b70733          	add	a4,a4,a1
+ 368:	01071793          	sll	a5,a4,0x10
+ 36c:	00f70733          	add	a4,a4,a5
+ 370:	02071793          	sll	a5,a4,0x20
+ 374:	00f70733          	add	a4,a4,a5
+ 378:	fec572e3          	bgeu	a0,a2,35c <memset+0x28>
+ 37c:	00050793          	mv	a5,a0
+ 380:	00878793          	add	a5,a5,8
+ 384:	fee7bc23          	sd	a4,-8(a5)
+ 388:	fec7ece3          	bltu	a5,a2,380 <memset+0x4c>
+ 38c:	00008067          	ret
+ 390:	00008067          	ret
+
+0000000000000394 <strlen>:
+ 394:	00054783          	lbu	a5,0(a0)
+ 398:	00078e63          	beqz	a5,3b4 <strlen+0x20>
+ 39c:	00050793          	mv	a5,a0
+ 3a0:	0017c703          	lbu	a4,1(a5)
+ 3a4:	00178793          	add	a5,a5,1
+ 3a8:	fe071ce3          	bnez	a4,3a0 <strlen+0xc>
+ 3ac:	40a78533          	sub	a0,a5,a0
+ 3b0:	00008067          	ret
+ 3b4:	00000513          	li	a0,0
+ 3b8:	00008067          	ret
+
+00000000000003bc <strnlen>:
+ 3bc:	00b506b3          	add	a3,a0,a1
+ 3c0:	00050793          	mv	a5,a0
+ 3c4:	00059863          	bnez	a1,3d4 <strnlen+0x18>
+ 3c8:	0240006f          	j	3ec <strnlen+0x30>
+ 3cc:	00178793          	add	a5,a5,1
+ 3d0:	00f68a63          	beq	a3,a5,3e4 <strnlen+0x28>
+ 3d4:	0007c703          	lbu	a4,0(a5)
+ 3d8:	fe071ae3          	bnez	a4,3cc <strnlen+0x10>
+ 3dc:	40a78533          	sub	a0,a5,a0
+ 3e0:	00008067          	ret
+ 3e4:	40a68533          	sub	a0,a3,a0
+ 3e8:	00008067          	ret
+ 3ec:	00000513          	li	a0,0
+ 3f0:	00008067          	ret
+
+00000000000003f4 <strcmp>:
+ 3f4:	00054783          	lbu	a5,0(a0)
+ 3f8:	00158593          	add	a1,a1,1
+ 3fc:	00150513          	add	a0,a0,1
+ 400:	fff5c703          	lbu	a4,-1(a1)
+ 404:	00078a63          	beqz	a5,418 <strcmp+0x24>
+ 408:	fee786e3          	beq	a5,a4,3f4 <strcmp>
+ 40c:	0007851b          	sext.w	a0,a5
+ 410:	40e5053b          	subw	a0,a0,a4
+ 414:	00008067          	ret
+ 418:	00000513          	li	a0,0
+ 41c:	ff5ff06f          	j	410 <strcmp+0x1c>
+
+0000000000000420 <strcpy>:
+ 420:	00050793          	mv	a5,a0
+ 424:	0005c703          	lbu	a4,0(a1)
+ 428:	00178793          	add	a5,a5,1
+ 42c:	00158593          	add	a1,a1,1
+ 430:	fee78fa3          	sb	a4,-1(a5)
+ 434:	fe0718e3          	bnez	a4,424 <strcpy+0x4>
+ 438:	00008067          	ret
+
+Disassembly of section .text.startup:
+
+000000000000043c <main>:
+ 43c:	ff010113          	add	sp,sp,-16
+ 440:	00004517          	auipc	a0,0x4
+ 444:	c0050513          	add	a0,a0,-1024 # 4040 <fromhost+0x3000>
+ 448:	00113423          	sd	ra,8(sp)
+ 44c:	d51ff0ef          	jal	19c <printstr>
+ 450:	00813083          	ld	ra,8(sp)
+ 454:	00000513          	li	a0,0
+ 458:	01010113          	add	sp,sp,16
+ 45c:	00008067          	ret
+ 460:	fff00513          	li	a0,-1
+ 464:	00008067          	ret
+
+Disassembly of section .tohost:
+
+0000000000001000 <tohost>:
+	...
+
+0000000000001040 <fromhost>:
+	...
+
+Disassembly of section .rodata:
+
+0000000000004000 <.rodata>:
+    4000:	c180                	.2byte	0xc180
+    4002:	ffff                	.2byte	0xffff
+    4004:	c0f8                	.2byte	0xc0f8
+    4006:	ffff                	.2byte	0xffff
+    4008:	c178                	.2byte	0xc178
+    400a:	ffff                	.2byte	0xffff
+    400c:	c170                	.2byte	0xc170
+    400e:	ffff                	.2byte	0xffff
+    4010:	c168                	.2byte	0xc168
+    4012:	ffff                	.2byte	0xffff
+    4014:	c160                	.2byte	0xc160
+    4016:	ffff                	.2byte	0xffff
+    4018:	c158                	.2byte	0xc158
+    401a:	ffff                	.2byte	0xffff
+    401c:	c150                	.2byte	0xc150
+    401e:	ffff                	.2byte	0xffff
+    4020:	c148                	.2byte	0xc148
+    4022:	ffff                	.2byte	0xffff
+    4024:	c140                	.2byte	0xc140
+    4026:	ffff                	.2byte	0xffff
+    4028:	c138                	.2byte	0xc138
+    402a:	ffff                	.2byte	0xffff
+    402c:	c130                	.2byte	0xc130
+    402e:	ffff                	.2byte	0xffff
+    4030:	c128                	.2byte	0xc128
+    4032:	ffff                	.2byte	0xffff
+    4034:	c120                	.2byte	0xc120
+    4036:	ffff                	.2byte	0xffff
+    4038:	c118                	.2byte	0xc118
+    403a:	ffff                	.2byte	0xffff
+    403c:	c110                	.2byte	0xc110
+    403e:	ffff                	.2byte	0xffff
+
+Disassembly of section .rodata.str1.8:
+
+0000000000004040 <_end-0x1c>:
+    4040:	6548                	.2byte	0x6548
+    4042:	6c6c                	.2byte	0x6c6c
+    4044:	57202c6f          	jal	s8,65b6 <__global_pointer$+0x1d5a>
+    4048:	646c726f          	jal	tp,cb68e <__global_pointer$+0xc6e32>
+    404c:	0a21                	.2byte	0xa21
+    404e:	0000                	.2byte	0x0
+    4050:	7845                	.2byte	0x7845
+    4052:	7469                	.2byte	0x7469
+    4054:	6320                	.2byte	0x6320
+    4056:	3a65646f          	jal	s0,5a3fc <__global_pointer$+0x55ba0>
+    405a:	0020                	.2byte	0x20
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347          	.4byte	0x3a434347
+   4:	2820                	.2byte	0x2820
+   6:	65653267          	.4byte	0x65653267
+   a:	6535                	.2byte	0x6535
+   c:	3334                	.2byte	0x3334
+   e:	3030                	.2byte	0x3030
+  10:	3831                	.2byte	0x3831
+  12:	2029                	.2byte	0x2029
+  14:	3231                	.2byte	0x3231
+  16:	322e                	.2byte	0x322e
+  18:	302e                	.2byte	0x302e
+	...
+
+Disassembly of section .riscv.attributes:
+
+0000000000000000 <.riscv.attributes>:
+   0:	1b41                	.2byte	0x1b41
+   2:	0000                	.2byte	0x0
+   4:	7200                	.2byte	0x7200
+   6:	7369                	.2byte	0x7369
+   8:	01007663          	bgeu	zero,a6,14 <_start+0x14>
+   c:	0011                	.2byte	0x11
+   e:	0000                	.2byte	0x0
+  10:	1004                	.2byte	0x1004
+  12:	7205                	.2byte	0x7205
+  14:	3676                	.2byte	0x3676
+  16:	6934                	.2byte	0x6934
+  18:	7032                	.2byte	0x7032
+  1a:	0031                	.2byte	0x31
