@@ -12,7 +12,7 @@
 
 #undef strcmp
 
-extern volatile uint64_t tohost;
+#define TOHOST 0x1000
 
 void __attribute__((weak)) thread_entry(int cid, int nc)
 {
@@ -94,8 +94,7 @@ void int32ToHex(int num, char* str) {
 
 int putchar_tohost(int ch)
 {
-  char* ptr_tohost = (char*)tohost;
-  *ptr_tohost = (char)ch;
+  *((char*)TOHOST) = (char)ch;
 
   return 0;
 }

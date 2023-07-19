@@ -7,10 +7,9 @@ import hajime.simple4Stage._
 class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String) extends Module {
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
-    val debug = ValidIO(UInt(64.W))
+    val toHost = ValidIO(UInt(64.W))
     val performance_counters = new Performance_CountersIO(64)
-    val debug_retired_inst = Output(Valid(UInt(32.W)))
-    val debug_abi_map = Output(new debug_map_physical_to_abi(64))
+    val debug_io = Output(new debugIO(64))
   })
 
   val core = Module(Core(xprlen = 64, debug = true))
@@ -22,9 +21,8 @@ class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String) ext
 
   core.io.reset_vector := io.reset_vector
   io.performance_counters := core.io.performance_counters
-  io.debug := dcache.debug
-  io.debug_retired_inst := core.io.debug_retired_inst.get
-  io.debug_abi_map := core.io.debug_abi_map.get
+  io.toHost := dcache.debug
+  io.debug_io := core.io.debug_io.get
 }
 
 object Core_and_cache extends App {

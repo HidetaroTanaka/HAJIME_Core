@@ -12,14 +12,21 @@ class Performance_CountersIO(xprlen: Int) extends Bundle {
   val retired_inst_count = Output(UInt(xprlen.W))
 }
 
+class debugIO(xprlen: Int) extends Bundle {
+  val debug_retired = Valid(new Bundle{
+    val instruction = UInt(RISCV_Consts.INST_LEN.W)
+    val pc = UInt(xprlen.W)
+  })
+  val debug_abi_map = new debug_map_physical_to_abi(xprlen)
+}
+
 class CoreIO(xprlen: Int, debug: Boolean = true) extends Bundle {
   val icache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = RISCV_Consts.INST_LEN)
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
   // val hartid = Input(UInt(xprlen.W))
   val reset_vector = Input(UInt(xprlen.W))
   val performance_counters = new Performance_CountersIO(xprlen)
-  val debug_retired_inst = if(debug) Some(Output(Valid(UInt(32.W)))) else None
-  val debug_abi_map = if(debug) Some(Output(new debug_map_physical_to_abi(xprlen))) else None
+  val debug_io = if(debug) Some(Output(new debugIO(xprlen))) else None
 }
 
 class Core(xprlen: Int, debug: Boolean = true) extends Module {
@@ -31,10 +38,7 @@ class Core(xprlen: Int, debug: Boolean = true) extends Module {
   frontend.io.reset_vector := io.reset_vector
   cpu.io.frontend <> frontend.io.cpu
   io.performance_counters := cpu.io.performance_counters
-  if(debug) {
-    io.debug_retired_inst.get := cpu.io.debug_retired_inst.get
-    io.debug_abi_map.get := cpu.io.debug_abi_map.get
-  }
+  if(debug) io.debug_io.get := cpu.io.debug_io.get
 }
 
 object Core extends App {
@@ -49,8 +53,7 @@ class AcceleratorInterface extends Bundle {
 class CPUIO(xprlen: Int, debug: Boolean) extends Bundle {
   val frontend = Flipped(new FrontEndCpuIO(xprlen))
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
-  val debug_retired_inst = if(debug) Some(Output(Valid(UInt(RISCV_Consts.INST_LEN.W)))) else None
-  val debug_abi_map = if(debug) Some(Output(new debug_map_physical_to_abi(xprlen))) else None
+  val debug_io = if(debug) Some(Output(new debugIO(xprlen))) else None
   val performance_counters = new Performance_CountersIO(xprlen)
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
@@ -89,6 +92,11 @@ class RegIndexes_WB extends Bundle {
   val rd_index = Valid(UInt(5.W))
 }
 
+class Debug_Inst(xprlen: Int) extends Bundle {
+  val instruction = UInt(RISCV_Consts.INST_LEN.W)
+  val pc = UInt(xprlen.W)
+}
+
 class ID_EX_IO(xprlen: Int) extends Bundle {
   val dataSignals = new ID_EX_dataSignals(xprlen)
   val ctrlSignals = new Bundle {
@@ -96,14 +104,14 @@ class ID_EX_IO(xprlen: Int) extends Bundle {
     val toWB = new EX_WB_ctrlSignals
   }
   val bypassSignals = new RegIndexes_EX
-  val debug_inst = if(CORE_Consts.debug) Some(UInt(RISCV_Consts.INST_LEN.W)) else None
+  val debug_inst = if(CORE_Consts.debug) Some(new Debug_Inst(xprlen)) else None
 }
 
 class EX_WB_IO(xprlen: Int) extends Bundle {
   val dataSignals = new EX_WB_dataSignals(xprlen)
   val ctrlSignals = new EX_WB_ctrlSignals
   val bypassSignals = new RegIndexes_WB
-  val debug_inst = if(CORE_Consts.debug) Some(UInt(RISCV_Consts.INST_LEN.W)) else None
+  val debug_inst = if(CORE_Consts.debug) Some(new Debug_Inst(xprlen)) else None
 }
 
 class CPU(xprlen: Int, debug: Boolean) extends Module {
@@ -183,7 +191,10 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   bypassingUnit.io.ID.in.bits.rs2_index.bits := decoded_inst.rs2
   bypassingUnit.io.ID.in.bits.rs2_index.valid := ALUin_USE_RS2(decoder.io.out.bits.ALUin_ctrl) || NOALU_USE_RS2(decoder.io.out.bits.NOALU_ctrl)
 
-  if(debug) ID_EX_REG.bits.debug_inst.get := decoded_inst.bits
+  if(debug) {
+    ID_EX_REG.bits.debug_inst.get.instruction := decoded_inst.bits
+    ID_EX_REG.bits.debug_inst.get.pc := io.frontend.resp.bits.pc
+  }
 
   // retain the ID_EX register if stall
   when(bypassingUnit.io.EX.out.stall) {
@@ -262,7 +273,10 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   }
 
   retired_inst_count := retired_inst_count + WB_inst_can_retire
-  if(debug) io.debug_retired_inst.get.bits := EX_WB_REG.bits.debug_inst.get & Fill(32, EX_WB_REG.valid)
-  if(debug) io.debug_retired_inst.get.valid := EX_WB_REG.valid
-  if(debug) io.debug_abi_map.get := rf.io.debug_abi_map.get
+  if(debug) {
+    io.debug_io.get.debug_retired.bits.instruction := EX_WB_REG.bits.debug_inst.get.instruction & Fill(RISCV_Consts.INST_LEN, EX_WB_REG.valid)
+    io.debug_io.get.debug_retired.bits.pc := EX_WB_REG.bits.debug_inst.get.pc & Fill(xprlen, EX_WB_REG.valid)
+    io.debug_io.get.debug_retired.valid := EX_WB_REG.valid
+    io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
+  }
 }
