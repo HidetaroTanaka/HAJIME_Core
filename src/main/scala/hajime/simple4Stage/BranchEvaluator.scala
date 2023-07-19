@@ -23,7 +23,7 @@ class BranchEvaluator(xprlen: Int) extends Module {
   val io = IO(new BranchEvaluatorIO(xprlen))
 
   // Branch Insts
-  val branch_taken = MuxLookup(io.req.bits.BranchType, false.B,
+  val branch_taken = MuxLookup(io.req.bits.BranchType, false.B)(
     Seq(
       BR_EQ -> !(io.req.bits.ALU_Result.orR),
       BR_NE -> io.req.bits.ALU_Result.orR,
@@ -34,7 +34,7 @@ class BranchEvaluator(xprlen: Int) extends Module {
     )
   )
 
-  io.out.valid := io.req.valid && MuxLookup(io.req.bits.PC_WB_ctrl, false.B,
+  io.out.valid := io.req.valid && MuxLookup(io.req.bits.PC_WB_ctrl, false.B)(
     Seq(
       PCWB_JALR   -> (io.req.bits.jalr_predPC =/= io.req.bits.ALU_Result),
       PCWB_BRANCH -> (io.req.bits.bp_taken =/= branch_taken),

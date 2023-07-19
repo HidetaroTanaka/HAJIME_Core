@@ -38,11 +38,11 @@ Disassembly of section .text.init:
   78:	00000f93          	li	t6,0
   7c:	00005197          	auipc	gp,0x5
   80:	41018193          	add	gp,gp,1040 # 548c <__global_pointer$>
-  84:	00005217          	auipc	tp,0x5
-  88:	c4720213          	add	tp,tp,-953 # 4ccb <_end+0x3f>
+  84:	10000217          	auipc	tp,0x10000
+  88:	00320213          	add	tp,tp,3 # 10000087 <_end+0x3f>
   8c:	fc027213          	and	tp,tp,-64
-  90:	00005137          	lui	sp,0x5
-  94:	fff1011b          	addw	sp,sp,-1 # 4fff <_end+0x373>
+  90:	00006137          	lui	sp,0x6
+  94:	fff1011b          	addw	sp,sp,-1 # 5fff <__global_pointer$+0xb73>
   98:	00000513          	li	a0,0
   9c:	00100593          	li	a1,1
   a0:	1780006f          	j	218 <_init>
@@ -120,8 +120,8 @@ Disassembly of section .text:
 000000000000019c <printstr>:
  19c:	00054783          	lbu	a5,0(a0)
  1a0:	00078c63          	beqz	a5,1b8 <printstr+0x1c>
- 1a4:	00001737          	lui	a4,0x1
- 1a8:	00f70023          	sb	a5,0(a4) # 1000 <tohost>
+ 1a4:	10000737          	lui	a4,0x10000
+ 1a8:	00f70023          	sb	a5,0(a4) # 10000000 <tohost>
  1ac:	00154783          	lbu	a5,1(a0)
  1b0:	00150513          	add	a0,a0,1
  1b4:	fe079ae3          	bnez	a5,1a8 <printstr+0xc>
@@ -133,8 +133,8 @@ Disassembly of section .text:
  1c4:	00005717          	auipc	a4,0x5
  1c8:	abc70713          	add	a4,a4,-1348 # 4c80 <verify_data+0x640>
  1cc:	04500793          	li	a5,69
- 1d0:	000016b7          	lui	a3,0x1
- 1d4:	00f68023          	sb	a5,0(a3) # 1000 <tohost>
+ 1d0:	100006b7          	lui	a3,0x10000
+ 1d4:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
  1d8:	00174783          	lbu	a5,1(a4)
  1dc:	00170713          	add	a4,a4,1
  1e0:	fe079ae3          	bnez	a5,1d4 <exit+0x18>
@@ -143,13 +143,13 @@ Disassembly of section .text:
  1ec:	00014703          	lbu	a4,0(sp)
  1f0:	00070e63          	beqz	a4,20c <exit+0x50>
  1f4:	00010793          	mv	a5,sp
- 1f8:	000016b7          	lui	a3,0x1
- 1fc:	00e68023          	sb	a4,0(a3) # 1000 <tohost>
+ 1f8:	100006b7          	lui	a3,0x10000
+ 1fc:	00e68023          	sb	a4,0(a3) # 10000000 <tohost>
  200:	0017c703          	lbu	a4,1(a5)
  204:	00178793          	add	a5,a5,1
  208:	fe071ae3          	bnez	a4,1fc <exit+0x40>
- 20c:	000017b7          	lui	a5,0x1
- 210:	00078023          	sb	zero,0(a5) # 1000 <tohost>
+ 20c:	100007b7          	lui	a5,0x10000
+ 210:	00078023          	sb	zero,0(a5) # 10000000 <tohost>
  214:	0000006f          	j	214 <exit+0x58>
 
 0000000000000218 <_init>:
@@ -326,14 +326,6 @@ Disassembly of section .text.startup:
  480:	ff1ff06f          	j	470 <main+0x64>
  484:	fff00513          	li	a0,-1
  488:	00008067          	ret
-
-Disassembly of section .tohost:
-
-0000000000001000 <tohost>:
-	...
-
-0000000000001040 <fromhost>:
-	...
 
 Disassembly of section .data:
 
@@ -1716,12 +1708,20 @@ Disassembly of section .data:
 
 Disassembly of section .rodata.str1.8:
 
-0000000000004c80 <_end-0xc>:
+0000000000004c80 <.rodata.str1.8>:
     4c80:	7845                	.2byte	0x7845
     4c82:	7469                	.2byte	0x7469
     4c84:	6320                	.2byte	0x6320
     4c86:	3a65646f          	jal	s0,5b02c <__global_pointer$+0x55ba0>
     4c8a:	0020                	.2byte	0x20
+
+Disassembly of section .tohost:
+
+0000000010000000 <tohost>:
+	...
+
+0000000010000040 <fromhost>:
+	...
 
 Disassembly of section .comment:
 

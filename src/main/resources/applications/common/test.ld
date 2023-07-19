@@ -26,9 +26,6 @@ SECTIONS
   .text.init : { *(.text.init) }
   .text : { *(.text) }
 
-  . = ALIGN(0x1000);
-  .tohost : { *(.tohost) }
-
   /* data segment */
   . = ALIGN(0x4000);
   .data : { *(.data) }
@@ -59,6 +56,9 @@ SECTIONS
     *(.tbss)
     _tbss_end = .;
   }
+
+  . = ALIGN(0x10000000);
+  .tohost : { *(.tohost) }
 
   /* End of uninitalized data segement */
   _end = .;

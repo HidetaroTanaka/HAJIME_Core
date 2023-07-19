@@ -33,6 +33,6 @@ _start:
     li x30,0
     li x31,0
     // initialise stack pointer
-    li sp, 0x00004FFF
+    li sp, 0x00005FFF
 
     j main

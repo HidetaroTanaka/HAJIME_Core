@@ -8,7 +8,7 @@ import hajime.axiIO.AXI4liteIO
 /**
  * Read Only AXI4-Lite Memory because thinking about writing is pain
  */
-class Icache_model(hexfileName: String) extends Module {
+class Icache_model(hexfileName: String, memsize: Int = 8192) extends Module {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
 
   val AR_HAS_ACCESS_DELAY = false
@@ -24,8 +24,9 @@ class Icache_model(hexfileName: String) extends Module {
     ar_addr_reg.valid := false.B
   }
 
-  // 0x0000_0000 ~ 0x00000FFF
-  val mem = SyncReadMem(4096, UInt(8.W))
+  // 4096: 0x0000_0000 ~ 0x00000FFF
+  // 8192: 0x0000_0000 ~ 0x00001FFF
+  val mem = SyncReadMem(memsize, UInt(8.W))
   if(hexfileName != null) loadMemoryFromFile(mem, hexfileName)
 
   val readData_vec = Wire(Vec(4, UInt(8.W)))
@@ -70,6 +71,6 @@ class Icache_model(hexfileName: String) extends Module {
 }
 
 object Icache_model extends App {
-  def apply(hexfileName: String): Icache_model = new Icache_model(hexfileName)
-  (new ChiselStage).emitVerilog(this.apply(null), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  def apply(hexfileName: String, memsize: Int): Icache_model = new Icache_model(hexfileName, memsize)
+  (new ChiselStage).emitVerilog(this.apply(null, 8192), args = hajime.common.COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
 }

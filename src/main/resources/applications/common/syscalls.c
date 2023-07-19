@@ -12,7 +12,7 @@
 
 #undef strcmp
 
-#define TOHOST 0x1000
+#define TOHOST 0x10000000
 
 #define PUTCHAR_TOHOST( ch ) do { *((volatile char*)TOHOST) = ch; } while(0);
 

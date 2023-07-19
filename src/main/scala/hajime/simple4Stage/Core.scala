@@ -144,7 +144,7 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   val ID_EX_REG = Reg(Valid(new ID_EX_IO(xprlen)))
   val pcPlus4 = io.frontend.resp.bits.pc + 4.U(xprlen.W)
 
-  io.frontend.req := Mux(branch_evaluator.io.out.valid, branch_evaluator.io.out, branch_predictor.io.req)
+  io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.req)
   branch_predictor.io.pc := io.frontend.resp.bits.pc
   branch_predictor.io.pc4 := pcPlus4
   branch_predictor.io.branch_pc_if_taken := Mux(branch_predictor.io.isJAL, decoded_inst.j_imm, decoded_inst.b_imm) + io.frontend.resp.bits.pc

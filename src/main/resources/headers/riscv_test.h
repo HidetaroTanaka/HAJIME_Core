@@ -187,7 +187,7 @@ _start:                                                                 \
 #define RVTEST_PASS                                                     \
         fence;                                                          \
         li TESTNUM, 1;                                                  \
-        la t0, 0x1000;                                                  \
+        la t0, tohost;                                                  \
         sw TESTNUM, 0(t0);                                              \
 1:      j 1b;
 
@@ -197,7 +197,7 @@ _start:                                                                 \
 1:      beqz TESTNUM, 1b;                                               \
         sll TESTNUM, TESTNUM, 1;                                        \
         or TESTNUM, TESTNUM, 1;                                         \
-        la t0, 0x1000;                                                  \
+        la t0, tohost;                                                  \
         sw TESTNUM, 0(t0);                                              \
 2:      j 2b;
 

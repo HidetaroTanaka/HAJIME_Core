@@ -55,7 +55,7 @@ _start:
   and tp, tp, -64
 
   # set stack pointer, hart ID, number of cores
-  li sp, 0x00004FFF
+  li sp, 0x00005FFF
   li a0, 0
   li a1, 1
 
