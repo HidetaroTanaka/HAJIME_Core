@@ -14,6 +14,8 @@
 
 #define TOHOST 0x1000
 
+#define PUTCHAR_TOHOST( ch ) do { *((volatile char*)TOHOST) = ch; } while(0);
+
 void __attribute__((weak)) thread_entry(int cid, int nc)
 {
   // multi-threaded programs override this function.
@@ -36,75 +38,24 @@ void int32ToHex(int num, char* str) {
   // str[9] ~ str[2]
   for(i=0; i < 8; i++) {
     tmp = num & 0xF;
-    switch(tmp) {
-      case 0x0:
-        str[9-i] = '0';
-        break;
-      case 0x1:
-        str[9-i] = '1';
-        break;
-      case 0x2:
-        str[9-i] = '2';
-        break;
-      case 0x3:
-        str[9-i] = '3';
-        break;
-      case 0x4:
-        str[9-i] = '4';
-        break;
-      case 0x5:
-        str[9-i] = '5';
-        break;
-      case 0x6:
-        str[9-i] = '6';
-        break;
-      case 0x7:
-        str[9-i] = '7';
-        break;
-      case 0x8:
-        str[9-i] = '8';
-        break;
-      case 0x9:
-        str[9-i] = '9';
-        break;
-      case 0xA:
-        str[9-i] = 'A';
-        break;
-      case 0xB:
-        str[9-i] = 'B';
-        break;
-      case 0xC:
-        str[9-i] = 'C';
-        break;
-      case 0xD:
-        str[9-i] = 'D';
-        break;
-      case 0xE:
-        str[9-i] = 'E';
-        break;
-      case 0xF:
-        str[9-i] = 'F';
-        break;
-      default:
-        str[9-i] = '0';
+    if(tmp >= 0x0 && tmp <= 0x9) {
+        str[9-i] = '0' + tmp;
+    } else {
+        str[9-i] = 'A' + (tmp - 0xA);
     }
+    num = num >> 4;
   }
   str[10] = '\0';
-}
-
-int putchar_tohost(int ch)
-{
-  *((char*)TOHOST) = (char)ch;
-
-  return 0;
+  return;
 }
 
 void printstr(char* str) {
-  volatile register char* ptr = str;
+  char* ptr = str;
   while(*ptr != '\0') {
-    putchar_tohost((int)(*ptr));
+    PUTCHAR_TOHOST(*ptr)
     ptr++;
   }
+  return;
 }
 
 void exit(int ret) {
@@ -112,7 +63,7 @@ void exit(int ret) {
   char hex[11];
   int32ToHex(ret, hex);
   printstr(hex);
-  putchar_tohost('\0');
+  PUTCHAR_TOHOST('\0');
 _exit:
   goto _exit;
 }
