@@ -12,14 +12,16 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
       def get_toHostValid(): Boolean = {
         dut.io.debug.valid.peekBoolean()
       }
+      var toHostWrittenChar: List[Char] = List()
+      val toHostAnsChar: List[Char] = List('H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\u0000')
       while(!(get_toHostValid() && (get_toHostChar() == '\u0000'))) {
         dut.clock.step()
         if(get_toHostValid()) {
           print(get_toHostChar())
+          toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
         }
       }
-      dut.io.debug.bits.expect(0.U(64.W))
-      dut.io.debug.valid.expect(true.B)
+      assert((toHostWrittenChar zip toHostAnsChar).map(x => (x._1 == x._2)).reduce(_ && _))
     }
   }
 }
