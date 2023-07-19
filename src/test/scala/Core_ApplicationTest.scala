@@ -42,6 +42,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
           toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
         }
       }
+      dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
     }
   }
 }

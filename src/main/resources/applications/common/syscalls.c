@@ -64,6 +64,8 @@ void exit(int ret) {
   int32ToHex(ret, hex);
   printstr(hex);
   PUTCHAR_TOHOST('\0');
+  // guarantee that register a0 holds exit code
+  volatile register unsigned long exit_code asm ("a0") = ret;
 _exit:
   goto _exit;
 }
