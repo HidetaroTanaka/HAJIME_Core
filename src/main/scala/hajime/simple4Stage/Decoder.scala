@@ -5,15 +5,7 @@ import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.common.{CACHE_FUNCTIONS, COMPILE_CONSTANTS, InstBundle, RISCV_Consts}
 import hajime.common.ScalarOpConstants._
-
-class MEM_ctrl_IO extends Bundle {
-  val memWrite = Bool()
-  val memRead  = Bool()
-  val mem_func = UInt(CACHE_FUNCTIONS.BYTE.getWidth.W)
-  val mem_sext = Bool()
-
-  def mem_valid: Bool = memWrite || memRead
-}
+import hajime.publicmodules.{ALU_functIO, MEM_ctrl_IO}
 
 /**
  * decoded results of inst

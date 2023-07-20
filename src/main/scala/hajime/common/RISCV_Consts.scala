@@ -17,14 +17,16 @@ object ScalarOpConstants {
   val N = false.B
 
   // ALU_in1, ALU_in2 selector
-  def ALUin_X = 0.U(2.W)
+  def ALUin_X = 0.U(3.W)
   def ALUin_RS1_RS2 = ALUin_X
   def ALUin_RS1_IMI = ALUin_RS1_RS2+1.U
   def ALUin_RS1_IMS = ALUin_RS1_IMI+1.U
   def ALUin_PC_IMMU = ALUin_RS1_IMS+1.U
+  def ALUin_RS1_CSR = ALUin_PC_IMMU+1.U
 
   def ALUin_USE_RS1(aluin_signal: UInt): Bool = {
-    (aluin_signal === ALUin_RS1_RS2) || (aluin_signal === ALUin_RS1_IMI) || (aluin_signal === ALUin_RS1_IMS)
+    val matchList = Seq(ALUin_RS1_RS2, ALUin_RS1_IMI, ALUin_RS1_IMS, ALUin_RS1_CSR)
+    matchList.map(x => (aluin_signal === x)).reduce(_ || _)
   }
   def ALUin_USE_RS2(aluin_signal: UInt): Bool = {
     aluin_signal === ALUin_RS1_RS2
@@ -73,6 +75,22 @@ object ScalarOpConstants {
   def BR_GE  = BR_LT+1.U
   def BR_LTU = BR_GE+1.U
   def BR_GEU = BR_LTU+1.U
+
+  def CSR_NONE = 0.U
+  /**
+   * csrrc, csrrci: Read and Clear CSR according to rs1 or zimm
+   */
+  def CSR_CLEAR = CSR_NONE+1.U
+
+  /**
+   * csrrs, scrrsi: Read and Set CSR according to rs1 or zimm
+   */
+  def CSR_SET = CSR_CLEAR+1.U
+
+  /**
+   * csrrw, csrrwi: Read and Write CSR according to rs1 or zimm
+   */
+  def CSR_WRITE = CSR_SET+1.U
 }
 
 object CORE_Consts {

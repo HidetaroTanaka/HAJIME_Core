@@ -1,7 +1,6 @@
-package hajime.simple4Stage
+package hajime.publicmodules
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 
 class BarrelShifterIO(xprlen: Int) extends Bundle {

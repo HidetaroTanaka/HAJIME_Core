@@ -1,12 +1,11 @@
-package hajime.simple4Stage
+package hajime.publicmodules
 
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
-import hajime.common.{COMPILE_CONSTANTS, RISCV_Consts}
 import hajime.common.RISCV_Consts._
 import hajime.common.ScalarOpConstants._
-import hajime.common.Functions
+import hajime.common.{COMPILE_CONSTANTS, Functions}
 
 
 class ALU_functIO extends Bundle {

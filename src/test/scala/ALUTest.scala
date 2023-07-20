@@ -2,6 +2,7 @@ import chisel3._
 import chiseltest._
 import hajime.common.ScalarOpConstants._
 import hajime.common._
+import hajime.publicmodules.ALU
 import hajime.simple4Stage._
 import org.scalatest.flatspec._
 

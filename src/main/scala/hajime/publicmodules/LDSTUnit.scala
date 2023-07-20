@@ -1,12 +1,20 @@
-package hajime.simple4Stage
+package hajime.publicmodules
 
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4SIG_CHECK.resp_exception
 import hajime.axiIO.AXI4liteIO
-import hajime.common
 import hajime.common.{CACHE_FUNCTIONS, RISCV_Consts}
+
+class MEM_ctrl_IO extends Bundle {
+  val memWrite = Bool()
+  val memRead  = Bool()
+  val mem_func = UInt(CACHE_FUNCTIONS.BYTE.getWidth.W)
+  val mem_sext = Bool()
+
+  def mem_valid: Bool = memWrite || memRead
+}
 
 class LDSTReq(xprlen: Int) extends Bundle {
   val addr = UInt(xprlen.W)

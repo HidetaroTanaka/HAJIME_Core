@@ -12,15 +12,18 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
       def get_toHostValid(): Boolean = {
         dut.io.toHost.valid.peekBoolean()
       }
-      // var toHostWrittenChar: List[Char] = List()
+      var toHostWrittenChar: List[Char] = List()
       while (!(get_toHostValid() && (get_toHostChar() == '\u0000'))) {
         dut.clock.step()
         if (get_toHostValid()) {
-          print(get_toHostChar())
-          // toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
+          // print(get_toHostChar())
+          toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
         }
       }
       dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
+      toHostWrittenChar.foreach(x => print(x))
+      println()
+      println(s"IPC for HelloWorld test: ${dut.io.performance_counters.retired_inst_count.peek().litValue.toDouble / dut.io.performance_counters.cycle_count.peek().litValue.toDouble}")
     }
   }
   it should "execute median" in {
@@ -32,15 +35,18 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
       def get_toHostValid(): Boolean = {
         dut.io.toHost.valid.peekBoolean()
       }
-      // var toHostWrittenChar: List[Char] = List()
+      var toHostWrittenChar: List[Char] = List()
       while (!(get_toHostValid() && (get_toHostChar() == '\u0000'))) {
         dut.clock.step()
         if (get_toHostValid()) {
-          print(get_toHostChar())
-          // toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
+          // print(get_toHostChar())
+          toHostWrittenChar = toHostWrittenChar :+ get_toHostChar()
         }
       }
       dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
+      toHostWrittenChar.foreach(x => print(x))
+      println()
+      println(s"IPC for median test: ${dut.io.performance_counters.retired_inst_count.peek().litValue.toDouble / dut.io.performance_counters.cycle_count.peek().litValue.toDouble}")
     }
   }
 }

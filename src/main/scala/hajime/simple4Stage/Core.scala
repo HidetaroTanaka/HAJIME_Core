@@ -6,6 +6,7 @@ import chisel3.util._
 import hajime.axiIO.AXI4liteIO
 import hajime.common.ScalarOpConstants._
 import hajime.common._
+import hajime.publicmodules.{ALU, ALU_functIO, LDSTUnit, MEM_ctrl_IO}
 
 class Performance_CountersIO(xprlen: Int) extends Bundle {
   val cycle_count = Output(UInt(xprlen.W))
