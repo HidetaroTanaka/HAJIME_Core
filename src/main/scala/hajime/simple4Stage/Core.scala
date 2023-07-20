@@ -138,7 +138,7 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
 
   // START OF ID STAGE
-  io.frontend.resp.ready := (cycle_count =/= 0.U(xprlen.W)) && !bypassingUnit.io.ID.out.stall && !fence_in_pipeline
+  io.frontend.resp.ready := ((cycle_count =/= 0.U(xprlen.W)) && !bypassingUnit.io.ID.out.stall && !fence_in_pipeline) || io.frontend.req.valid
 
   val decoded_inst = Wire(new InstBundle(xprlen))
   decoded_inst.bits := io.frontend.resp.bits.inst
