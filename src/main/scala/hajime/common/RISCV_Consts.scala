@@ -45,11 +45,12 @@ object ScalarOpConstants {
   def ALU_AND    = ALU_OR+1.U
 
   // NOALU selector
-  def NOALU_X    = 0.U(2.W)
+  def NOALU_X    = 0.U(3.W)
   def NOALU_PC4  = NOALU_X
   def NOALU_RS2  = NOALU_PC4+1.U
   def NOALU_IMMU = NOALU_RS2+1.U
   def NOALU_PC_IF_MISPREDICT = NOALU_IMMU+1.U
+  def NOALU_CSR = NOALU_PC_IF_MISPREDICT+1.U
 
   def NOALU_USE_RS2(noalu_signal: UInt): Bool = {
     noalu_signal === NOALU_RS2
@@ -79,16 +80,22 @@ object ScalarOpConstants {
   def CSR_NONE = 0.U
   /**
    * csrrc, csrrci: Read and Clear CSR according to rs1 or zimm
+   *
+   * CSR = CSR & ~{rs1, zimm}
    */
   def CSR_CLEAR = CSR_NONE+1.U
 
   /**
    * csrrs, scrrsi: Read and Set CSR according to rs1 or zimm
+   *
+   * CSR = CSR | {rs1, zimm}
    */
   def CSR_SET = CSR_CLEAR+1.U
 
   /**
    * csrrw, csrrwi: Read and Write CSR according to rs1 or zimm
+   *
+   * CSR = {rs1, zimm}
    */
   def CSR_WRITE = CSR_SET+1.U
 }

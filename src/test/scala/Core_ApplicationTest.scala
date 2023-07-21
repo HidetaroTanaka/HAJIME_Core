@@ -21,7 +21,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
         }
       }
       dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
-      toHostWrittenChar.foreach(x => print(x))
+      toHostWrittenChar.foreach(print)
       println()
       println(s"IPC for HelloWorld test: ${dut.io.performance_counters.retired_inst_count.peek().litValue.toDouble / dut.io.performance_counters.cycle_count.peek().litValue.toDouble}")
     }
@@ -44,7 +44,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
         }
       }
       dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
-      toHostWrittenChar.foreach(x => print(x))
+      toHostWrittenChar.foreach(print)
       println()
       println(s"IPC for median test: ${dut.io.performance_counters.retired_inst_count.peek().litValue.toDouble / dut.io.performance_counters.cycle_count.peek().litValue.toDouble}")
     }
