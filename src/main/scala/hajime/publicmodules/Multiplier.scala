@@ -94,13 +94,17 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
   multipliers_64x8(0).io.multiplicand := io.req.bits.multiplicand.bits
   multipliers_64x8(0).io.multiplier := io.req.bits.multiplier.bits(7,0)
   val stage0_result = multipliers_64x8(0).io.out
-  stageRegisters(0).valid := io.req.valid
-  stageRegisters(0).bits.tag := io.req.bits.tag
-  stageRegisters(0).bits.result := stage0_result
-  stageRegisters(0).bits.multiplicand := io.req.bits.multiplicand.bits
-  stageRegisters(0).bits.multiplier := io.req.bits.multiplier.bits(63, 8)
-
-  if(params.debug) io.debug.get(0) := stageRegisters(0)
+  when(!io.resp.ready && stageRegisters(1).valid) {
+    stageRegisters(0) := stageRegisters(0)
+  } .otherwise {
+    stageRegisters(0).valid := io.req.valid
+    stageRegisters(0).bits.tag := io.req.bits.tag
+    stageRegisters(0).bits.result := stage0_result
+    stageRegisters(0).bits.multiplicand := io.req.bits.multiplicand.bits
+    stageRegisters(0).bits.multiplier := io.req.bits.multiplier.bits(63, 8)
+    if (params.debug) io.debug.get(0) := stageRegisters(0)
+  }
+  io.req.ready := io.resp.ready || !stageRegisters(0).valid
 
   /*
   // STAGE 1
@@ -120,10 +124,14 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
   for(i <- 1 until 7) {
     multipliers_64x8(i).io.multiplicand := stageRegisters(i-1).bits.multiplicand
     multipliers_64x8(i).io.multiplier := stageRegisters(i-1).bits.multiplier(7,0)
-    stageRegisters(i) := stageRegisters(i-1)
-    stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << ((i*8).U)) + stageRegisters(i-1).bits.result
-    stageRegisters(i).bits.multiplier := stageRegisters(i-1).bits.multiplier >> 8.U
-
+    // retain stageRegister if current information cant be sent to the next
+    when(!io.resp.ready && (if(i == 6) true.B else stageRegisters(i+1).valid)) {
+      stageRegisters(i) := stageRegisters(i)
+    } .otherwise {
+      stageRegisters(i) := stageRegisters(i - 1)
+      stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << (i * 8).U) + stageRegisters(i - 1).bits.result
+      stageRegisters(i).bits.multiplier := stageRegisters(i - 1).bits.multiplier >> 8.U
+    }
     if(params.debug) io.debug.get(i) := stageRegisters(i)
   }
 
