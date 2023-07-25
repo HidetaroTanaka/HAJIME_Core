@@ -12,6 +12,11 @@ object Functions {
   def generate_Int64RandomHexString(): String = {
     IndexedSeq.fill(16)(Random.nextInt(16).toHexString).reduce(_ + _)
   }
+
+  def generate_Int64RandomHexString(n: Int): String = {
+    val number_of_zeros = 16 - n
+    (0 until 16).map(i => if(i < number_of_zeros) "0" else Random.nextInt(16).toHexString).reduce(_ + _)
+  }
   def bigIntToString32format(bigInt: BigInt): String = {
     String.format("%32s", bigInt.toString(16).toUpperCase).replace(' ', '0')
   }
@@ -67,8 +72,8 @@ class MultiplierTest extends AnyFlatSpec with ChiselScalatestTester {
 
 class NonPipelinedMultiplierSpec extends AnyFlatSpec with ChiselScalatestTester {
   Random.setSeed(0)
-  val multiplicand_array = (0 until HajimeCoreParams().robEntries).map(_ => BigInt("0000000000000000" + generate_Int64RandomHexString(), 16))
-  val multiplier_array = (0 until HajimeCoreParams().robEntries).map(_ => BigInt("0000000000000000" + generate_Int64RandomHexString(), 16))
+  val multiplicand_array = (0 until HajimeCoreParams().robEntries).map(_ => BigInt("0000000000000000" + generate_Int64RandomHexString(Random.nextInt(16)), 16))
+  val multiplier_array = (0 until HajimeCoreParams().robEntries).map(_ => BigInt("0000000000000000" + generate_Int64RandomHexString(Random.nextInt(16)), 16))
   it should s"perform multiplication" in {
     test(NonPipelinedMultiplier(HajimeCoreParams())).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for((num1, num2, i) <- (multiplicand_array zip multiplier_array).zipWithIndex.map {
@@ -82,10 +87,14 @@ class NonPipelinedMultiplierSpec extends AnyFlatSpec with ChiselScalatestTester 
         dut.io.req.bits.tag.poke(i.U)
         dut.io.resp.ready.poke(true.B)
         dut.clock.step()
+        dut.io.resp.ready.poke(Random.nextBoolean().B)
         dut.io.req.valid.poke(false.B)
         dut.io.req.bits.multiplicand.bits.poke(0.U)
         dut.io.req.bits.multiplier.bits.poke(0.U)
-        while(!dut.io.resp.valid.peekBoolean()) dut.clock.step()
+        while(!(dut.io.resp.valid.peekBoolean() && dut.io.resp.ready.peekBoolean())) {
+          dut.clock.step()
+          dut.io.resp.ready.poke(Random.nextBoolean().B)
+        }
         val result = bigIntToString32format(dut.io.resp.bits.result.peekInt())
         val answer = bigIntToString32format(num1 * num2)
         dut.io.resp.bits.result.expect(num1 * num2)

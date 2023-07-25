@@ -160,7 +160,6 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new Bundle {
     val req = Flipped(Irrevocable(new MultiplierReq()))
     val resp = Irrevocable(new MultiplierResp())
-    val debug = if(params.debug) Some(Output(UInt((params.xprlen*2).W))) else None
   })
   require(params.xprlen == 64)
   io := DontCare
@@ -170,9 +169,13 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
   multiplier_64x8.io.multiplicand := internalReg.bits.multiplicand
   multiplier_64x8.io.multiplier := internalReg.bits.multiplier(7,0)
 
+  val multiplicand_greater_than_multiplier = io.req.bits.multiplicand.bits > io.req.bits.multiplier.bits
+  val lessnum = Mux(multiplicand_greater_than_multiplier, io.req.bits.multiplier.bits, io.req.bits.multiplicand.bits)
+  val greaternum = Mux(multiplicand_greater_than_multiplier, io.req.bits.multiplicand.bits, io.req.bits.multiplier.bits)
+
   when(io.req.valid && io.req.ready) {
-    internalReg.bits.multiplicand := io.req.bits.multiplicand.bits
-    internalReg.bits.multiplier := io.req.bits.multiplier.bits
+    internalReg.bits.multiplicand := greaternum
+    internalReg.bits.multiplier := lessnum
     internalReg.bits.result := 0.U((params.xprlen*2).W)
     internalReg.bits.tag := io.req.bits.tag
     internalReg.bits.stage := 0.U(3.W)
@@ -193,8 +196,8 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
 
   // 現在の出力が次のサイクルで破棄できる，またはinternalRegがvalidでないならば，reqを受け取れる
   io.req.ready := (io.resp.valid && io.resp.ready) || !internalReg.valid
-  // internalRegがvalidかつ，(multiplicandまたはmultiplierが0または1、またはstageが7)
-  io.resp.valid := internalReg.valid && (((internalReg.bits.multiplicand >> 1) === 0.U) || ((internalReg.bits.multiplier >> 1) === 0.U) || internalReg.bits.stage === 7.U(3.W))
+  // internalRegがvalidかつ，(multiplierが[0,0xFF]、またはstageが7)
+  io.resp.valid := internalReg.valid && ((internalReg.bits.multiplier(63,8) === 0.U) || internalReg.bits.stage === 7.U(3.W))
   io.resp.bits.tag := internalReg.bits.tag
   io.resp.bits.result := internalReg.bits.result + MuxLookup(internalReg.bits.stage, multiplier_64x8.io.out)(
     (0.U(3.W) -> multiplier_64x8.io.out) +: (1 until 8).map(i =>
