@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common.{CACHE_FUNCTIONS, CacheIO, RISCV_Consts}
+import hajime.common.RISCV_Consts
 
 /**
  * PC Update request from CPU
