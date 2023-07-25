@@ -165,41 +165,45 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
   io := DontCare
 
   val internalReg = RegInit(NonPipelinedMultipler_InternalReg.default_withValid(params))
-  val multiplier_64x8 = Module(new Multiplier_64x8)
-  multiplier_64x8.io.multiplicand := internalReg.bits.multiplicand
-  multiplier_64x8.io.multiplier := internalReg.bits.multiplier(7,0)
 
   val multiplicand_greater_than_multiplier = io.req.bits.multiplicand.bits > io.req.bits.multiplier.bits
   val lessnum = Mux(multiplicand_greater_than_multiplier, io.req.bits.multiplier.bits, io.req.bits.multiplicand.bits)
   val greaternum = Mux(multiplicand_greater_than_multiplier, io.req.bits.multiplicand.bits, io.req.bits.multiplier.bits)
 
-  when(io.req.valid && io.req.ready) {
-    internalReg.bits.multiplicand := greaternum
-    internalReg.bits.multiplier := lessnum
-    internalReg.bits.result := 0.U((params.xprlen*2).W)
-    internalReg.bits.tag := io.req.bits.tag
-    internalReg.bits.stage := 0.U(3.W)
-    internalReg.valid := true.B
-  } .elsewhen(io.resp.valid && !io.resp.ready) {
+  val accept_current_request = io.req.valid && io.req.ready
+  val executor_result = Mux(accept_current_request, 0.U((params.xprlen * 2).W), internalReg.bits.result)
+  val executor_multiplicand = Mux(accept_current_request, greaternum, internalReg.bits.multiplicand)
+  val executor_multiplier = Mux(accept_current_request, lessnum, internalReg.bits.multiplier)
+  val executor_tag = Mux(accept_current_request, io.req.bits.tag, internalReg.bits.tag)
+  val executor_stage = Mux(accept_current_request, 0.U(3.W), internalReg.bits.stage + 1.U(3.W))
+  val executor_valid = accept_current_request || internalReg.valid
+
+  val multiplier_64x8 = Module(new Multiplier_64x8)
+  multiplier_64x8.io.multiplicand := executor_multiplicand
+  multiplier_64x8.io.multiplier := executor_multiplier(7,0)
+
+  // internalRegがvalidであり，respがvalidだがreadyでない場合
+  when(internalReg.valid && io.resp.valid && !io.resp.ready) {
     internalReg := internalReg
-  } .elsewhen(internalReg.valid) {
-    internalReg := internalReg
+  // respがvalidだがreadyでなく，かつinternalRegがvalidでないならば，現在の入力を保持する
+  // また，現在のreqを受け付けているまたはinternalRegがvalidの場合も同様
+  } .elsewhen((!internalReg.valid && io.resp.valid && !io.resp.ready) || accept_current_request || internalReg.valid) {
     internalReg.bits.result := io.resp.bits.result
-    // internalReg.bits.multiplicand := internalReg.bits.multiplicand
-    internalReg.bits.multiplier := internalReg.bits.multiplier(63, 8)
-    // internalReg.bits.tag := internalReg.bits.tag
-    internalReg.bits.stage := internalReg.bits.stage + 1.U(3.W)
-    // internalReg.valid := internalReg.valid
+    internalReg.bits.multiplicand := executor_multiplicand
+    internalReg.bits.multiplier := executor_multiplier(63,8)
+    internalReg.bits.tag := executor_tag
+    internalReg.bits.stage := executor_stage
+    internalReg.valid := Mux(io.resp.ready && io.resp.valid, false.B, executor_valid)
   } .otherwise {
     internalReg.valid := false.B
   }
 
-  // 現在の出力が次のサイクルで破棄できる，またはinternalRegがvalidでないならば，reqを受け取れる
-  io.req.ready := (io.resp.valid && io.resp.ready) || !internalReg.valid
-  // internalRegがvalidかつ，(multiplierが[0,0xFF]、またはstageが7)
-  io.resp.valid := internalReg.valid && ((internalReg.bits.multiplier(63,8) === 0.U) || internalReg.bits.stage === 7.U(3.W))
-  io.resp.bits.tag := internalReg.bits.tag
-  io.resp.bits.result := internalReg.bits.result + MuxLookup(internalReg.bits.stage, multiplier_64x8.io.out)(
+  // internalRegがvalidでないならば，reqを受け取れる
+  io.req.ready := !internalReg.valid
+  // executor_validかつ，(multiplierが[0,0xFF]、またはstageが7)
+  io.resp.valid := executor_valid && ((executor_multiplier(63,8) === 0.U) || executor_stage === 7.U(3.W))
+  io.resp.bits.tag := executor_tag
+  io.resp.bits.result := executor_result + MuxLookup(executor_stage, multiplier_64x8.io.out)(
     (0.U(3.W) -> multiplier_64x8.io.out) +: (1 until 8).map(i =>
       i.U(3.W) -> Cat(multiplier_64x8.io.out, 0.U((i * 8).W))
     )

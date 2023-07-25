@@ -86,19 +86,19 @@ class NonPipelinedMultiplierSpec extends AnyFlatSpec with ChiselScalatestTester 
         dut.io.req.bits.multiplier.signed.poke(false.B)
         dut.io.req.bits.tag.poke(i.U)
         dut.io.resp.ready.poke(true.B)
-        dut.clock.step()
-        dut.io.resp.ready.poke(Random.nextBoolean().B)
-        dut.io.req.valid.poke(false.B)
-        dut.io.req.bits.multiplicand.bits.poke(0.U)
-        dut.io.req.bits.multiplier.bits.poke(0.U)
         while(!(dut.io.resp.valid.peekBoolean() && dut.io.resp.ready.peekBoolean())) {
           dut.clock.step()
-          dut.io.resp.ready.poke(Random.nextBoolean().B)
+          dut.io.req.valid.poke(false.B)
+          dut.io.req.bits.multiplicand.bits.poke(0.U)
+          dut.io.req.bits.multiplier.bits.poke(0.U)
+          dut.io.req.bits.tag.poke(0.U)
+          // dut.io.resp.ready.poke(Random.nextBoolean().B)
         }
         val result = bigIntToString32format(dut.io.resp.bits.result.peekInt())
         val answer = bigIntToString32format(num1 * num2)
         dut.io.resp.bits.result.expect(num1 * num2)
         println(s"result: 0x$result, answer: 0x$answer")
+        dut.clock.step()
       }
     }
   }
