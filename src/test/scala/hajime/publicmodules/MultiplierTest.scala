@@ -3,7 +3,6 @@ package hajime.publicmodules
 import chisel3._
 import chiseltest._
 import hajime.common.HajimeCoreParams
-import chisel3.experimental.BundleLiterals._
 import org.scalatest.flatspec._
 
 import scala.util.Random
@@ -22,7 +21,7 @@ object Functions {
   }
 }
 
-import Functions._
+import hajime.publicmodules.Functions._
 
 class MultiplierTest extends AnyFlatSpec with ChiselScalatestTester {
   Random.setSeed(0)
