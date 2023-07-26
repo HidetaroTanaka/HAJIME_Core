@@ -56,8 +56,9 @@ class BypassingUnit(xprlen: Int) extends Module {
     val WB = new BypassingLogicIO_WB(xprlen)
   })
 
+  // WBステージがvalidかつ，WBステージでメモリアクセスを行っているが返答がvalidでない場合にWBステージをストールさせる
   io.WB.out.stall := (io.WB.in.bits.dcache_requested_but_not_valid && io.WB.in.valid)
-  // Send stall from WB to EX
+  // WBステージをストールさせる（この場合WBステージにvalidな命令が存在する）または，EXステージでメモリへリクエストを送信したがメモリがreadyでない場合にストール
   io.EX.out.stall := (io.WB.out.stall || io.EX.in.bits.dcache_req_not_ready_and_has_mem_inst_in_EX_stage) && io.EX.in.valid
 
   // Bypass rs1 value from WB, EX to ID
