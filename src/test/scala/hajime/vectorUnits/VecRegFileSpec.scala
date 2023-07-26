@@ -9,6 +9,7 @@ import scala.util.Random
 
 class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
   Random.setSeed(0)
+  var input_array: IndexedSeq[BigInt] = IndexedSeq()
   it should "Write and Read VecRegFile" in {
     val params = HajimeCoreParams()
     test(VecRegFile(params)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
@@ -24,7 +25,9 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
       println("a")
       for(i <- 0 until params.vlen/8) {
         println(s"Write Index: $i")
-        dut.io.req.bits.data.poke(Random.nextInt(256))
+        val input = Random.nextInt(256)
+        dut.io.req.bits.data.poke(input)
+        input_array :+= input
         dut.io.req.bits.index.poke(i.U)
         dut.clock.step()
       }
@@ -33,6 +36,7 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
         println(s"Read Index: $i")
         dut.io.rs1_index.poke(i.U)
         println(s"Read Data: ${dut.io.rs1_out.peekInt()}")
+        dut.io.rs1_out.expect(input_array(i))
         dut.clock.step()
       }
     }
