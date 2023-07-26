@@ -17,6 +17,7 @@ case class HajimeCoreParams(
   useVector: Boolean = false,
   usePackedSIMD: Boolean = false,
   debug: Boolean = true,
+  vlen: Int = 256,
 ) {
   def robTagWidth: Int = log2Up(robEntries)
 }
