@@ -39,9 +39,9 @@ class MultiplierTest extends AnyFlatSpec with ChiselScalatestTester {
       for (((num1, num2), i) <- (multiplicand_array zip multiplier_array).zipWithIndex) {
         dut.io.req.valid.poke(true.B)
         dut.io.req.bits.multiplicand.bits.poke(num1.U(64.W))
-        dut.io.req.bits.multiplicand.signed.poke(false.B)
+        // dut.io.req.bits.multiplicand.signed.poke(false.B)
         dut.io.req.bits.multiplier.bits.poke(num2.U(64.W))
-        dut.io.req.bits.multiplier.signed.poke(false.B)
+        // dut.io.req.bits.multiplier.signed.poke(false.B)
         dut.io.req.bits.tag.poke(i.U)
         dut.io.resp.ready.poke(true.B)
         dut.clock.step()
@@ -80,9 +80,9 @@ class NonPipelinedMultiplierSpec extends AnyFlatSpec with ChiselScalatestTester 
       }) {
         dut.io.req.valid.poke(true.B)
         dut.io.req.bits.multiplicand.bits.poke(num1)
-        dut.io.req.bits.multiplicand.signed.poke(false.B)
+        // dut.io.req.bits.multiplicand.signed.poke(false.B)
         dut.io.req.bits.multiplier.bits.poke(num2)
-        dut.io.req.bits.multiplier.signed.poke(false.B)
+        // dut.io.req.bits.multiplier.signed.poke(false.B)
         dut.io.req.bits.tag.poke(i.U)
         dut.io.resp.ready.poke(true.B)
         while(!(dut.io.resp.valid.peekBoolean() && dut.io.resp.ready.peekBoolean())) {

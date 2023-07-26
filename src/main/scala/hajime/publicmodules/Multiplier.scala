@@ -45,11 +45,11 @@ class Multiplier_64x8 extends Module {
 class MultiplierReq(implicit params: HajimeCoreParams) extends Bundle {
   val multiplicand = new Bundle{
     val bits = UInt(params.xprlen.W)
-    val signed = Bool()
+    // val signed = Bool()
   }
   val multiplier = new Bundle {
     val bits = UInt(params.xprlen.W)
-    val signed = Bool()
+    // val signed = Bool()
   }
   val tag = UInt(params.robTagWidth.W)
 }
