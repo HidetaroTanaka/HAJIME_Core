@@ -6,6 +6,7 @@ import chisel3.util._
 import hajime.common.{CACHE_FUNCTIONS, COMPILE_CONSTANTS, InstBundle, RISCV_Consts}
 import hajime.common.ScalarOpConstants._
 import hajime.publicmodules.{ALU_functIO, MEM_ctrl_IO}
+import ALUinSel._
 
 /**
  * decoded results of inst
