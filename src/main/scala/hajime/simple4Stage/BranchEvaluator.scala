@@ -40,7 +40,7 @@ class BranchEvaluator(xprlen: Int) extends Module {
       PCWB_BRANCH -> (io.req.bits.bp_taken =/= branch_taken),
     )
   )
-  io.out.bits.pc := Mux(io.req.bits.PC_WB_ctrl === PCWB_JALR, io.req.bits.ALU_Result, io.req.bits.PC_if_bp_incorrect)
+  io.out.bits.pc := Mux(io.req.bits.PC_WB_ctrl === PCWB_JALR, io.req.bits.ALU_Result & Cat(Fill(xprlen-1, true.B), false.B), io.req.bits.PC_if_bp_incorrect)
 }
 
 object BranchEvaluator extends App {

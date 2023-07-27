@@ -1,13 +1,11 @@
-package hajime.superScalar
+package hajime.publicmodules
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
-import hajime.common._
-import hajime.common.ScalarOpConstants._
 import hajime.common.CACHE_FUNCTIONS._
 import hajime.common.Instructions._
-import hajime.publicmodules.{ALU_functIO, MEM_ctrl_IO}
+import hajime.common.ScalarOpConstants._
+import hajime.common._
 
 class ID_output extends Bundle {
   val ALUin_ctrl = UInt(ALUin_X.getWidth.W)
@@ -95,8 +93,12 @@ class Decoder(implicit params: HajimeCoreParams) extends Module {
         JAL -> List(Y, ALUin_X, ALU_X, N, N, NOALU_PC4, WB_NOALU, PCWB_JAL, N, N, MEM_NONE, N, BR_N, N, CSR_NONE),
         //        List(valid,  ALUin_ctrl,     ALU_func,   flag, op32, NOALU_ctrl, RF_WB_ctrl, PC_WB_ctrl, memWrite, memRead,  mem_function, mem_sext, BranchType, fence,  csr)
         FENCE  -> List(Y,      ALUin_X,        ALU_X,      N,    N,    NOALU_X,    WB_X,       PCWB_X,     N,        N,        MEM_NONE,     N,        BR_N,       Y,      CSR_NONE),
-        CSRRWI -> List(Y,      ALUin_RS1_CSR,  ALU_ADDSUB, N,    N,    NOALU_X,    WB_NOALU,   PCWB_X,     N,        N,        MEM_NONE,     N,        BR_N,       N,      CSR_WRITE),
+        CSRRW  -> List(Y,),
+        CSRRWI -> List(Y,      ALUin_X,        ALU_X, N,    N,    NOALU_X,    WB_CSR,     PCWB_X,     N,        N,        MEM_NONE,     N,        BR_N,       N,      CSR_WRITE),
 
       ))
+    def amogus(x: Int, xs: Int*): Seq[Int] = {
+      x +: xs
+    }
   }
 }

@@ -17,15 +17,15 @@ object ScalarOpConstants {
   val N = false.B
 
   // ALU_in1, ALU_in2 selector
-  def ALUin_X = 0.U(3.W)
+  def ALUin_X = 0.U(2.W)
   def ALUin_RS1_RS2 = ALUin_X
   def ALUin_RS1_IMI = ALUin_RS1_RS2+1.U
   def ALUin_RS1_IMS = ALUin_RS1_IMI+1.U
   def ALUin_PC_IMMU = ALUin_RS1_IMS+1.U
-  def ALUin_RS1_CSR = ALUin_PC_IMMU+1.U
+  // def ALUin_RS1_CSR = ALUin_PC_IMMU+1.U
 
   def ALUin_USE_RS1(aluin_signal: UInt): Bool = {
-    val matchList = Seq(ALUin_RS1_RS2, ALUin_RS1_IMI, ALUin_RS1_IMS, ALUin_RS1_CSR)
+    val matchList = Seq(ALUin_RS1_RS2, ALUin_RS1_IMI, ALUin_RS1_IMS)
     matchList.map(x => (aluin_signal === x)).reduce(_ || _)
   }
   def ALUin_USE_RS2(aluin_signal: UInt): Bool = {
@@ -57,10 +57,11 @@ object ScalarOpConstants {
   }
 
   // RF writebacc selector
-  def WB_X      = 0.U(2.W)
+  def WB_X      = 0.U(3.W)
   def WB_ALU    = WB_X+1.U
   def WB_MEM    = WB_ALU+1.U
   def WB_NOALU  = WB_MEM+1.U
+  def WB_CSR    = WB_NOALU+1.U
 
   // PCWrite selector (PC Update type)
   def PCWB_X      = 0.U(2.W)  // don't write pc
