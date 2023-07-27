@@ -77,7 +77,7 @@ object ScalarOpConstants {
   def BR_LTU = BR_GE+1.U
   def BR_GEU = BR_LTU+1.U
 
-  def CSR_NONE = 0.U
+  def CSR_NONE = 0.U(2.W)
   /**
    * csrrc, csrrci: Read and Clear CSR according to rs1 or zimm
    *
