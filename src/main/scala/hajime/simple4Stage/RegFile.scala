@@ -1,6 +1,6 @@
 package hajime.simple4Stage
 
-import chisel3.stage.ChiselStage
+import circt.stage.ChiselStage
 import chisel3.util._
 import chisel3._
 import hajime.common.{COMPILE_CONSTANTS, CORE_Consts}
@@ -120,5 +120,6 @@ class RegFile(xprlen: Int, debug: Boolean) extends Module {
 
 object RegFile extends App {
   def apply(xprlen: Int, debug: Boolean): RegFile = new RegFile(xprlen, debug)
-  (new ChiselStage).emitVerilog(apply(XLEN, CORE_Consts.debug), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  // (new ChiselStage).emitVerilog(apply(XLEN, CORE_Consts.debug), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(RegFile(XLEN, CORE_Consts.debug), firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info"))
 }

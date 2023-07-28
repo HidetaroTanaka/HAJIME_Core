@@ -93,7 +93,7 @@ class Decoder(implicit params: HajimeCoreParams) extends Module {
         JAL -> List(Y, ALUin_X, ALU_X, N, N, NOALU_PC4, WB_NOALU, PCWB_JAL, N, N, MEM_NONE, N, BR_N, N, CSR_NONE),
         //        List(valid,  ALUin_ctrl,     ALU_func,   flag, op32, NOALU_ctrl, RF_WB_ctrl, PC_WB_ctrl, memWrite, memRead,  mem_function, mem_sext, BranchType, fence,  csr)
         FENCE  -> List(Y,      ALUin_X,        ALU_X,      N,    N,    NOALU_X,    WB_X,       PCWB_X,     N,        N,        MEM_NONE,     N,        BR_N,       Y,      CSR_NONE),
-        CSRRW  -> List(Y,),
+        // CSRRW  -> List(Y,),
         CSRRWI -> List(Y,      ALUin_X,        ALU_X, N,    N,    NOALU_X,    WB_CSR,     PCWB_X,     N,        N,        MEM_NONE,     N,        BR_N,       N,      CSR_WRITE),
 
       ))

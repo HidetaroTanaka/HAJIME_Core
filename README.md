@@ -15,6 +15,13 @@ $ cd HAJIME_Core
 $ git submodule update --init --recursive
 ```
 
+Firtool is also required to generate SystemVerilog file. Reference: https://github.com/chipsalliance/chisel/blob/main/SETUP.md
+
+```bash
+$ wget -q -O - https://github.com/llvm/circt/releases/download/firtool-1.38.0/firrtl-bin-ubuntu-20.04.tar.gz | tar -zx
+$ sudo mv firtool-1.38.0/bin/firtool /usr/local/bin/
+```
+
 ***
 
 You've done the [Chisel Bootcamp](https://github.com/freechipsproject/chisel-bootcamp), and now you
