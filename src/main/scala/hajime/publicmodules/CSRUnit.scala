@@ -3,7 +3,7 @@ package hajime.publicmodules
 import chisel3._
 import chisel3.util._
 import hajime.common._
-import hajime.common.ScalarOpConstants._
+import hajime.common.Deprecated_ScalarOpConstants._
 
 class CSRUnitReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._

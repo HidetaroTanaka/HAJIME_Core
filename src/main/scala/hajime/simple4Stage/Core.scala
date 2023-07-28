@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common.ScalarOpConstants._
+import hajime.common.Deprecated_ScalarOpConstants._
 import hajime.common._
 import hajime.publicmodules.{ALU, ALU_functIO, LDSTUnit, MEM_ctrl_IO}
 

@@ -9,7 +9,50 @@ object RISCV_Consts {
   val RF_INDEX_WIDTH: Int = 5
 }
 
-object ScalarOpConstants {
+trait ScalarOpConstants {
+  val Y = true.B
+  val N = false.B
+  object Branch extends ChiselEnum {
+    val NONE, EQ, NE, LT, GE, LTU, GEU, JAL, JALR = Value
+  }
+  // value to ALU in1
+  object ALU_in1 extends ChiselEnum {
+    val RS1, U_IMM = Value
+    def use_RS1(signal: ALU_in1.Type): Bool = {
+      signal === RS1
+    }
+  }
+  // value to ALU in2
+  object ALU_in2 extends ChiselEnum {
+    val ZERO, RS2, I_IMM, S_IMM, PC = Value
+    def use_RS2(signal: ALU_in2.Type): Bool = {
+      signal === RS2
+    }
+  }
+  object ARITH_FCN extends ChiselEnum {
+    val NONE, ADDSUB, SLL, SLT, SLTU, XOR, SR, OR, AND = Value
+  }
+  object MUL_FCN extends ChiselEnum {
+    val NONE, LOW, HIGH, HISU, HIU = Value
+  }
+  object WB_SEL extends ChiselEnum {
+    val NONE, PC4, ARITH, CSR, MEM = Value
+  }
+  object MEM_FCN extends ChiselEnum {
+    val M_NONE, M_RD, M_WR = Value
+    def valid(signal: MEM_FCN.Type): Bool = {
+      signal =/= M_NONE
+    }
+  }
+  object MEM_LEN extends ChiselEnum {
+    val B, H, W, D = Value
+  }
+  object CSR_FCN extends ChiselEnum {
+    val N, C, S, W, I = Value
+  }
+}
+
+object Deprecated_ScalarOpConstants {
   //************************************
   // Control Signals
 

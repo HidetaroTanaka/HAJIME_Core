@@ -4,8 +4,84 @@ import chisel3._
 import chisel3.util._
 import hajime.common.CACHE_FUNCTIONS._
 import hajime.common.Instructions._
-import hajime.common.ScalarOpConstants._
 import hajime.common._
+
+abstract trait DecodeConstants extends ScalarOpConstants {
+  val table: Array[(BitPat, List[BitPat])]
+}
+
+object RV32IDecode extends DecodeConstants {
+  val table: Array[(BitPat, List[BitPat])] = Array(
+    //      List(valid, Branch, ALU_in1,   ALU_in2, Arithmetic_Function, ALU_flag, ALU_op32, Multiply_Function, WriteBack_selector, Memory_Function, Memory_Length, Memory_SEXT, CSR_Function, fence)
+    // R-type
+    ADD    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SUB    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.ADDSUB, Y, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLL    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLL,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLT    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLT,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLTU   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLTU,   N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    XOR    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.XOR,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SRL    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SR,     N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SRA    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SR,     Y, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    OR     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.OR,     N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    AND    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.AND,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+
+    // I-type
+    ADDI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLTI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.SLT,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLTIU  -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.SLTU,   N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    XORI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.XOR,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    ORI    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.OR,     N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    ANDI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.AND,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SLLI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.SLL,    N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SRLI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.SR,     N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    SRAI   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.SR,     Y, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    LB     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, Y, CSR_FCN.N, N),
+    LH     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, Y, CSR_FCN.N, N),
+    LW     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.W, Y, CSR_FCN.N, N),
+    LBU    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, N, CSR_FCN.N, N),
+    LHU    -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, N, CSR_FCN.N, N),
+    JALR   -> List(Y, Branch.JALR, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.PC4,   MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+
+    // S-type
+    SB     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.B, N, CSR_FCN.N, N),
+    SH     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N),
+    SW     -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.I_IMM, ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N),
+
+    // B-type
+    BEQ    -> List(Y, Branch.EQ,   ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.XOR,    N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    BNE    -> List(Y, Branch.NE,   ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.XOR,    N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    BLT    -> List(Y, Branch.LT,   ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLT,    N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    BGE    -> List(Y, Branch.GE,   ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLT,    N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    BLTU   -> List(Y, Branch.LTU,  ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLTU,   N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    BGEU   -> List(Y, Branch.GEU,  ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.SLTU,   N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+
+    // U-type
+    LUI    -> List(Y, Branch.NONE, ALU_in1.U_IMM, ALU_in2.ZERO,  ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+    AUIPC  -> List(Y, Branch.NONE, ALU_in1.U_IMM, ALU_in2.PC,    ARITH_FCN.ADDSUB, N, N, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+
+    // J-type
+    JAL    -> List(Y, Branch.JAL,  DontCare,      DontCare,      DontCare,         N, N, MUL_FCN.NONE, WB_SEL.PC4,   MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+
+    // SYSTEM
+    FENCE  -> List(Y, Branch.NONE, DontCare,      DontCare,      DontCare,         N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, Y),
+    ECALL  -> List(Y, Branch.NONE, DontCare,      DontCare,      DontCare,         N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.I, N),
+    // ebreak is unimplemented
+    EBREAK -> List(Y, Branch.NONE, DontCare,      DontCare,      DontCare,         N, N, MUL_FCN.NONE, WB_SEL.NONE,  MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+  )
+}
+
+object RV64IDecode extends DecodeConstants {
+  val table: Array[(BitPat, List[BitPat])] = Array(
+    ADDW   -> List(Y, Branch.NONE, ALU_in1.RS1,   ALU_in2.RS2,   ARITH_FCN.ADDSUB, N, Y, MUL_FCN.NONE, WB_SEL.ARITH, MEM_FCN.M_NONE, DontCare,  N, CSR_FCN.N, N),
+  )
+}
+
+class _Decoder(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
+  when(ALU_in1.RS1 === ALU_in1.RS1) {
+    println("aaaaa")
+  }
+}
+
 
 class ID_output extends Bundle {
   val ALUin_ctrl = UInt(ALUin_X.getWidth.W)

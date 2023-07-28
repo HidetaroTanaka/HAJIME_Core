@@ -1,6 +1,6 @@
 import chisel3._
 import chiseltest._
-import hajime.common.ScalarOpConstants._
+import hajime.common.Deprecated_ScalarOpConstants._
 import hajime.common._
 import hajime.publicmodules.ALU
 import hajime.simple4Stage._
@@ -26,7 +26,7 @@ class ALUTest extends AnyFlatSpec with ChiselScalatestTester {
           case "sllw" => List (1.U(3.W), N, Y)
           case "srlw" => List (5.U(3.W), N, Y)
           case "sraw" => List (5.U(3.W), Y, Y)
-          case _ => List(ScalarOpConstants.ALU_X, N, N)
+          case _ => List(Deprecated_ScalarOpConstants.ALU_X, N, N)
         }
       }
 

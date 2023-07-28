@@ -6,13 +6,13 @@ import chisel3.util._
 case class HajimeCoreParams(
   issue_width: Int = 2,
   xprlen: Int = 64,
-  frequency: Long = 50*1000*1000,
+  frequency: Long = 50*1000*1000, // x[MHz] = x * 1000 * 1000
   physicalRegFileEntries: Int = 48,
   robEntries: Int = 8,
   useAtomics: Boolean = false,
   useCompressed: Boolean = false,
-  useZicsr: Boolean = false,
-  useMulDiv: Boolean = false,
+  useZicsr: Boolean = true,
+  useMulDiv: Boolean = true, // Umm actually, this core only supports multiplication
   useFloat32: Boolean = false,
   useFloat64: Boolean = false,
   useFloat128: Boolean = false,

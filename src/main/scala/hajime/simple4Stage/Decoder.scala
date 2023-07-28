@@ -1,10 +1,11 @@
 package hajime.simple4Stage
 
+import circt.stage.ChiselStage
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
-import hajime.common.{CACHE_FUNCTIONS, COMPILE_CONSTANTS, InstBundle, RISCV_Consts}
-import hajime.common.ScalarOpConstants._
+import hajime.common.{CACHE_FUNCTIONS, COMPILE_CONSTANTS, CORE_Consts, InstBundle, RISCV_Consts}
+import hajime.common.Deprecated_ScalarOpConstants._
+import hajime.common.RISCV_Consts.XLEN
 import hajime.publicmodules.{ALU_functIO, MEM_ctrl_IO}
 
 /**
@@ -146,5 +147,6 @@ class Decoder(xprlen: Int) extends Module {
 
 object Decoder extends App {
   def apply(xprlen: Int): Decoder = new Decoder(xprlen)
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(xprlen = RISCV_Consts.XLEN), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  // (new chisel3.stage.ChiselStage).emitVerilog(apply(xprlen = RISCV_Consts.XLEN), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(Decoder(XLEN), firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info"))
 }

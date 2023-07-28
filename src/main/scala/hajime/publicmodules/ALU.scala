@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.common.RISCV_Consts._
-import hajime.common.ScalarOpConstants._
+import hajime.common.Deprecated_ScalarOpConstants._
 import hajime.common.{COMPILE_CONSTANTS, Functions}
 
 

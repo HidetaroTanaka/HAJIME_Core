@@ -3,7 +3,7 @@ package hajime.simple4Stage
 import chisel3._
 import chisel3.util._
 import hajime.common.{COMPILE_CONSTANTS, RISCV_Consts}
-import hajime.common.ScalarOpConstants._
+import hajime.common.Deprecated_ScalarOpConstants._
 
 class BranchEvaluatorReq(xprlen: Int) extends Bundle {
   val ALU_Result = UInt(xprlen.W)
