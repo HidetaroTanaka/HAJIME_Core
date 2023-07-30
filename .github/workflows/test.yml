@@ -7,9 +7,8 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
     steps:
-      - name: apt_updates
+      - name: Install Verilator
         run: |
-          sudo apt update
           sudo apt install -y verilator
       - name: Checkout
         uses: actions/checkout@v2
