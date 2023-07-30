@@ -1,62 +1,57 @@
 package hajime.simple4Stage
 
+import circt.stage.ChiselStage
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common.Deprecated_ScalarOpConstants._
 import hajime.common._
-import hajime.publicmodules.{ALU, ALU_functIO, LDSTUnit, MEM_ctrl_IO}
+import hajime.publicmodules._
 
-/**
-class Performance_CountersIO(xprlen: Int) extends Bundle {
-  val cycle_count = Output(UInt(xprlen.W))
-  val retired_inst_count = Output(UInt(xprlen.W))
-}
+import scala.annotation.unused
 
-class debugIO(xprlen: Int) extends Bundle {
+class debugIO(implicit params: HajimeCoreParams) extends Bundle {
   val debug_retired = Valid(new Bundle{
-    val instruction = UInt(RISCV_Consts.INST_LEN.W)
-    val pc = UInt(xprlen.W)
+    val instruction = new InstBundle()
+    val pc = new ProgramCounter()
   })
-  val debug_abi_map = new debug_map_physical_to_abi(xprlen)
+  val debug_abi_map = new debug_map_physical_to_abi()
 }
 
-class CoreIO(xprlen: Int, debug: Boolean = true) extends Bundle {
-  val icache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = RISCV_Consts.INST_LEN)
+class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val icache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = 32)
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
   // val hartid = Input(UInt(xprlen.W))
   val reset_vector = Input(UInt(xprlen.W))
-  val performance_counters = new Performance_CountersIO(xprlen)
-  val debug_io = if(debug) Some(Output(new debugIO(xprlen))) else None
+  val debug_io = if(debug) Some(Output(new debugIO())) else None
 }
 
-class Core(xprlen: Int, debug: Boolean = true) extends Module {
-  val io = IO(new CoreIO(xprlen, debug))
-  val frontend = Module(Frontend(xprlen))
-  val cpu = Module(new CPU(xprlen, debug))
+class Core(implicit params: HajimeCoreParams) extends Module {
+  val io = IO(new CoreIO())
+  val frontend = Module(Frontend())
+  val cpu = Module(new CPU())
   io.icache_axi4lite <> frontend.io.icache_axi4lite
   io.dcache_axi4lite <> cpu.io.dcache_axi4lite
   frontend.io.reset_vector := io.reset_vector
   cpu.io.frontend <> frontend.io.cpu
-  io.performance_counters := cpu.io.performance_counters
-  if(debug) io.debug_io.get := cpu.io.debug_io.get
+  if(params.debug) io.debug_io.get := cpu.io.debug_io.get
 }
 
 object Core extends App {
-  def apply(xprlen: Int, debug: Boolean): Core = new Core(xprlen, debug)
-  (new chisel3.stage.ChiselStage).emitVerilog(this.apply(RISCV_Consts.XLEN, CORE_Consts.debug), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  def apply(implicit params: HajimeCoreParams): Core = new Core()
+  ChiselStage.emitSystemVerilogFile(Core(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
+@unused
 class AcceleratorInterface extends Bundle {
   ???
 }
 
-class CPUIO(xprlen: Int, debug: Boolean) extends Bundle {
-  val frontend = Flipped(new FrontEndCpuIO(xprlen))
+class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val frontend = Flipped(new FrontEndCpuIO())
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
-  val debug_io = if(debug) Some(Output(new debugIO(xprlen))) else None
-  val performance_counters = new Performance_CountersIO(xprlen)
+  val debug_io = if(debug) Some(Output(new debugIO())) else None
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
 
@@ -116,8 +111,8 @@ class EX_WB_IO(xprlen: Int) extends Bundle {
   val debug_inst = if(CORE_Consts.debug) Some(new Debug_Inst(xprlen)) else None
 }
 
-class CPU(xprlen: Int, debug: Boolean) extends Module {
-  val io = IO(new CPUIO(xprlen, debug))
+class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
+  val io = IO(new CPUIO())
 
   val cycle_count = RegInit(0.U(xprlen.W))
   cycle_count := cycle_count + 1.U(xprlen.W)
@@ -128,13 +123,15 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
   val fence_in_pipeline = RegInit(false.B)
 
   // Modules
-  val decoder = Module(Decoder(xprlen))
+  val decoder = Module(Decoder())
   val branch_predictor = Module(BranchPredictor(xprlen))
   val rf = Module(RegFile(xprlen, debug))
   val alu = Module(ALU(xprlen))
   val branch_evaluator = Module(BranchEvaluator(xprlen))
   val bypassingUnit = Module(BypassingUnit(xprlen))
   val ldstUnit = Module(LDSTUnit(xprlen))
+  val csrUnit = if(params.debug) Some(Module(CSRUnit())) else None
+  val multiplier = if(params.debug) Some(Module(Multiplier())) else None
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
 
@@ -282,4 +279,3 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }
 }
-*/
