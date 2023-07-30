@@ -1,55 +1,54 @@
 package hajime.simple4Stage
 
+import circt.stage.ChiselStage
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common.RISCV_Consts
+import hajime.common._
 
 /**
  * PC Update request from CPU
- * @param xprlen
  */
-class FrontEndReq(xprlen: Int) extends Bundle {
-  val pc = UInt(xprlen.W)
+class FrontEndReq(implicit params: HajimeCoreParams) extends Bundle {
+  val pc = UInt(params.xprlen.W)
 }
 
 /**
  * send instruction from FrontEnd to CPU
- * @param xprlen
  */
-class FrontEndResp(xprlen: Int) extends Bundle {
-  val pc = UInt(xprlen.W)
-  // val pcPlus4 = UInt(xprlen.W)
-  val inst = UInt(RISCV_Consts.INST_LEN.W)
+class FrontEndResp(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val pc = new ProgramCounter()
+  val inst = new InstBundle()
 }
 
-class FrontEndCpuIO(xprlen: Int) extends Bundle {
-  val req = Flipped(new ValidIO(new FrontEndReq(xprlen)))
-  val resp = new DecoupledIO(new FrontEndResp(xprlen))
+class FrontEndCpuIO(implicit params: HajimeCoreParams) extends Bundle {
+  val req = Flipped(new ValidIO(new FrontEndReq()))
+  val resp = Irrevocable(new FrontEndResp())
 }
 
-class FrontEndIO(xprlen: Int) extends Bundle {
-  val cpu = new FrontEndCpuIO(xprlen)
-  val icache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = RISCV_Consts.INST_LEN)
-  val reset_vector = Input(UInt(xprlen.W))
+class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
+  val cpu = new FrontEndCpuIO()
+  val icache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = 32)
+  val reset_vector = Input(UInt(params.xprlen.W))
   val exception = Output(Bool())
 }
 
-class Frontend(xprlen: Int) extends Module {
-  val io = IO(new FrontEndIO(xprlen))
+class Frontend(implicit params: HajimeCoreParams) extends Module {
+  import params._
+  val io = IO(new FrontEndIO())
   io := DontCare
 
-  val pc_reg = RegInit(io.reset_vector)
-  val addr_req_to_axi_ar = MuxCase(pc_reg+4.U(xprlen.W), Seq(
+  val pc_reg = RegInit(new ProgramCounter().initialise(io.reset_vector))
+  val addr_req_to_axi_ar = MuxCase(pc_reg.nextPC, Seq(
     io.cpu.req.valid -> io.cpu.req.bits.pc,
     // if AXI AR is not ready, or AXI R is not valid, or CPU is not ready, retain PC
-    (!io.icache_axi4lite.ar.ready || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg,
+    (!io.icache_axi4lite.ar.ready || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg.addr,
   ))
 
   // If CPU gets instruction from Frontend, move PC to next one
   when(io.cpu.resp.valid || io.cpu.resp.ready) {
-    pc_reg := addr_req_to_axi_ar
+    pc_reg.addr := addr_req_to_axi_ar
   }
 
   io.icache_axi4lite.ar.bits.addr := addr_req_to_axi_ar
@@ -57,21 +56,15 @@ class Frontend(xprlen: Int) extends Module {
   io.icache_axi4lite.ar.valid := io.cpu.resp.ready // || io.cpu.req.valid
 
   io.cpu.resp.bits.pc := pc_reg
-  io.cpu.resp.bits.inst := io.icache_axi4lite.r.bits.data
+  io.cpu.resp.bits.inst.bits := io.icache_axi4lite.r.bits.data
   io.cpu.resp.valid := io.icache_axi4lite.r.valid
   io.icache_axi4lite.r.ready := io.cpu.resp.ready // || io.cpu.req.valid
 
-  io.exception := {
-      (io.icache_axi4lite.r.bits.resp === "b010".U(3.W)) ||
-      (io.icache_axi4lite.r.bits.resp === "b011".U(3.W)) ||
-      (io.icache_axi4lite.r.bits.resp === "b101".U(3.W))
-  }
+  io.exception := io.icache_axi4lite.r.bits.exception
 }
 
 object Frontend extends App {
-  def apply(xprlen: Int): Frontend = new Frontend(xprlen)
-
-  (new ChiselStage).emitVerilog(this.apply(xprlen = RISCV_Consts.XLEN), args = Array(
-    "--emission-options=disableMemRandomization,disableRegisterRandomization"))
+  def apply(implicit params: HajimeCoreParams): Frontend = new Frontend()
+  ChiselStage.emitSystemVerilogFile(Frontend(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 

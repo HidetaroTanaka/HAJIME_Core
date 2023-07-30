@@ -3,8 +3,9 @@ package hajime.common
 import chisel3._
 import chisel3.util._
 
-class InstBundle(xprlen: Int) extends Bundle {
-  val bits: UInt = UInt(RISCV_Consts.INST_LEN.W)
+class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val bits: UInt = UInt(32.W)
 
   def funct7: UInt    = bits(31,25)
   def rs2: UInt       = bits(24,20)
@@ -24,4 +25,9 @@ class InstBundle(xprlen: Int) extends Bundle {
 class ProgramCounter(implicit params: HajimeCoreParams) extends Bundle {
   val addr = UInt(params.xprlen.W)
   def nextPC: UInt = addr + 4.U(params.xprlen.W)
+  def initialise(initial: UInt): ProgramCounter = {
+    val initalisedWire = Wire(this)
+    initalisedWire.addr := initial
+    initalisedWire
+  }
 }

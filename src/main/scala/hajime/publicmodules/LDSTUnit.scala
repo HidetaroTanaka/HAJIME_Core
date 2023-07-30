@@ -3,7 +3,6 @@ package hajime.publicmodules
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
-import hajime.axiIO.AXI4SIG_CHECK.resp_exception
 import hajime.axiIO.AXI4liteIO
 import hajime.common.{CACHE_FUNCTIONS, RISCV_Consts}
 
@@ -56,8 +55,8 @@ class LDSTUnit(xprlen: Int) extends Module {
     req_reg.MEM_ctrl.memWrite -> io.dcache_axi4lite.b.valid,
   ))
   io.cpu.resp.bits.exception := MuxCase(false.B, Seq(
-    req_reg.MEM_ctrl.memRead -> resp_exception(io.dcache_axi4lite.r.bits.resp),
-    req_reg.MEM_ctrl.memWrite -> resp_exception(io.dcache_axi4lite.b.bits.resp),
+    req_reg.MEM_ctrl.memRead -> io.dcache_axi4lite.r.bits.exception,
+    req_reg.MEM_ctrl.memWrite -> io.dcache_axi4lite.b.bits.exception,
   ))
   io.cpu.resp.bits.data := MuxLookup(req_reg.MEM_ctrl.mem_func, io.dcache_axi4lite.r.bits.data)(Seq(
     CACHE_FUNCTIONS.BYTE -> Mux(req_reg.MEM_ctrl.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),

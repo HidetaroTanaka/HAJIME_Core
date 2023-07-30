@@ -1,9 +1,10 @@
+package hajime.publicmodules
+
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import chisel3.util.experimental.loadMemoryFromFile
 import hajime.axiIO.AXI4liteIO
-import hajime.common._
 
 // This actually isn't compatible with AXI4-Lite, but anyway
 class Dcache_model(dcacheBaseAddr: Int, tohost: Int, hexfileName: String, memsize: Int = 8192) extends Module {

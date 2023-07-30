@@ -8,6 +8,7 @@ case class HajimeCoreParams(
   xprlen: Int = 64,
   frequency: Long = 50*1000*1000, // x[MHz] = x * 1000 * 1000
   physicalRegFileEntries: Int = 48,
+  ras_depth: Int = 8,
   robEntries: Int = 8,
   useAtomics: Boolean = false,
   useCompressed: Boolean = false,

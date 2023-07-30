@@ -2,6 +2,7 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.common.RISCV_Consts
+import hajime.publicmodules.{Dcache_model, Icache_model}
 import hajime.simple4Stage._
 
 class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String, icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000) extends Module {

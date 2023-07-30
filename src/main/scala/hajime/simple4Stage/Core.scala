@@ -8,6 +8,7 @@ import hajime.common.Deprecated_ScalarOpConstants._
 import hajime.common._
 import hajime.publicmodules.{ALU, ALU_functIO, LDSTUnit, MEM_ctrl_IO}
 
+/**
 class Performance_CountersIO(xprlen: Int) extends Bundle {
   val cycle_count = Output(UInt(xprlen.W))
   val retired_inst_count = Output(UInt(xprlen.W))
@@ -281,3 +282,4 @@ class CPU(xprlen: Int, debug: Boolean) extends Module {
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }
 }
+*/

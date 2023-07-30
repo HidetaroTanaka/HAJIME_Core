@@ -15,18 +15,26 @@ trait ScalarOpConstants {
   }
   object Branch extends ChiselEnum {
     val NONE, EQ, NE, LT, GE, LTU, GEU, JAL, JALR = Value
+    val condBranchList = EQ :: NE :: LT :: GE :: LTU :: GEU :: Nil
+    val jumpList = JAL :: JALR :: Nil
+    def isCondBranch(signal: UInt): Bool = {
+      condBranchList.map(x => signal === x.asUInt).reduce(_ || _)
+    }
+    def isJump(signal: UInt): Bool = {
+      jumpList.map(x => signal === x.asUInt).reduce(_ || _)
+    }
   }
   object Value1 extends ChiselEnum {
     val ZERO, RS1, U_IMM, CSR = Value
-    def use_RS1(signal: Value1.Type): Bool = {
-      signal === RS1
+    def use_RS1(signal: UInt): Bool = {
+      signal === RS1.asUInt
     }
   }
   // value to ALU in2
   object Value2 extends ChiselEnum {
     val ZERO, RS2, I_IMM, S_IMM, PC = Value
-    def use_RS2(signal: Value2.Type): Bool = {
-      signal === RS2
+    def use_RS2(signal: UInt): Bool = {
+      signal === RS2.asUInt
     }
   }
   object ARITHMETIC_FCN extends ChiselEnum {
@@ -148,4 +156,5 @@ object CORE_Consts {
 
 object COMPILE_CONSTANTS {
   val CHISELSTAGE_ARGS = Array("--emission-options=disableMemRandomization,disableRegisterRandomization")
+  val FIRTOOLOPS = Array("-disable-all-randomization", "-strip-debug-info")
 }
