@@ -47,7 +47,7 @@ class BranchEvaluator(implicit params: HajimeCoreParams) extends Module with Sca
       x => x.asUInt -> (io.req.bits.bp_taken =/= branch_taken)
     )
   )
-  io.out.bits.pc := Mux(io.req.bits.BranchType === Branch.JALR.asUInt, io.req.bits.ALU_Result & Cat(Fill(params.xprlen-1, true.B), false.B), Mux(
+  io.out.bits.pc := Mux(io.req.bits.BranchType === Branch.JALR.asUInt, Cat(io.req.bits.ALU_Result.head(params.xprlen-1), false.B), Mux(
     branch_taken, io.req.bits.destPC, io.req.bits.pc.nextPC
   ))
 }
