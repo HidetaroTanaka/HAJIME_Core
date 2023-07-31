@@ -28,7 +28,7 @@ class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
 
 class Core(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new CoreIO())
-  val frontend = Module(Frontend())
+  val frontend = Module(new Frontend())
   val cpu = Module(new CPU())
   io.icache_axi4lite <> frontend.io.icache_axi4lite
   io.dcache_axi4lite <> cpu.io.dcache_axi4lite
@@ -55,83 +55,60 @@ class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
 
-class ID_EX_dataSignals(xprlen: Int) extends Bundle {
-  val ID_noALU_val = UInt(xprlen.W)
-  val ID_aluin1_val = UInt(xprlen.W)
-  val ID_aluin2_val = UInt(xprlen.W)
-  val predicated_PC = Valid(new FrontEndReq(xprlen))
+class BasicCtrlSignals(implicit params: HajimeCoreParams) extends Bundle {
+  val decode = new DecoderIO
+  val rd_index = UInt(5.W)
 }
 
-class ID_EX_ctrlSignals extends Bundle {
-  val ALU_funct = new ALU_functIO()
-  val NOALU_ctrl = UInt(NOALU_X.getWidth.W)
-  val PC_WB_ctrl = UInt(PCWB_X.getWidth.W)
-  val BranchType = UInt(BR_N.getWidth.W)
-  val ALUin_ctrl = UInt(ALUin_X.getWidth.W)
+class ID_EX_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val pc = new ProgramCounter()
+  val bp_destPC = UInt(xprlen.W)
+  val imm = UInt(xprlen.W)
+  val rs1 = UInt(xprlen.W)
+  val rs2 = UInt(xprlen.W)
+  val csr = UInt(12.W)
 }
 
-class EX_WB_dataSignals(xprlen: Int) extends Bundle {
-  val EX_noALU_val = UInt(xprlen.W)
-  val EX_ALU_val = UInt(xprlen.W)
+class EX_WB_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val pc4 = UInt(xprlen.W)
+  val arith_logic_result = UInt(xprlen.W)
+  val csr = UInt(xprlen.W)
 }
 
-class EX_WB_ctrlSignals extends Bundle {
-  val MEM_ctrl = new MEM_ctrl_IO()
-  val RF_WB_ctrl = UInt(WB_X.getWidth.W)
-  val fence = Bool()
+class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
+  val instruction = UInt(32.W)
+  val pc = new ProgramCounter()
 }
 
-class RegIndexes_EX extends Bundle {
-  val rd_index = Valid(UInt(5.W))
+class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
+  val dataSignals = new ID_EX_dataSignals()
+  val ctrlSignals = new BasicCtrlSignals()
+  val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
-class RegIndexes_WB extends Bundle {
-  val rd_index = Valid(UInt(5.W))
-}
-
-class Debug_Inst(xprlen: Int) extends Bundle {
-  val instruction = UInt(RISCV_Consts.INST_LEN.W)
-  val pc = UInt(xprlen.W)
-}
-
-class ID_EX_IO(xprlen: Int) extends Bundle {
-  val dataSignals = new ID_EX_dataSignals(xprlen)
-  val ctrlSignals = new Bundle {
-    val toEX = new ID_EX_ctrlSignals
-    val toWB = new EX_WB_ctrlSignals
-  }
-  val bypassSignals = new RegIndexes_EX
-  val debug_inst = if(CORE_Consts.debug) Some(new Debug_Inst(xprlen)) else None
-}
-
-class EX_WB_IO(xprlen: Int) extends Bundle {
-  val dataSignals = new EX_WB_dataSignals(xprlen)
-  val ctrlSignals = new EX_WB_ctrlSignals
-  val bypassSignals = new RegIndexes_WB
-  val debug_inst = if(CORE_Consts.debug) Some(new Debug_Inst(xprlen)) else None
+class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
+  val dataSignals = new EX_WB_dataSignals()
+  val ctrlSignals = new BasicCtrlSignals()
+  val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
 class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new CPUIO())
 
-  val cycle_count = RegInit(0.U(xprlen.W))
-  cycle_count := cycle_count + 1.U(xprlen.W)
-  val retired_inst_count = RegInit(0.U(xprlen.W))
-  io.performance_counters.cycle_count := cycle_count
-  io.performance_counters.retired_inst_count := retired_inst_count
-
   val fence_in_pipeline = RegInit(false.B)
 
   // Modules
-  val decoder = Module(Decoder())
-  val branch_predictor = Module(BranchPredictor(xprlen))
-  val rf = Module(RegFile(xprlen, debug))
-  val alu = Module(ALU(xprlen))
-  val branch_evaluator = Module(BranchEvaluator(xprlen))
-  val bypassingUnit = Module(BypassingUnit(xprlen))
-  val ldstUnit = Module(LDSTUnit(xprlen))
-  val csrUnit = if(params.debug) Some(Module(CSRUnit())) else None
-  val multiplier = if(params.debug) Some(Module(Multiplier())) else None
+  val decoder = Module(new Decoder())
+  val branch_predictor = Module(new BranchPredictor())
+  val rf = Module(new RegFile())
+  val alu = Module(new ALU())
+  val branch_evaluator = Module(new BranchEvaluator())
+  val bypassingUnit = Module(new BypassingUnit())
+  val ldstUnit = Module(new LDSTUnit())
+  val csrUnit = if(params.debug) Some(Module(new CSRUnit())) else None
+  val multiplier = if(params.debug) Some(Module(new Multiplier())) else None
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
 

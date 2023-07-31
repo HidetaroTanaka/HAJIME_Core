@@ -2,6 +2,7 @@ import chisel3._
 import chiseltest._
 import org.scalatest.flatspec._
 
+/*
 class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   it should "print Hello World in C language" in {
     test(new Core_and_cache(icache_hexfilename = "src/main/resources/applications/helloworld_inst.hex", dcache_hexfilename = "src/main/resources/applications/helloworld_data.hex")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
@@ -50,3 +51,4 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 }
+*/

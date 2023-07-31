@@ -1,47 +1,49 @@
+package hajime.publicmodules
+
 import chisel3._
 import chiseltest._
-import hajime.common.Deprecated_ScalarOpConstants._
+import hajime.common.Instructions._
 import hajime.common._
-import hajime.publicmodules.ALU
-import hajime.simple4Stage._
 import org.scalatest.flatspec._
 
-class ALUTest extends AnyFlatSpec with ChiselScalatestTester {
+class ALUTest extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConstants {
+  import ContentValid._
   it should "not act sussy" in {
-    test(new ALU(xprlen = RISCV_Consts.XLEN)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
-      def instDecode(inst: String): List[UInt] = {
+    // wtf? I have never curried ALU.apply
+    test(new ALU()(HajimeCoreParams())).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      def instDecode(inst: String): List[Int] = {
         inst match {
-          case "add" => List(0.U(3.W), N, N)
-          case "sub" => List(0.U(3.W), Y, N)
-          case "sll" => List(1.U(3.W), N, N)
-          case "slt" => List(2.U(3.W), N, N)
-          case "sltu" => List(3.U(3.W), N, N)
-          case "xor" => List(4.U(3.W), N, N)
-          case "srl" => List(5.U(3.W), N, N)
-          case "sra" => List(5.U(3.W), Y, N)
-          case "or" => List (6.U(3.W), N, N)
-          case "and" => List (7.U(3.W), N, N)
-          case "addw" => List (0.U(3.W), N, Y)
-          case "subw" => List (0.U(3.W), Y, Y)
-          case "sllw" => List (1.U(3.W), N, Y)
-          case "srlw" => List (5.U(3.W), N, Y)
-          case "sraw" => List (5.U(3.W), Y, Y)
-          case _ => List(Deprecated_ScalarOpConstants.ALU_X, N, N)
+          case "add" => List(ARITHMETIC_FCN.ADDSUB.litValue.toInt, 0, 0)
+          case "sub" => List(ARITHMETIC_FCN.ADDSUB.litValue.toInt, 1, 0)
+          case "sll" => List(ARITHMETIC_FCN.SLL.litValue.toInt, 0, 0)
+          case "slt" => List(ARITHMETIC_FCN.SLT.litValue.toInt, 0, 0)
+          case "sltu" => List(ARITHMETIC_FCN.SLTU.litValue.toInt, 0, 0)
+          case "xor" => List(ARITHMETIC_FCN.XOR.litValue.toInt, 0, 0)
+          case "srl" => List(ARITHMETIC_FCN.SR.litValue.toInt, 0, 0)
+          case "sra" => List(ARITHMETIC_FCN.SR.litValue.toInt, 1, 0)
+          case "or" => List(ARITHMETIC_FCN.OR.litValue.toInt, 0, 0)
+          case "and" => List(ARITHMETIC_FCN.AND.litValue.toInt, 0, 0)
+          case "addw" => List(ARITHMETIC_FCN.ADDSUB.litValue.toInt, 0, 1)
+          case "subw" => List(ARITHMETIC_FCN.ADDSUB.litValue.toInt, 1, 1)
+          case "sllw" => List(ARITHMETIC_FCN.SLL.litValue.toInt, 0, 1)
+          case "srlw" => List(ARITHMETIC_FCN.SR.litValue.toInt, 0, 1)
+          case "sraw" => List(ARITHMETIC_FCN.SR.litValue.toInt, 1, 1)
+          case _ => List(ARITHMETIC_FCN.NONE.litValue.toInt, 0, 0)
         }
       }
 
-      def DO_TEST(inst: String, out: String, in1: String, in2: String): Unit = {
-
+      def DO_TEST(testNum: BigInt, inst: String, out: String, in1: String, in2: String): Unit = {
         c.io.in1.poke(in1.U(RISCV_Consts.XLEN.W))
         c.io.in2.poke(in2.U(RISCV_Consts.XLEN.W))
-        c.io.funct.fn.poke((instDecode(inst))(0))
-        c.io.funct.addsubFlag.poke((instDecode(inst))(1))
-        c.io.funct.op32.poke((instDecode(inst))(2))
+        c.io.funct.arithmetic_funct.poke((instDecode(inst)).head)
+        c.io.funct.alu_flag.poke((instDecode(inst)(1)))
+        c.io.funct.op32.poke((instDecode(inst)(2)))
         c.io.out.expect(out.U(RISCV_Consts.XLEN.W))
+        if(c.io.out.peekInt() == out.U.litValue) println(s"test $testNum for $inst passed")
       }
 
-      def TEST_RR_OP(dummy: BigInt, inst: String, out: String, in1: String, in2: String): Unit = {
-        DO_TEST(inst, out, in1, in2)
+      def TEST_RR_OP(testNum: BigInt, inst: String, out: String, in1: String, in2: String): Unit = {
+        DO_TEST(testNum, inst, out, in1, in2)
         c.clock.step()
       }
 

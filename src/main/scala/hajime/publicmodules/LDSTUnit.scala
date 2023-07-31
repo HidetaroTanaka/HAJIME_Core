@@ -4,42 +4,33 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common.{CACHE_FUNCTIONS, RISCV_Consts}
+import hajime.common._
 
-class MEM_ctrl_IO extends Bundle {
-  val memWrite = Bool()
-  val memRead  = Bool()
-  val mem_func = UInt(CACHE_FUNCTIONS.BYTE.getWidth.W)
-  val mem_sext = Bool()
-
-  def mem_valid: Bool = memWrite || memRead
+class LDSTReq(implicit params: HajimeCoreParams) extends Bundle {
+  val addr = UInt(params.xprlen.W)
+  val data = UInt(params.xprlen.W)
+  val funct = Input(new ID_output)
 }
 
-class LDSTReq(xprlen: Int) extends Bundle {
-  val addr = UInt(xprlen.W)
-  val data = UInt(xprlen.W)
-  val MEM_ctrl = new MEM_ctrl_IO
-}
-
-class LDSTResp(xprlen: Int) extends Bundle {
-  val data = UInt(xprlen.W)
+class LDSTResp(implicit params: HajimeCoreParams) extends Bundle {
+  val data = UInt(params.xprlen.W)
   val exception = Bool()
 }
 
-class LDSTCpuIO(xprlen: Int) extends Bundle {
-  val req = Flipped(new DecoupledIO(new LDSTReq(xprlen)))
-  val resp = new ValidIO(new LDSTResp(xprlen))
+class LDSTCpuIO(implicit params: HajimeCoreParams) extends Bundle {
+  val req = Flipped(Irrevocable(new LDSTReq()))
+  val resp = new ValidIO(new LDSTResp())
 }
 
-class LDSTIO(xprlen: Int) extends Bundle {
-  val cpu = new LDSTCpuIO(xprlen)
-  val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
+class LDSTIO(implicit params: HajimeCoreParams) extends Bundle {
+  val cpu = new LDSTCpuIO()
+  val dcache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = params.xprlen)
 }
 
 // TODO: Add Atomic Extension Support
-class LDSTUnit(xprlen: Int) extends Module {
-  val io = IO(new LDSTIO(xprlen))
-  val strb_width = xprlen/8
+class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
+  val io = IO(new LDSTIO())
+  val strb_width = params.xprlen/8
 
   val req_reg = Reg(chiselTypeOf(io.cpu.req.bits))
   when(io.cpu.req.ready && io.cpu.req.valid) {
@@ -47,8 +38,8 @@ class LDSTUnit(xprlen: Int) extends Module {
   }
 
   io.cpu.req.ready := io.cpu.req.valid && MuxCase(true.B, Seq(
-    io.cpu.req.bits.MEM_ctrl.memRead -> io.dcache_axi4lite.ar.ready,
-    io.cpu.req.bits.MEM_ctrl.memWrite -> (io.dcache_axi4lite.aw.ready && io.dcache_axi4lite.w.ready),
+    (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_RD.asUInt) -> io.dcache_axi4lite.ar.ready,
+    (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_WR.asUInt) -> (io.dcache_axi4lite.aw.ready && io.dcache_axi4lite.w.ready),
   ))
   io.cpu.resp.valid := MuxCase(true.B, Seq(
     req_reg.MEM_ctrl.memRead -> io.dcache_axi4lite.r.valid,

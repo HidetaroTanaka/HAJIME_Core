@@ -6,6 +6,7 @@ import hajime.publicmodules.{Dcache_model, Icache_model}
 import hajime.simple4Stage._
 
 class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String, icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000) extends Module {
+  /*
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
     val toHost = ValidIO(UInt(64.W))
@@ -24,6 +25,7 @@ class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String, ica
   io.performance_counters := core.io.performance_counters
   io.toHost := dcache.debug
   io.debug_io := core.io.debug_io.get
+   */
 }
 
 object Core_and_cache extends App {

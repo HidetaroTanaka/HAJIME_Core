@@ -1,13 +1,12 @@
 package hajime.publicmodules
 
-import circt.stage.ChiselStage
 import chisel3._
+import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.common.CACHE_FUNCTIONS._
 import hajime.common.Instructions._
 import hajime.common._
 
-abstract trait DecodeConstants extends ScalarOpConstants {
+trait DecodeConstants extends ScalarOpConstants {
   val table: Array[(BitPat, List[EnumType])]
 }
 
@@ -127,26 +126,25 @@ object ZicsrDecode extends DecodeConstants {
 }
 
 class ID_output extends Bundle with ScalarOpConstants {
-  val valid = Bool()
-  val branch = UInt()
-  val value1 = UInt()
-  val value2 = UInt()
-  val arithmetic_funct = UInt()
+  val branch = UInt(Branch.getWidth.W)
+  val value1 = UInt(Value1.getWidth.W)
+  val value2 = UInt(Value2.getWidth.W)
+  val arithmetic_funct = UInt(ARITHMETIC_FCN.getWidth.W)
   val alu_flag = Bool()
   val op32 = Bool()
-  val writeback_selector = UInt()
-  val memory_function = UInt()
-  val memory_length = UInt()
-  val mem_sext = UInt()
-  val csr_funct = UInt()
+  val writeback_selector = UInt(WB_SEL.getWidth.W)
+  val memory_function = UInt(MEM_FCN.getWidth.W)
+  val memory_length = UInt(MEM_LEN.getWidth.W)
+  val mem_sext = Bool()
+  val csr_funct = UInt(CSR_FCN.getWidth.W)
   val fence = Bool()
-  def toList: List[UInt] = (valid :: branch :: value1 :: value2 :: arithmetic_funct :: alu_flag :: op32 ::
+  def toList: List[UInt] = (branch :: value1 :: value2 :: arithmetic_funct :: alu_flag :: op32 ::
     writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence :: Nil)
 }
 
 class DecoderIO extends Bundle {
   val inst = Input(Valid(UInt(RISCV_Consts.INST_LEN.W)))
-  val out = new ID_output
+  val out = Output(Valid(new ID_output))
 }
 
 class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConstants {
@@ -167,7 +165,8 @@ class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConst
       mapping = tableForListLookup
     )
   }
-  for((out, sig) <- (io.out.toList zip csignals)) {
+  io.out.valid := csignals.head.asBool && io.inst.valid
+  for((out, sig) <- (io.out.bits.toList zip csignals.tail)) {
     out := sig
   }
 }

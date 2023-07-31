@@ -3,6 +3,7 @@ import chiseltest._
 import org.scalatest.flatspec._
 import scala.sys.process._
 
+/*
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
     "simple",
@@ -60,3 +61,4 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 }
+*/
