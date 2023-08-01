@@ -9,11 +9,11 @@ class BranchEvaluatorReq(implicit params: HajimeCoreParams) extends Bundle with 
   import params._
   val ALU_Result = UInt(xprlen.W)
   val BranchType = UInt(Branch.NONE.getWidth.W)
-  // conditional branch: pc+b_imm, jalr: RAS
+  // conditional branch: pc+imm, jalr: RAS
   val destPC = UInt(xprlen.W)
   val pc = new ProgramCounter()
   // if branch prediction is taken and miss, out is pc+4
-  // else if branch prediction is not taken and miss, out is b_imm
+  // else if branch prediction is not taken and miss, out is imm
   // else if jalr prediction is miss, out is ALU_Result
   val bp_taken = Bool()
 }

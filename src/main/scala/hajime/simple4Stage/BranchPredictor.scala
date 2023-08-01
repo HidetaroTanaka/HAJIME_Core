@@ -3,17 +3,17 @@ package hajime.simple4Stage
 import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
-import hajime.common._
+import hajime.common.{ScalarOpConstants, _}
 import hajime.common.RISCV_Consts._
 
 class BranchPredictorIO(implicit params: HajimeCoreParams) extends Bundle with ScalarOpConstants {
-  // 分岐成立予測であれば，io.req.validはtrue
+  // 分岐成立予測であれば，io.out.validはtrue
   // （分岐不成立予測なら単にPC+4を入れるだけ）
-  // 分岐先予測はio.req.bits.pc
-  val req = new ValidIO(new FrontEndReq())
+  // 分岐先予測はio.out.bits.pc
+  val out = new ValidIO(new FrontEndReq())
   val pc = Input(new ProgramCounter())
-  val b_imm = Input(UInt(params.xprlen.W))
-  val BranchType = UInt(Branch.NONE.getWidth.W)
+  val imm = Input(UInt(params.xprlen.W))
+  val BranchType = Input(UInt(Branch.getWidth.W))
 }
 
 class BranchPredictor(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
@@ -22,7 +22,7 @@ class BranchPredictor(implicit params: HajimeCoreParams) extends Module with Sca
   val branch_taken_predict = Wire(Bool())
   branch_taken_predict := MuxLookup(io.BranchType, false.B)(
     Branch.condBranchList.map(
-      x => x.asUInt -> (io.pc.addr > io.b_imm)
+      x => x.asUInt -> (0.S > io.imm.asSInt)
     ) ++ Branch.jumpList.map(
       x => x.asUInt -> true.B
     )
@@ -47,8 +47,9 @@ class BranchPredictor(implicit params: HajimeCoreParams) extends Module with Sca
     RAS_push(io.pc.nextPC)
   }
 
-  io.req.valid := branch_taken_predict
-  io.req.bits.pc := Mux(io.BranchType === Branch.JALR.asUInt, RAS_pop(), io.pc.addr + io.b_imm)
+  io.out.valid := branch_taken_predict
+  // JALRならばRAS、それ以外はpc+imm (branch, jal)
+  io.out.bits.pc := Mux(io.BranchType === Branch.JALR.asUInt, RAS_pop(), io.pc.addr + io.imm)
 }
 
 object BranchPredictor extends App {

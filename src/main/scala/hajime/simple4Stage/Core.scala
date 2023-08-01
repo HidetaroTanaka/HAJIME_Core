@@ -15,6 +15,11 @@ class debugIO(implicit params: HajimeCoreParams) extends Bundle {
     val pc = new ProgramCounter()
   })
   val debug_abi_map = new debug_map_physical_to_abi()
+  val ID_EX_Reg = Valid(new ID_EX_IO())
+}
+
+object debugIO {
+  def apply(implicit params: HajimeCoreParams): debugIO = new debugIO()
 }
 
 class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -96,6 +101,7 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
 
 class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new CPUIO())
+  io := DontCare
 
   val fence_in_pipeline = RegInit(false.B)
 
@@ -103,81 +109,86 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val decoder = Module(new Decoder())
   val branch_predictor = Module(new BranchPredictor())
   val rf = Module(new RegFile())
+  rf.io := DontCare
   val alu = Module(new ALU())
+  alu.io := DontCare
   val branch_evaluator = Module(new BranchEvaluator())
+  branch_evaluator.io := DontCare
   val bypassingUnit = Module(new BypassingUnit())
+  bypassingUnit.io := DontCare
   val ldstUnit = Module(new LDSTUnit())
-  val csrUnit = if(params.debug) Some(Module(new CSRUnit())) else None
-  val multiplier = if(params.debug) Some(Module(new Multiplier())) else None
+  ldstUnit.io := DontCare
+  val csrUnit = Module(new CSRUnit())
+  csrUnit.io := DontCare
+  val multiplier = if(params.useMulDiv) Some(Module(new Multiplier())) else None
+  if(params.useMulDiv) multiplier.get.io := DontCare
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
 
+  val cpu_operating = RegInit(false.B)
+  when(!reset.asBool) {
+    cpu_operating := true.B
+  }
+
+  val EX_stall = WireInit(false.B)
+  val WB_stall = WireInit(false.B)
+  val ID_stall = WireInit(false.B)
+  val ID_flush = WireInit(false.B)
+  val rs1_required_but_not_valid = WireInit(false.B)
+  val rs2_required_but_not_valid = WireInit(false.B)
+
   // START OF ID STAGE
-  io.frontend.resp.ready := ((cycle_count =/= 0.U(xprlen.W)) && !bypassingUnit.io.ID.out.stall && !fence_in_pipeline) || io.frontend.req.valid
 
-  val decoded_inst = Wire(new InstBundle(xprlen))
-  decoded_inst.bits := io.frontend.resp.bits.inst
-  val ID_EX_REG = Reg(Valid(new ID_EX_IO(xprlen)))
-  val pcPlus4 = io.frontend.resp.bits.pc + 4.U(xprlen.W)
+  val decoded_inst = Wire(new InstBundle())
+  decoded_inst := io.frontend.resp.bits.inst
+  val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
+  io.debug_io.get.ID_EX_Reg := ID_EX_REG
 
-  io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.req)
+  // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
+  ID_stall := (ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || fence_in_pipeline
+  io.frontend.resp.ready := cpu_operating && !ID_stall
+
+  io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
   branch_predictor.io.pc := io.frontend.resp.bits.pc
-  branch_predictor.io.pc4 := pcPlus4
-  branch_predictor.io.branch_pc_if_taken := Mux(branch_predictor.io.isJAL, decoded_inst.j_imm, decoded_inst.b_imm) + io.frontend.resp.bits.pc
-  branch_predictor.io.isJALR := (decoder.io.out.bits.PC_WB_ctrl === PCWB_JALR)
-  branch_predictor.io.isJAL := (decoder.io.out.bits.PC_WB_ctrl === PCWB_JAL)
-  branch_predictor.io.isBranch := (decoder.io.out.bits.PC_WB_ctrl === PCWB_BRANCH)
+  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
+  branch_predictor.io.BranchType := decoder.io.out.bits.branch
 
-  decoder.io.inst := decoded_inst.bits
-  rf.io.rs1 := decoded_inst.rs1
-  rf.io.rs2 := decoded_inst.rs2
+  decoder.io.inst := decoded_inst
+  rf.io.rs1 := Mux(bypassingUnit.io.ID.out.rs1_bypassMatch, bypassingUnit.io.ID.out.rs1_value.bits, decoded_inst.rs1)
+  rf.io.rs2 := Mux(bypassingUnit.io.ID.out.rs2_bypassMatch, bypassingUnit.io.ID.out.rs2_value.bits, decoded_inst.rs2)
 
-  val ID_inst_valid = decoder.io.out.valid && io.frontend.resp.valid
-  ID_EX_REG.valid := ID_inst_valid && io.frontend.resp.ready
-  ID_EX_REG.bits.dataSignals.ID_noALU_val := MuxLookup(decoder.io.out.bits.NOALU_ctrl, 0.U)(
-    Seq(
-      NOALU_IMMU -> decoded_inst.u_imm,
-      NOALU_PC4 -> pcPlus4,
-      NOALU_RS2 -> Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out),
-      NOALU_PC_IF_MISPREDICT -> Mux(branch_predictor.io.req.valid, pcPlus4, branch_predictor.io.branch_pc_if_taken),
-    )
-  )
-  ID_EX_REG.bits.dataSignals.ID_aluin1_val := MuxCase(0.U, Seq(
-    ALUin_USE_RS1(decoder.io.out.bits.ALUin_ctrl) -> Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out),
-    (decoder.io.out.bits.ALUin_ctrl === ALUin_PC_IMMU) -> io.frontend.resp.bits.pc,
+  /** IDステージの命令を処理するか否か
+   */
+  val ID_inst_valid = decoder.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready
+  ID_EX_REG.valid := ID_inst_valid
+  ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
+  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
+  ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
+    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
+    (decoder.io.out.bits.value1 === Value1.CSR.asUInt) -> decoded_inst.csr_uimm,
+    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
+    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
   ))
-  ID_EX_REG.bits.dataSignals.ID_aluin2_val := MuxLookup(decoder.io.out.bits.ALUin_ctrl, 0.U)(
-    Seq(
-      ALUin_RS1_RS2 -> Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out),
-      ALUin_RS1_IMI -> decoded_inst.i_imm,
-      ALUin_RS1_IMS -> decoded_inst.s_imm,
-      ALUin_PC_IMMU -> decoded_inst.u_imm,
-    )
-  )
-  ID_EX_REG.bits.bypassSignals.rd_index.bits := decoded_inst.rd
-  ID_EX_REG.bits.bypassSignals.rd_index.valid := decoder.io.out.bits.RF_WB_ctrl =/= WB_X
-  ID_EX_REG.bits.dataSignals.predicated_PC := branch_predictor.io.req
-  ID_EX_REG.bits.ctrlSignals.toEX := decoder.io.out.bits
-  ID_EX_REG.bits.ctrlSignals.toEX.ALUin_ctrl := decoder.io.out.bits.ALUin_ctrl
-  ID_EX_REG.bits.ctrlSignals.toWB := decoder.io.out.bits
+  ID_EX_REG.bits.dataSignals.rs1 := rf.io.rs1_out
+  ID_EX_REG.bits.dataSignals.rs2 := rf.io.rs2_out
+  ID_EX_REG.bits.dataSignals.csr := decoded_inst.csr
 
-  bypassingUnit.io.ID.in.valid := ID_inst_valid
-  bypassingUnit.io.ID.in.bits.rs1_index.bits := decoded_inst.rs1
-  bypassingUnit.io.ID.in.bits.rs1_index.valid := ALUin_USE_RS1(decoder.io.out.bits.ALUin_ctrl)
-  bypassingUnit.io.ID.in.bits.rs2_index.bits := decoded_inst.rs2
-  bypassingUnit.io.ID.in.bits.rs2_index.valid := ALUin_USE_RS2(decoder.io.out.bits.ALUin_ctrl) || NOALU_USE_RS2(decoder.io.out.bits.NOALU_ctrl)
+  bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
+  bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1
+  bypassingUnit.io.ID.in.rs2_index.bits := decoded_inst.rs2
+  bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2
 
-  if(debug) {
-    ID_EX_REG.bits.debug_inst.get.instruction := decoded_inst.bits
-    ID_EX_REG.bits.debug_inst.get.pc := io.frontend.resp.bits.pc
+  if(params.debug) {
+    ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
+    ID_EX_REG.bits.debug.get.pc := io.frontend.resp.bits.pc
   }
 
   // retain the ID_EX register if stall
-  when(bypassingUnit.io.EX.out.stall) {
+  when(EX_stall) {
     ID_EX_REG := ID_EX_REG
   }
-  // flush the ID_EX register if branch miss
-  when(branch_evaluator.io.out.valid) {
+  // flush the ID_EX register if branch miss, ecall or mret
+  when(ID_flush) {
     ID_EX_REG.valid := false.B
   }
 

@@ -45,15 +45,13 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   }
 
   val cycle = zeroInit_Register()
-  val time_counter = RegInit(0.U(log2Up(frequency).W))
+  val (_, counterWrap) = Counter(true.B, frequency)
   when(io.fromCPU.cpu_operating) {
     cycle := cycle + 1.U(xprlen.W)
-    time_counter := time_counter + 1.U(time_counter.getWidth.W)
   }
   val time = zeroInit_Register()
-  when(time_counter === frequency.U) {
+  when(counterWrap) {
     time := time + 1.U(xprlen.W)
-    time_counter := 0.U
   }
   val instret = zeroInit_Register()
   when(io.fromCPU.inst_retire) {
@@ -120,5 +118,5 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
 }
 object CSRFile extends App {
   def apply(implicit params: HajimeCoreParams): CSRFile = new CSRFile()
-  ChiselStage.emitSystemVerilogFile(apply(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  ChiselStage.emitSystemVerilogFile(CSRFile(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

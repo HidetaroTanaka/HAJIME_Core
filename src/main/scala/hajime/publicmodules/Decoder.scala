@@ -156,8 +156,8 @@ class ID_output extends Bundle with ScalarOpConstants {
   def memValid: Bool = memRead || memWrite
 }
 
-class DecoderIO extends Bundle {
-  val inst = Input(Valid(UInt(RISCV_Consts.INST_LEN.W)))
+class DecoderIO(implicit params: HajimeCoreParams) extends Bundle {
+  val inst = Input(new InstBundle())
   val out = Output(Valid(new ID_output))
 }
 
@@ -179,7 +179,7 @@ class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConst
       mapping = tableForListLookup
     )
   }
-  io.out.valid := csignals.head.asBool && io.inst.valid
+  io.out.valid := csignals.head.asBool
   for((out, sig) <- (io.out.bits.toList zip csignals.tail)) {
     out := sig
   }

@@ -6,7 +6,7 @@ import chisel3.util._
 case class HajimeCoreParams(
   issue_width: Int = 2,
   xprlen: Int = 64,
-  frequency: Long = 50*1000*1000, // x[MHz] = x * 1000 * 1000
+  frequency: Int = 50*1000*1000, // x[MHz] = x * 1000 * 1000
   physicalRegFileEntries: Int = 48,
   ras_depth: Int = 8,
   robEntries: Int = 8,

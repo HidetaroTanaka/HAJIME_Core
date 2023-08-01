@@ -1,5 +1,6 @@
 package hajime.publicmodules
 
+import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.common._
@@ -37,5 +38,5 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCon
 
 object CSRUnit extends App {
   def apply(implicit params: HajimeCoreParams): CSRUnit = new CSRUnit()
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(HajimeCoreParams()), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(CSRUnit(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

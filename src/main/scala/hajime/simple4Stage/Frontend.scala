@@ -53,12 +53,12 @@ class Frontend(implicit params: HajimeCoreParams) extends Module {
 
   io.icache_axi4lite.ar.bits.addr := addr_req_to_axi_ar
   io.icache_axi4lite.ar.bits.prot := 0.U
-  io.icache_axi4lite.ar.valid := io.cpu.resp.ready // || io.cpu.req.valid
+  io.icache_axi4lite.ar.valid := io.cpu.resp.ready // || io.cpu.out.valid
 
   io.cpu.resp.bits.pc := pc_reg
   io.cpu.resp.bits.inst.bits := io.icache_axi4lite.r.bits.data
   io.cpu.resp.valid := io.icache_axi4lite.r.valid
-  io.icache_axi4lite.r.ready := io.cpu.resp.ready // || io.cpu.req.valid
+  io.icache_axi4lite.r.ready := io.cpu.resp.ready // || io.cpu.out.valid
 
   io.exception := io.icache_axi4lite.r.bits.exception
 }
