@@ -19,8 +19,8 @@ class BranchPredictorIO(implicit params: HajimeCoreParams) extends Bundle with S
 class BranchPredictor(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new BranchPredictorIO())
   // use static branch predictor for placeholder
-  val branch_taken_predict = Wire(Bool())
-  branch_taken_predict := MuxLookup(io.BranchType, false.B)(
+  val branch_predict_taken = Wire(Bool())
+  branch_predict_taken := MuxLookup(io.BranchType, false.B)(
     Branch.condBranchList.map(
       x => x.asUInt -> (0.S > io.imm.asSInt)
     ) ++ Branch.jumpList.map(
@@ -47,7 +47,7 @@ class BranchPredictor(implicit params: HajimeCoreParams) extends Module with Sca
     RAS_push(io.pc.nextPC)
   }
 
-  io.out.valid := branch_taken_predict
+  io.out.valid := branch_predict_taken
   // JALRならばRAS、それ以外はpc+imm (branch, jal)
   io.out.bits.pc := Mux(io.BranchType === Branch.JALR.asUInt, RAS_pop(), io.pc.addr + io.imm)
 }

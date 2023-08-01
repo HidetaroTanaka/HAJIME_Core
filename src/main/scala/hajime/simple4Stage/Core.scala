@@ -60,8 +60,8 @@ class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
 
-class BasicCtrlSignals(implicit params: HajimeCoreParams) extends Bundle {
-  val decode = new DecoderIO
+class BasicCtrlSignals() extends Bundle {
+  val decode = new ID_output
   val rd_index = UInt(5.W)
 }
 
@@ -69,6 +69,7 @@ class ID_EX_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val pc = new ProgramCounter()
   val bp_destPC = UInt(xprlen.W)
+  val bp_taken = Bool()
   val imm = UInt(xprlen.W)
   val rs1 = UInt(xprlen.W)
   val rs2 = UInt(xprlen.W)
@@ -120,7 +121,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ldstUnit.io := DontCare
   val csrUnit = Module(new CSRUnit())
   csrUnit.io := DontCare
-  val multiplier = if(params.useMulDiv) Some(Module(new Multiplier())) else None
+  val multiplier = if(params.useMulDiv) Some(Module(new NonPipelinedMultiplierWrap())) else None
   if(params.useMulDiv) multiplier.get.io := DontCare
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
@@ -142,10 +143,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val decoded_inst = Wire(new InstBundle())
   decoded_inst := io.frontend.resp.bits.inst
   val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
+  val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
   io.debug_io.get.ID_EX_Reg := ID_EX_REG
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
-  ID_stall := (ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || fence_in_pipeline
+  // flushならばストールさせる必要はない
+  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || fence_in_pipeline)
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
@@ -154,8 +157,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   branch_predictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decoded_inst
-  rf.io.rs1 := Mux(bypassingUnit.io.ID.out.rs1_bypassMatch, bypassingUnit.io.ID.out.rs1_value.bits, decoded_inst.rs1)
-  rf.io.rs2 := Mux(bypassingUnit.io.ID.out.rs2_bypassMatch, bypassingUnit.io.ID.out.rs2_value.bits, decoded_inst.rs2)
+  rf.io.rs1 := Mux(bypassingUnit.io.ID.out.rs1_bypassMatchAtEX, bypassingUnit.io.ID.out.rs1_value.bits, decoded_inst.rs1)
+  rf.io.rs2 := Mux(bypassingUnit.io.ID.out.rs2_bypassMatchAtEX, bypassingUnit.io.ID.out.rs2_value.bits, decoded_inst.rs2)
 
   /** IDステージの命令を処理するか否か
    */
@@ -163,6 +166,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.valid := ID_inst_valid
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
   ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
+  ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
     (decoder.io.out.bits.value1 === Value1.CSR.asUInt) -> decoded_inst.csr_uimm,
@@ -172,11 +176,22 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.bits.dataSignals.rs1 := rf.io.rs1_out
   ID_EX_REG.bits.dataSignals.rs2 := rf.io.rs2_out
   ID_EX_REG.bits.dataSignals.csr := decoded_inst.csr
+  ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
+  ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 
   bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
   bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1
   bypassingUnit.io.ID.in.rs2_index.bits := decoded_inst.rs2
   bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2
+
+  rs1_required_but_not_valid := MuxCase(false.B, Seq(
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> !bypassingUnit.io.EX.in.rd.valid,
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtWB -> !bypassingUnit.io.WB.in.rd.valid,
+  ))
+  rs2_required_but_not_valid := MuxCase(false.B, Seq(
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> !bypassingUnit.io.EX.in.rd.valid,
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> !bypassingUnit.io.WB.in.rd.valid,
+  ))
 
   if(params.debug) {
     ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
@@ -193,42 +208,83 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   }
 
   // START OF EX STAGE
-  alu.io.in1 := ID_EX_REG.bits.dataSignals.ID_aluin1_val
-  alu.io.in2 := ID_EX_REG.bits.dataSignals.ID_aluin2_val
-  alu.io.funct := ID_EX_REG.bits.ctrlSignals.toEX.ALU_funct
+  alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
+    Value1.RS1.asUInt -> ID_EX_REG.bits.dataSignals.rs1,
+    Value1.U_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
+  ))
+  alu.io.in2 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value2, 0.U)(Seq(
+    Value2.RS2.asUInt -> ID_EX_REG.bits.dataSignals.rs2,
+    Value2.I_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
+    Value2.S_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
+    Value2.PC.asUInt -> ID_EX_REG.bits.dataSignals.pc.addr,
+  ))
+  alu.io.funct := ID_EX_REG.bits.ctrlSignals.decode
 
-  val ID_noALU_val = ID_EX_REG.bits.dataSignals.ID_noALU_val
+  // TODO: ecall and mret frontend req
 
   branch_evaluator.io.req.bits.ALU_Result := alu.io.out
-  branch_evaluator.io.req.bits.BranchType := ID_EX_REG.bits.ctrlSignals.toEX.BranchType
-  branch_evaluator.io.req.bits.PC_WB_ctrl := ID_EX_REG.bits.ctrlSignals.toEX.PC_WB_ctrl
-  branch_evaluator.io.req.bits.bp_taken := ID_EX_REG.bits.dataSignals.predicated_PC.valid
-  branch_evaluator.io.req.bits.jalr_predPC := ID_EX_REG.bits.dataSignals.predicated_PC.bits.pc
-  branch_evaluator.io.req.bits.PC_if_bp_incorrect := ID_noALU_val
+  branch_evaluator.io.req.bits.BranchType := ID_EX_REG.bits.ctrlSignals.decode.branch
+  branch_evaluator.io.req.bits.destPC := ID_EX_REG.bits.dataSignals.bp_destPC
+  branch_evaluator.io.req.bits.pc := ID_EX_REG.bits.dataSignals.pc
+  branch_evaluator.io.req.bits.bp_taken := ID_EX_REG.bits.dataSignals.bp_taken
   branch_evaluator.io.req.valid := ID_EX_REG.valid
 
-  bypassingUnit.io.EX.in.valid := ID_EX_REG.valid
-  bypassingUnit.io.EX.in.bits.rd.bits.value := Mux(ID_EX_REG.bits.ctrlSignals.toWB.RF_WB_ctrl === WB_ALU, alu.io.out, ID_EX_REG.bits.dataSignals.ID_noALU_val)
-  bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.bypassSignals.rd_index.bits
-  bypassingUnit.io.EX.in.bits.rd.valid := (ID_EX_REG.bits.ctrlSignals.toWB.RF_WB_ctrl =/= WB_X && ID_EX_REG.bits.ctrlSignals.toWB.RF_WB_ctrl =/= WB_MEM)
-  bypassingUnit.io.EX.in.bits.dcache_req_not_ready_and_has_mem_inst_in_EX_stage := ID_EX_REG.bits.ctrlSignals.toWB.MEM_ctrl.mem_valid && !ldstUnit.io.cpu.req.ready
+  if(params.useMulDiv) {
+    multiplier.get.io.req.bits.rs1 := ID_EX_REG.bits.dataSignals.rs1
+    multiplier.get.io.req.bits.rs2 := ID_EX_REG.bits.dataSignals.rs2
+    multiplier.get.io.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
+    // TODO: review this
+    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL
+    multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
+  }
 
-  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.toWB.MEM_ctrl.mem_valid
+  csrUnit.io.req.csr := ID_EX_REG.bits.dataSignals.csr
+  csrUnit.io.req.data := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.CSR.asUInt,
+    ID_EX_REG.bits.dataSignals.imm,
+    ID_EX_REG.bits.dataSignals.rs1
+  )
+  csrUnit.io.req.funct := ID_EX_REG.bits.ctrlSignals.decode
+
+  val EX_arithmetic_result = if(params.useMulDiv) {
+    Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits.result, alu.io.out)
+  } else {
+    alu.io.out
+  }
+
+  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
-  ldstUnit.io.cpu.req.bits.data := ID_EX_REG.bits.dataSignals.ID_noALU_val
-  ldstUnit.io.cpu.req.bits.MEM_ctrl := ID_EX_REG.bits.ctrlSignals.toWB.MEM_ctrl
+  ldstUnit.io.cpu.req.bits.data := ID_EX_REG.bits.dataSignals.rs2
+  ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
 
-  val EX_WB_REG = Reg(Valid(new EX_WB_IO(xprlen)))
+  bypassingUnit.io.EX.in.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
+  bypassingUnit.io.EX.in.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+    WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
+    WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
+    WB_SEL.CSR.asUInt -> csrUnit.io.resp.data,
+  ))
+  bypassingUnit.io.EX.in.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
+    WB_SEL.PC4.asUInt -> true.B,
+    WB_SEL.ARITH.asUInt -> (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B),
+    WB_SEL.CSR.asUInt -> true.B,
+    WB_SEL.MEM.asUInt -> false.B,
+    WB_SEL.NONE.asUInt -> false.B
+  ))
 
-  EX_WB_REG.valid := ID_EX_REG.valid // && !branch_evaluator.io.out.valid
-  EX_WB_REG.bits.bypassSignals.rd_index := ID_EX_REG.bits.bypassSignals.rd_index
-  EX_WB_REG.bits.dataSignals.EX_ALU_val := alu.io.out
-  EX_WB_REG.bits.dataSignals.EX_noALU_val := ID_noALU_val
-  EX_WB_REG.bits.ctrlSignals := ID_EX_REG.bits.ctrlSignals.toWB
+  EX_WB_REG.valid := ID_EX_REG.valid
+  EX_WB_REG.bits.dataSignals.pc4 := ID_EX_REG.bits.dataSignals.pc.nextPC
+  EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
+  EX_WB_REG.bits.dataSignals.csr := csrUnit.io.resp.data
 
-  if(debug) EX_WB_REG.bits.debug_inst.get := ID_EX_REG.bits.debug_inst.get
+  if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
-  when(bypassingUnit.io.WB.out.stall) {
+  // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.respがreadyでない，または乗算命令で乗算器がvalidでない
+  EX_stall := (EX_WB_REG.valid && WB_stall && ID_EX_REG.valid) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || if(params.useMulDiv) {
+    (ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid)
+  } else {
+    true.B
+  }
+
+  when(EX_stall) {
     EX_WB_REG := EX_WB_REG
   }
 

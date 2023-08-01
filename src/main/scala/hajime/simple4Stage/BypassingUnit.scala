@@ -17,9 +17,11 @@ class BypassingLogicInputs_ID extends Bundle {
 
 class BypassingLogicOutputs_ID(implicit params: HajimeCoreParams) extends Bundle {
   val rs1_value = Valid(UInt(params.xprlen.W))
-  val rs1_bypassMatch = Bool()
+  val rs1_bypassMatchAtEX = Bool()
+  val rs1_bypassMatchAtWB = Bool()
   val rs2_value = Valid(UInt(params.xprlen.W))
-  val rs2_bypassMatch = Bool()
+  val rs2_bypassMatchAtEX = Bool()
+  val rs2_bypassMatchAtWB = Bool()
 }
 
 class BypassingLogicInputs_EX(implicit params: HajimeCoreParams) extends Bundle {
@@ -64,8 +66,9 @@ class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
       WB_rd_and_ID_rs1_matches_not_zero -> io.WB.in.rd.valid
     )
   )
-  // 値が用意できるかに関わらず、EX・WBいずれかからフォワーディングすべき値があるか否か
-  io.ID.out.rs1_bypassMatch := EX_rd_and_ID_rs1_matches_not_zero || WB_rd_and_ID_rs1_matches_not_zero
+  // 値が用意できるかに関わらず、EX・WBからフォワーディングすべき値があるか否か
+  io.ID.out.rs1_bypassMatchAtEX := EX_rd_and_ID_rs1_matches_not_zero
+  io.ID.out.rs1_bypassMatchAtWB := WB_rd_and_ID_rs1_matches_not_zero
 
   val WB_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.WB.in.rd.bits.index) && io.ID.in.rs2_index.valid)
   val EX_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.EX.in.rd.bits.index) && io.ID.in.rs2_index.valid)
@@ -76,7 +79,8 @@ class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
       WB_rd_and_ID_rs2_matches_not_zero -> io.WB.in.rd.valid,
     )
   )
-  io.ID.out.rs2_bypassMatch := EX_rd_and_ID_rs2_matches_not_zero || WB_rd_and_ID_rs2_matches_not_zero
+  io.ID.out.rs2_bypassMatchAtEX := EX_rd_and_ID_rs2_matches_not_zero
+  io.ID.out.rs2_bypassMatchAtWB := WB_rd_and_ID_rs2_matches_not_zero
 }
 
 object BypassingUnit extends App {

@@ -1,7 +1,7 @@
 package hajime.publicmodules
 
 import chisel3._
-import chisel3.stage.ChiselStage
+import circt.stage.ChiselStage
 import chisel3.util._
 import chisel3.experimental.BundleLiterals._
 import hajime.common._
@@ -22,7 +22,7 @@ class Multiplier_nxn(n: Int) extends Module {
 
 object Multiplier_nxn extends App {
   def apply(n: Int): Multiplier_nxn = new Multiplier_nxn(n)
-  (new ChiselStage).emitVerilog(apply(8), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(apply(8), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
 class Multiplier_64x8 extends Module {
@@ -134,7 +134,7 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
 
 object Multiplier extends App {
   def apply(implicit params: HajimeCoreParams): Multiplier = new Multiplier()
-  (new ChiselStage).emitVerilog(apply(HajimeCoreParams()), args=COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(apply(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
 class NonPipelinedMultipler_InternalReg(implicit params: HajimeCoreParams) extends Bundle {
@@ -212,5 +212,51 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
 
 object NonPipelinedMultiplier extends App {
   def apply(implicit param: HajimeCoreParams): NonPipelinedMultiplier = new NonPipelinedMultiplier()
-  (new ChiselStage).emitVerilog(apply(HajimeCoreParams()), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(apply(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+}
+
+class NonPipelinedMultiplierWrapIOReq(implicit params: HajimeCoreParams) extends Bundle {
+  val rs1 = UInt(params.xprlen.W)
+  val rs2 = UInt(params.xprlen.W)
+  val funct = new ID_output
+}
+class NonPipelinedMultiplierWrapIO(implicit params: HajimeCoreParams) extends Bundle {
+  val req = Flipped(Irrevocable(new NonPipelinedMultiplierWrapIOReq()))
+  val resp = Irrevocable(new MultiplierResp())
+}
+
+/**
+ * 符号やデコードの処理等
+ */
+class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
+  val io = IO(new NonPipelinedMultiplierWrapIO())
+
+  val nonPipelinedMultiplier = Module(new NonPipelinedMultiplier())
+
+  val rs1_inverted = WireInit(false.B)
+  val rs2_inverted = WireInit(false.B)
+  nonPipelinedMultiplier.io.req.valid := io.req.valid
+  io.req.ready := nonPipelinedMultiplier.io.req.ready
+  nonPipelinedMultiplier.io.req.bits.tag := 0.U
+  // invert if rs1.head=1 and MULH, MULHSU
+  // half if op32
+  nonPipelinedMultiplier.io.req.bits.multiplicand := MuxCase(io.req.bits.rs1, Seq(
+    (io.req.bits.rs1.head(1).asBool &&
+      ((io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HISU.asUInt))) -> {
+      rs1_inverted := true.B
+      -io.req.bits.rs1
+    },
+    io.req.bits.funct.op32 -> io.req.bits.rs1.tail(32)
+  ))
+  // invert if rs2.head=1 and MULH, half if op32
+  nonPipelinedMultiplier.io.req.bits.multiplier := MuxCase(io.req.bits.rs2, Seq(
+    (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH)) -> {
+      rs2_inverted := true.B
+      -io.req.bits.rs2
+    },
+    io.req.bits.funct.op32 -> io.req.bits.rs2.tail(32)
+  ))
+
+  io.resp <> nonPipelinedMultiplier.io.resp
+  io.resp.bits.result := Mux(rs1_inverted ^ rs2_inverted, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
 }
