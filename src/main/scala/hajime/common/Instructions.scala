@@ -150,6 +150,7 @@ object Causes {
 }
 object CSRs {
   val cycle = 0xc00
+  val time = 0xc01
   val instret = 0xc02
   val hpmcounter3 = 0xc03
   val hpmcounter4 = 0xc04
@@ -192,6 +193,8 @@ object CSRs {
   val mcause = 0x342
   val mtval = 0x343
   val mip = 0x344
+  val mtinst = 0x34a
+  val mtval2 = 0x34b
   val tselect = 0x7a0
   val tdata1 = 0x7a1
   val tdata2 = 0x7a2
@@ -264,6 +267,7 @@ object CSRs {
   val marchid = 0xf12
   val mimpid = 0xf13
   val mhartid = 0xf14
+  val mconfigptr = 0xf15
   val cycleh = 0xc80
   val instreth = 0xc82
   val hpmcounter3h = 0xc83

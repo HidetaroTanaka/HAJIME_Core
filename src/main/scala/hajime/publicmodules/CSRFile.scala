@@ -1,5 +1,6 @@
 package hajime.publicmodules
 
+import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.common._
@@ -79,33 +80,33 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val mtval2 = zeroInit_Register()
 
   val readOnlyCSRs: Seq[(UInt, UInt)] = Seq(
-    "hC00".U(12.W) -> cycle,
-    "hC01".U(12.W) -> time,
-    "hC02".U(12.W) -> instret,
-    "hF11".U(12.W) -> mvendorid,
-    "hF12".U(12.W) -> marchid,
-    "hF13".U(12.W) -> mimpid,
-    "hF14".U(12.W) -> mhartid,
-    "hF15".U(12.W) -> mconfigptr,
+    CSRs.cycle.U(12.W) -> cycle,
+    CSRs.time.U(12.W) -> time,
+    CSRs.instret.U(12.W) -> instret,
+    CSRs.mvendorid.U(12.W) -> mvendorid,
+    CSRs.marchid.U(12.W) -> marchid,
+    CSRs.mimpid.U(12.W) -> mimpid,
+    CSRs.mhartid.U(12.W) -> mhartid,
+    CSRs.mconfigptr.U(12.W) -> mconfigptr,
   )
 
   val writableCSRs: Seq[(UInt, UInt)] = Seq(
-    "h300".U(12.W) -> mstatus,
-    "h301".U(12.W) -> misa,
-    "h302".U(12.W) -> medeleg,
-    "h303".U(12.W) -> mideleg,
-    "h304".U(12.W) -> mie,
-    "h305".U(12.W) -> mtvec,
-    "h306".U(12.W) -> mcounteren,
-    "h340".U(12.W) -> mscratch,
-    "h341".U(12.W) -> mepc,
-    "h342".U(12.W) -> mcause,
-    "h343".U(12.W) -> mtval,
-    "h344".U(12.W) -> mip,
-    "h34A".U(12.W) -> mtinst,
-    "h34B".U(12.W) -> mtval2,
-    "hB00".U(12.W) -> cycle, // Only M-mode can overwrite cycle and instret?
-    "hB02".U(12.W) -> instret,
+    CSRs.mstatus.U(12.W) -> mstatus,
+    CSRs.misa.U(12.W) -> misa,
+    CSRs.medeleg.U(12.W) -> medeleg,
+    CSRs.mideleg.U(12.W) -> mideleg,
+    CSRs.mie.U(12.W) -> mie,
+    CSRs.mtvec.U(12.W) -> mtvec,
+    CSRs.mcounteren.U(12.W) -> mcounteren,
+    CSRs.mscratch.U(12.W) -> mscratch,
+    CSRs.mepc.U(12.W) -> mepc,
+    CSRs.mcause.U(12.W) -> mcause,
+    CSRs.mtval.U(12.W) -> mtval,
+    CSRs.mip.U(12.W) -> mip,
+    CSRs.mtinst.U(12.W) -> mtinst,
+    CSRs.mtval2.U(12.W) -> mtval2,
+    CSRs.mcycle.U(12.W) -> cycle, // Only M-mode can overwrite cycle and instret?
+    CSRs.minstret.U(12.W) -> instret,
   )
 
   io.readResp.data := MuxLookup(io.readReq.csr, 0.U(xprlen.W))(readOnlyCSRs ++ writableCSRs)
@@ -119,5 +120,5 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
 }
 object CSRFile extends App {
   def apply(implicit params: HajimeCoreParams): CSRFile = new CSRFile()
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(HajimeCoreParams()), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(apply(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

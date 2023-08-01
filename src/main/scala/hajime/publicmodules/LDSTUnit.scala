@@ -38,31 +38,31 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
   }
 
   io.cpu.req.ready := io.cpu.req.valid && MuxCase(true.B, Seq(
-    (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_RD.asUInt) -> io.dcache_axi4lite.ar.ready,
-    (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_WR.asUInt) -> (io.dcache_axi4lite.aw.ready && io.dcache_axi4lite.w.ready),
+    io.cpu.req.bits.funct.memRead -> io.dcache_axi4lite.ar.ready,
+    io.cpu.req.bits.funct.memWrite -> (io.dcache_axi4lite.aw.ready && io.dcache_axi4lite.w.ready),
   ))
   io.cpu.resp.valid := MuxCase(true.B, Seq(
-    (req_reg.funct.memory_function === MEM_FCN.M_RD.asUInt) -> io.dcache_axi4lite.r.valid,
-    (req_reg.funct.memory_function === MEM_FCN.M_WR.asUInt) -> io.dcache_axi4lite.b.valid,
+    req_reg.funct.memRead -> io.dcache_axi4lite.r.valid,
+    req_reg.funct.memWrite -> io.dcache_axi4lite.b.valid,
   ))
   io.cpu.resp.bits.exception := MuxCase(false.B, Seq(
-    (req_reg.funct.memory_function === MEM_FCN.M_RD.asUInt) -> io.dcache_axi4lite.r.bits.exception,
-    (req_reg.funct.memory_function === MEM_FCN.M_WR.asUInt) -> io.dcache_axi4lite.b.bits.exception,
+    req_reg.funct.memRead -> io.dcache_axi4lite.r.bits.exception,
+    req_reg.funct.memWrite -> io.dcache_axi4lite.b.bits.exception,
   ))
   io.cpu.resp.bits.data := MuxLookup(req_reg.funct.memory_length, io.dcache_axi4lite.r.bits.data)(Seq(
-    MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext.asBool, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
-    MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext.asBool, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),
-    MEM_LEN.W.asUInt -> Mux(req_reg.funct.mem_sext.asBool, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(31,0), params.xprlen), io.dcache_axi4lite.r.bits.data(31,0).zext.asUInt),
+    MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
+    MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),
+    MEM_LEN.W.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(31,0), params.xprlen), io.dcache_axi4lite.r.bits.data(31,0).zext.asUInt),
     MEM_LEN.D.asUInt -> io.dcache_axi4lite.r.bits.data
   ))
 
   // AXI4Lite Read Address Request Channel
-  io.dcache_axi4lite.ar.valid := (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_RD.asUInt) && io.cpu.req.valid
+  io.dcache_axi4lite.ar.valid := io.cpu.req.bits.funct.memRead && io.cpu.req.valid
   io.dcache_axi4lite.ar.bits.addr := io.cpu.req.bits.addr
   io.dcache_axi4lite.ar.bits.prot := 0.U(3.W)
 
   // AXI4Lite Write Address Request Channel
-  io.dcache_axi4lite.aw.valid := (io.cpu.req.bits.funct.memory_function === MEM_FCN.M_WR.asUInt) && io.cpu.req.valid
+  io.dcache_axi4lite.aw.valid := io.cpu.req.bits.funct.memWrite && io.cpu.req.valid
   io.dcache_axi4lite.aw.bits.addr := io.cpu.req.bits.addr
   io.dcache_axi4lite.aw.bits.prot := 0.U(3.W)
 

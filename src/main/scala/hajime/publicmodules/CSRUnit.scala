@@ -3,13 +3,12 @@ package hajime.publicmodules
 import chisel3._
 import chisel3.util._
 import hajime.common._
-import hajime.common.Deprecated_ScalarOpConstants._
 
 class CSRUnitReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val csr = UInt(12.W)
+  val funct = new ID_output
   val data = UInt(xprlen.W)
-  val CSR_func = UInt(CSR_NONE.getWidth.W)
+  val csr = UInt(12.W)
 }
 
 class CSRUnitIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -18,7 +17,7 @@ class CSRUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val fromCPU = Input(new CPUtoCSR())
 }
 
-class CSRUnit(implicit params: HajimeCoreParams) extends Module {
+class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new CSRUnitIO())
 
   val csrFile = Module(CSRFile(params))
@@ -26,10 +25,10 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module {
   csrFile.io.fromCPU := io.fromCPU
   csrFile.io.readReq.csr := io.req.csr
   csrFile.io.writeReq.bits.csr := io.req.csr
-  csrFile.io.writeReq.bits.data := MuxLookup(io.req.CSR_func, io.req.data)(Seq(
-    CSR_CLEAR -> (csrFile.io.readResp.data & ~io.req.data),
-    CSR_SET -> (csrFile.io.readResp.data | io.req.data),
-    CSR_WRITE -> io.req.data
+  csrFile.io.writeReq.bits.data := MuxLookup(io.req.funct.csr_funct, io.req.data)(Seq(
+    CSR_FCN.C.asUInt -> (csrFile.io.readResp.data & ~io.req.data),
+    CSR_FCN.S.asUInt -> (csrFile.io.readResp.data | io.req.data),
+    CSR_FCN.W.asUInt -> io.req.data
   ))
   csrFile.io.writeReq.valid := true.B
 

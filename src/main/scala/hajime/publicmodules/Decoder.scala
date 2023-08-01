@@ -17,59 +17,63 @@ object RV32IDecode extends DecodeConstants {
     //             |  Branch       |             |             |                       |  op32             |               Memory_Length            |
     //             |  |            |             |             |                       |  |  WB_selector   |               |          Mem_SEXT      |
     // R-type      |  |            |             |             |                       |  |  |             |               |          |  CSR_Func   |
-    ADD    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SUB    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLL    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLL,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLT    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLTU   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    XOR    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRL    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRA    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    OR     -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.OR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    AND    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.AND,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    ADD    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SUB    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLL    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLL,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLT    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLTU   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    XOR    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRL    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRA    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    OR     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.OR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    AND    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.AND,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // I-type
-    ADDI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLTI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLT,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLTIU  -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    XORI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.XOR,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    ORI    -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.OR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    ANDI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.AND,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLLI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLL,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRLI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRAI   -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    LB     -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, Y, CSR_FCN.N, N),
-    LH     -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, Y, CSR_FCN.N, N),
-    LW     -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.W, Y, CSR_FCN.N, N),
-    LBU    -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, N, CSR_FCN.N, N),
-    LHU    -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, N, CSR_FCN.N, N),
-    JALR   -> List(Y, Branch.JALR, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.PC4,   MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    ADDI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLTI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLT,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLTIU  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    XORI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.XOR,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    ORI    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.OR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    ANDI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.AND,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLLI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLL,     N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRLI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRAI   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      Y, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    LB     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, Y, CSR_FCN.N, N),
+    LH     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, Y, CSR_FCN.N, N),
+    LW     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.W, Y, CSR_FCN.N, N),
+    LBU    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.B, N, CSR_FCN.N, N),
+    LHU    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.H, N, CSR_FCN.N, N),
+    JALR   -> List(Y, Branch.JALR,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.PC4,   MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // S-type
-    SB     -> List(Y, Branch.NONE, Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.B, N, CSR_FCN.N, N),
-    SH     -> List(Y, Branch.NONE, Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N),
-    SW     -> List(Y, Branch.NONE, Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N),
+    SB     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.B, N, CSR_FCN.N, N),
+    SH     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N),
+    SW     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N),
 
     // B-type
-    BEQ    -> List(Y, Branch.EQ,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    BNE    -> List(Y, Branch.NE,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    BLT    -> List(Y, Branch.LT,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    BGE    -> List(Y, Branch.GE,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    BLTU   -> List(Y, Branch.LTU,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    BGEU   -> List(Y, Branch.GEU,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BEQ    -> List(Y, Branch.EQ,    Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BNE    -> List(Y, Branch.NE,    Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.XOR,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BLT    -> List(Y, Branch.LT,    Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BGE    -> List(Y, Branch.GE,    Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLT,     N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BLTU   -> List(Y, Branch.LTU,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    BGEU   -> List(Y, Branch.GEU,   Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLTU,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // U-type
-    LUI    -> List(Y, Branch.NONE, Value1.U_IMM, Value2.ZERO,  ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    AUIPC  -> List(Y, Branch.NONE, Value1.U_IMM, Value2.PC,    ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    LUI    -> List(Y, Branch.NONE,  Value1.U_IMM, Value2.ZERO,  ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    AUIPC  -> List(Y, Branch.NONE,  Value1.U_IMM, Value2.PC,    ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // J-type
-    JAL    -> List(Y, Branch.JAL,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.PC4,   MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    JAL    -> List(Y, Branch.JAL,   Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.PC4,   MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // SYSTEM
-    FENCE  -> List(Y, Branch.NONE, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, Y),
-    ECALL  -> List(Y, Branch.NONE, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.I, N),
+    FENCE  -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, Y),
+    // csr[mepc] = address of ECALL, pc=Cat(mtvec.head(xprlen-2), 0.U(2.W))
+    ECALL  -> List(Y, Branch.ECALL, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.I, N),
+    // set pc=csr[mepc]
+    // input data to csr must be zero in order not to destroy mepc
+    MRET   -> List(Y, Branch.MRET,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
     // ebreak is unimplemented
-    EBREAK -> List(Y, Branch.NONE, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    EBREAK -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
   )
 }
 
@@ -77,51 +81,51 @@ object RV64IDecode extends DecodeConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
     // R-type
-    ADDW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SUBW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLLW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLL,     N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRLW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRAW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    ADDW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SUBW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.ADDSUB,  Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLLW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SLL,     N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRLW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRAW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,   ARITHMETIC_FCN.SR,      Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
 
     // I-type
-    ADDIW  -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SLLIW  -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLL,     N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRLIW  -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    SRAIW  -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    LD     -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.D, Y, CSR_FCN.N, N),
-    LWU    -> List(Y, Branch.NONE, Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.W, N, CSR_FCN.N, N),
+    ADDIW  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SLLIW  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SLL,     N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRLIW  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      N, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    SRAIW  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.SR,      Y, Y, WB_SEL.ARITH, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    LD     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.D, Y, CSR_FCN.N, N),
+    LWU    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.I_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.MEM,   MEM_FCN.M_RD,   MEM_LEN.W, N, CSR_FCN.N, N),
 
     // S-type
-    SD     -> List(Y, Branch.NONE, Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N),
+    SD     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N),
   )
 }
 
 object RV32MDecode extends DecodeConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
-    MUL    -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_LOW,  N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    MULH   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIGH, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    MULHSU -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HISU, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    MULHU  -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIU,  N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    MUL    -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_LOW,  N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    MULH   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIGH, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    MULHSU -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HISU, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    MULHU  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIU,  N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
   )
 }
 
 object RV64MDecode extends DecodeConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
-    MULW   -> List(Y, Branch.NONE, Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_LOW,  N, Y, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
+    MULW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_LOW,  N, Y, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
   )
 }
 
 object ZicsrDecode extends DecodeConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
-    CSRRW  -> List(Y, Branch.NONE, Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
-    CSRRS  -> List(Y, Branch.NONE, Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
-    CSRRC  -> List(Y, Branch.NONE, Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
-    CSRRWI -> List(Y, Branch.NONE, Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
-    CSRRSI -> List(Y, Branch.NONE, Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
-    CSRRCI -> List(Y, Branch.NONE, Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
+    CSRRW  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
+    CSRRS  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
+    CSRRC  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
+    CSRRWI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
+    CSRRSI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
+    CSRRCI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
   )
 }
 
@@ -140,6 +144,16 @@ class ID_output extends Bundle with ScalarOpConstants {
   val fence = Bool()
   def toList: List[UInt] = (branch :: value1 :: value2 :: arithmetic_funct :: alu_flag :: op32 ::
     writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence :: Nil)
+  def isCondBranch: Bool = Branch.isCondBranch(branch)
+  def isJump: Bool = Branch.isJump(branch)
+  def use_RS1: Bool = Value1.use_RS1(value1)
+  def use_RS2: Bool = Value2.use_RS2(value2)
+  def use_ALU: Bool = ARITHMETIC_FCN.use_ALU(arithmetic_funct)
+  def use_MUL: Bool = ARITHMETIC_FCN.use_MUL(arithmetic_funct)
+  def write_to_rd: Bool = WB_SEL.write_to_rd(writeback_selector)
+  def memRead: Bool = (memory_function === MEM_FCN.M_RD.asUInt)
+  def memWrite: Bool = (memory_function === MEM_FCN.M_WR.asUInt)
+  def memValid: Bool = memRead || memWrite
 }
 
 class DecoderIO extends Bundle {
@@ -161,7 +175,7 @@ class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConst
 
   val csignals = {
     ListLookup(io.inst.bits,
-      default = List(N, Branch.NONE, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N).map(_.asUInt),
+      default = List(N, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N).map(_.asUInt),
       mapping = tableForListLookup
     )
   }
