@@ -238,7 +238,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
 
-  csrUnit.io.req.csr := ID_EX_REG.bits.dataSignals.csr
+  csrUnit.io.req.csr_addr  := Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, CSRs.mepc.U(12.W), ID_EX_REG.bits.dataSignals.csr)
   csrUnit.io.req.data := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.CSR.asUInt,
     ID_EX_REG.bits.dataSignals.imm,
     ID_EX_REG.bits.dataSignals.rs1

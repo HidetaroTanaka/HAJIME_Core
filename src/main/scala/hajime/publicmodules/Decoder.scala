@@ -67,11 +67,10 @@ object RV32IDecode extends DecodeConstants {
 
     // SYSTEM
     FENCE  -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, Y),
-    // csr[mepc] = address of ECALL, pc=Cat(mtvec.head(xprlen-2), 0.U(2.W))
+    // csr_addr[mepc] = address of ECALL, csr_addr[mcause]=cause, pc=Cat(mtvec.head(xprlen-2), 0.U(2.W))
     ECALL  -> List(Y, Branch.ECALL, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.I, N),
-    // set pc=csr[mepc]
-    // input data to csr must be zero in order not to destroy mepc
-    MRET   -> List(Y, Branch.MRET,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
+    // pc=csr_addr[mepc]
+    MRET   -> List(Y, Branch.MRET,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.R, N),
     // ebreak is unimplemented
     EBREAK -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
   )

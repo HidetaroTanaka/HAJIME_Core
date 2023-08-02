@@ -63,7 +63,7 @@ trait ScalarOpConstants {
     val B, H, W, D = Value
   }
   object CSR_FCN extends ChiselEnum {
-    val N, C, S, W, I = Value
+    val N, C, S, W, R, I = Value
   }
 }
 

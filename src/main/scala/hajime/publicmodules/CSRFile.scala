@@ -5,10 +5,6 @@ import chisel3._
 import chisel3.util._
 import hajime.common._
 
-class CSRFileReadReq() extends Bundle {
-  val csr = UInt(12.W)
-}
-
 class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val data = UInt(xprlen.W)
@@ -16,8 +12,13 @@ class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
 
 class CSRFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val csr = UInt(12.W)
   val data = UInt(xprlen.W)
+}
+
+class CSRInterruptReq(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val mepc_write = UInt(xprlen.W)
+  val mcause_write = UInt(xprlen.W)
 }
 
 class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
@@ -29,10 +30,11 @@ class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
 
 class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val readReq = Input(new CSRFileReadReq())
+  val csr_addr = Input(UInt(12.W))
   val readResp = Output(new CSRFileReadResp())
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
+  val interrupt = Flipped(ValidIO(new CSRInterruptReq()))
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -107,13 +109,24 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.minstret.U(12.W) -> instret,
   )
 
-  io.readResp.data := MuxLookup(io.readReq.csr, 0.U(xprlen.W))(readOnlyCSRs ++ writableCSRs)
-  when(io.writeReq.valid){
+  // 割り込みの場合はmtvecの下位2bitをクリアしたものを出力（例外ハンドラのアドレス）
+  io.readResp.data := Mux(io.interrupt.valid,
+    Cat(mtvec.head(xprlen-2), 0.U(2.W)),
+    MuxLookup(io.csr_addr, 0.U(xprlen.W))(readOnlyCSRs ++ writableCSRs)
+  )
+  // 割り込みの場合は書き込まない
+  when(io.writeReq.valid && !io.interrupt.valid){
     for ((addr, register) <- writableCSRs) {
-      when(io.writeReq.bits.csr === addr) {
+      when(io.csr_addr === addr) {
         register := io.writeReq.bits.data
       }
     }
+  }
+
+  // 割り込みの場合はmepcに例外発生PC，mcauseに例外要因を書く
+  when(io.interrupt.valid) {
+    mepc := io.interrupt.bits.mepc_write
+    mcause := io.interrupt.bits.mcause_write
   }
 }
 object CSRFile extends App {
