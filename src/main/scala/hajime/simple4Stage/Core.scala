@@ -97,6 +97,8 @@ class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
 class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new EX_WB_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
+  val interrupt = Bool()
+  val interrupt_cause = UInt(params.xprlen.W)
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -104,7 +106,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val io = IO(new CPUIO())
   io := DontCare
 
-  val fence_in_pipeline = RegInit(false.B)
+  // fence, ecall, mretがEX、WBに存在する
+  // ecallやmretがWBステージにあり，ジャンプ先PCがあるならばreadyを上げるが，IDにある命令は受け取らない
+  val sysInst_in_pipeline = WireInit(false.B)
 
   // Modules
   val decoder = Module(new Decoder())
@@ -148,7 +152,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
   // flushならばストールさせる必要はない
-  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || fence_in_pipeline)
+  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline)
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
@@ -202,7 +206,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   when(EX_stall) {
     ID_EX_REG := ID_EX_REG
   }
-  // flush the ID_EX register if branch miss, ecall or mret
+  // flush the ID_EX register if branch miss, ecall, mret or interrupt
   when(ID_flush) {
     ID_EX_REG.valid := false.B
   }
@@ -220,8 +224,6 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ))
   alu.io.funct := ID_EX_REG.bits.ctrlSignals.decode
 
-  // TODO: ecall and mret frontend req
-
   branch_evaluator.io.req.bits.ALU_Result := alu.io.out
   branch_evaluator.io.req.bits.BranchType := ID_EX_REG.bits.ctrlSignals.decode.branch
   branch_evaluator.io.req.bits.destPC := ID_EX_REG.bits.dataSignals.bp_destPC
@@ -230,20 +232,16 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   branch_evaluator.io.req.valid := ID_EX_REG.valid
 
   if(params.useMulDiv) {
+    val multiplier_hasValue = RegInit(false.B)
+    // EXステージに有効な乗算命令があり，かつ乗算器の出力のvalidとreadyが共にtrueで無ければ乗算器に保持するべき情報（現在のEXステージの乗算命令）がある
+    multiplier_hasValue := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && ID_EX_REG.valid && !(multiplier.get.io.resp.ready && multiplier.get.io.resp.valid)
     multiplier.get.io.req.bits.rs1 := ID_EX_REG.bits.dataSignals.rs1
     multiplier.get.io.req.bits.rs2 := ID_EX_REG.bits.dataSignals.rs2
     multiplier.get.io.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
-    // TODO: review this
-    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL
+    // 乗算器に保持するべき情報（現在のEXステージの乗算命令）があればvalidを下げる（乗算器が既に情報を受け取っているため）
+    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier_hasValue
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
-
-  csrUnit.io.req.csr_addr  := Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, CSRs.mepc.U(12.W), ID_EX_REG.bits.dataSignals.csr)
-  csrUnit.io.req.data := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.CSR.asUInt,
-    ID_EX_REG.bits.dataSignals.imm,
-    ID_EX_REG.bits.dataSignals.rs1
-  )
-  csrUnit.io.req.funct := ID_EX_REG.bits.ctrlSignals.decode
 
   val EX_arithmetic_result = if(params.useMulDiv) {
     Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits.result, alu.io.out)
@@ -306,13 +304,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.WB.in.bits.dcache_requested_but_not_valid := EX_WB_REG.bits.ctrlSignals.MEM_ctrl.mem_valid && !ldstUnit.io.cpu.resp.valid
 
   when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.toWB.fence) {
-    fence_in_pipeline := true.B
+    sysInst_in_pipeline := true.B
     io.frontend.resp.ready := false.B
     when(!bypassingUnit.io.ID.out.stall) {
       ID_EX_REG.valid := false.B
     }
   } .elsewhen(EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.fence) {
-    fence_in_pipeline := false.B
+    sysInst_in_pipeline := false.B
   }
 
   retired_inst_count := retired_inst_count + WB_inst_can_retire
