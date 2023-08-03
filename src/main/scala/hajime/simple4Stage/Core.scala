@@ -52,6 +52,12 @@ class AcceleratorInterface extends Bundle {
   ???
 }
 
+@unused
+class Interrupts extends Bundle {
+  val software_int = Bool()
+  val timer_int = Bool()
+}
+
 class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val frontend = Flipped(new FrontEndCpuIO())
@@ -139,6 +145,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val WB_stall = WireInit(false.B)
   val ID_stall = WireInit(false.B)
   val ID_flush = WireInit(false.B)
+  val EX_flush = WireInit(false.B)
+  // update PC in WB stage for ecall, mret or interrupt
+  val WB_pc_redirect = WireInit(false.B)
   val rs1_required_but_not_valid = WireInit(false.B)
   val rs2_required_but_not_valid = WireInit(false.B)
 
@@ -207,6 +216,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     ID_EX_REG := ID_EX_REG
   }
   // flush the ID_EX register if branch miss, ecall, mret or interrupt
+  ID_flush := EX_flush || branch_evaluator.io.out.valid
   when(ID_flush) {
     ID_EX_REG.valid := false.B
   }
@@ -273,35 +283,53 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
   EX_WB_REG.bits.dataSignals.csr := csrUnit.io.resp.data
 
+  EX_WB_REG.bits.interrupt := (ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt) && ID_EX_REG.valid
+  EX_WB_REG.bits.interrupt_cause := Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
+
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.respがreadyでない，または乗算命令で乗算器がvalidでない
-  EX_stall := (EX_WB_REG.valid && WB_stall && ID_EX_REG.valid) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || if(params.useMulDiv) {
+  EX_stall := (EX_WB_REG.valid && WB_stall && ID_EX_REG.valid) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
     (ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid)
   } else {
     true.B
-  }
+  })
 
   when(EX_stall) {
     EX_WB_REG := EX_WB_REG
   }
 
-  // START OF WB STAGE
-  val WB_RF_value = MuxLookup(EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl, 0.U)(Seq(
-    WB_ALU -> EX_WB_REG.bits.dataSignals.EX_ALU_val,
-    WB_NOALU -> EX_WB_REG.bits.dataSignals.EX_noALU_val,
-    WB_MEM -> ldstUnit.io.cpu.resp.bits.data,
-  ))
-  val WB_inst_can_retire = EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl =/= WB_MEM || (EX_WB_REG.bits.ctrlSignals.RF_WB_ctrl === WB_MEM && ldstUnit.io.cpu.resp.valid))
-  rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.bypassSignals.rd_index.valid
-  rf.io.req.bits.data := WB_RF_value
-  rf.io.req.bits.rd := EX_WB_REG.bits.bypassSignals.rd_index.bits
+  // flush the EX_WB register if ecall, mret or interrupt
+  EX_flush := WB_pc_redirect
+  when(EX_flush) {
+    EX_WB_REG.valid := false.B
+  }
 
-  bypassingUnit.io.WB.in.valid := EX_WB_REG.valid
-  bypassingUnit.io.WB.in.bits.rd.valid := EX_WB_REG.bits.bypassSignals.rd_index.valid
-  bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.bypassSignals.rd_index.bits
-  bypassingUnit.io.WB.in.bits.rd.bits.value := WB_RF_value
-  bypassingUnit.io.WB.in.bits.dcache_requested_but_not_valid := EX_WB_REG.bits.ctrlSignals.MEM_ctrl.mem_valid && !ldstUnit.io.cpu.resp.valid
+  // START OF WB STAGE
+  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interrupt)
+  when(WB_pc_redirect) {
+    io.frontend.req.bits.pc := csrUnit.io.resp.data
+    io.frontend.req.valid := true.B
+  }
+  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && (
+    !EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid
+    )
+  rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
+  rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+    WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc4,
+    WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.arith_logic_result,
+    WB_SEL.CSR -> csrUnit.io.resp.data,
+    WB_SEL.MEM -> ldstUnit.io.cpu.resp.bits.data,
+  ).map{
+    case (wb_sel, data) => (wb_sel.asUInt, data)
+  })
+  rf.io.req.bits.rd := EX_WB_REG.bits.ctrlSignals.rd_index
+
+  bypassingUnit.io.WB.in.rd.valid := EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid)
+  bypassingUnit.io.WB.in.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
+  bypassingUnit.io.WB.in.rd.bits.value := rf.io.req.bits.data
+
+  // TODO: add CSR unit here
 
   when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.toWB.fence) {
     sysInst_in_pipeline := true.B
