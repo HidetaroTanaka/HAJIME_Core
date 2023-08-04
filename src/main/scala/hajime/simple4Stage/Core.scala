@@ -253,7 +253,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     multiplier.get.io.req.bits.rs2 := ID_EX_REG.bits.dataSignals.rs2
     multiplier.get.io.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
     // 乗算器に保持するべき情報（現在のEXステージの乗算命令）があればvalidを下げる（乗算器が既に情報を受け取っているため）
-    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier_hasValue
+    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier_hasValue && ID_EX_REG.valid && !EX_flush
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
 
@@ -263,7 +263,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     alu.io.out
   }
 
-  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid
+  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid && !EX_flush
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
   ldstUnit.io.cpu.req.bits.data := ID_EX_REG.bits.dataSignals.rs2
   ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
