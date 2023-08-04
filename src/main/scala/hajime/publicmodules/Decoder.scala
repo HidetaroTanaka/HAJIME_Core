@@ -153,6 +153,7 @@ class ID_output extends Bundle with ScalarOpConstants {
   def memRead: Bool = (memory_function === MEM_FCN.M_RD.asUInt)
   def memWrite: Bool = (memory_function === MEM_FCN.M_WR.asUInt)
   def memValid: Bool = memRead || memWrite
+  def isSysInst: Bool = fence || (branch === Branch.ECALL.asUInt || branch === Branch.MRET.asUInt)
 }
 
 class DecoderIO(implicit params: HajimeCoreParams) extends Bundle {

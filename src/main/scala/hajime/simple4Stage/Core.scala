@@ -28,6 +28,7 @@ class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
   // val hartid = Input(UInt(xprlen.W))
   val reset_vector = Input(UInt(xprlen.W))
+  val hartid = Input(UInt(xprlen.W))
   val debug_io = if(debug) Some(Output(new debugIO())) else None
 }
 
@@ -39,6 +40,7 @@ class Core(implicit params: HajimeCoreParams) extends Module {
   io.dcache_axi4lite <> cpu.io.dcache_axi4lite
   frontend.io.reset_vector := io.reset_vector
   cpu.io.frontend <> frontend.io.cpu
+  cpu.io.hartid := io.hartid
   if(params.debug) io.debug_io.get := cpu.io.debug_io.get
 }
 
@@ -62,6 +64,7 @@ class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val frontend = Flipped(new FrontEndCpuIO())
   val dcache_axi4lite = new AXI4liteIO(addr_width = xprlen, data_width = xprlen)
+  val hartid = Input(UInt(xprlen.W))
   val debug_io = if(debug) Some(Output(new debugIO())) else None
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
@@ -84,9 +87,10 @@ class ID_EX_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
 
 class EX_WB_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val pc4 = UInt(xprlen.W)
+  val pc = new ProgramCounter()
   val arith_logic_result = UInt(xprlen.W)
-  val csr = UInt(xprlen.W)
+  val datatoCSR = UInt(xprlen.W)
+  val csr_addr = UInt(12.W)
 }
 
 class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
@@ -279,11 +283,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ))
 
   EX_WB_REG.valid := ID_EX_REG.valid
-  EX_WB_REG.bits.dataSignals.pc4 := ID_EX_REG.bits.dataSignals.pc.nextPC
+  EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
-  EX_WB_REG.bits.dataSignals.csr := csrUnit.io.resp.data
+  EX_WB_REG.bits.dataSignals.datatoCSR := Mux(EX_WB_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
+  EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.csr
 
   EX_WB_REG.bits.interrupt := (ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt) && ID_EX_REG.valid
+  // only machine-mode ecall is supported now
   EX_WB_REG.bits.interrupt_cause := Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
@@ -316,7 +322,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     )
   rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
   rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
-    WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc4,
+    WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.arith_logic_result,
     WB_SEL.CSR -> csrUnit.io.resp.data,
     WB_SEL.MEM -> ldstUnit.io.cpu.resp.bits.data,
@@ -329,22 +335,24 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.WB.in.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
   bypassingUnit.io.WB.in.rd.bits.value := rf.io.req.bits.data
 
-  // TODO: add CSR unit here
+  csrUnit.io.req.valid := EX_WB_REG.valid
+  // ecallやmretの処理はcsrUnit内で行われる
+  csrUnit.io.req.bits.funct := EX_WB_REG.bits.ctrlSignals.decode
+  csrUnit.io.req.bits.data := EX_WB_REG.bits.dataSignals.datatoCSR
+  csrUnit.io.req.bits.csr_addr := EX_WB_REG.bits.dataSignals.csr_addr
+  csrUnit.io.fromCPU.hartid := io.hartid
+  csrUnit.io.fromCPU.cpu_operating := cpu_operating
+  csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
+  csrUnit.io.interrupt.valid := EX_WB_REG.bits.interrupt
+  csrUnit.io.interrupt.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
+  csrUnit.io.interrupt.bits.mcause_write := EX_WB_REG.bits.interrupt_cause
 
-  when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.toWB.fence) {
-    sysInst_in_pipeline := true.B
-    io.frontend.resp.ready := false.B
-    when(!bypassingUnit.io.ID.out.stall) {
-      ID_EX_REG.valid := false.B
-    }
-  } .elsewhen(EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.fence) {
-    sysInst_in_pipeline := false.B
-  }
+  // EXまたはWBステージにfence, ecall, mretがある
+  sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)
 
-  retired_inst_count := retired_inst_count + WB_inst_can_retire
-  if(debug) {
-    io.debug_io.get.debug_retired.bits.instruction := EX_WB_REG.bits.debug_inst.get.instruction & Fill(RISCV_Consts.INST_LEN, EX_WB_REG.valid)
-    io.debug_io.get.debug_retired.bits.pc := EX_WB_REG.bits.debug_inst.get.pc & Fill(xprlen, EX_WB_REG.valid)
+  if(params.debug) {
+    io.debug_io.get.debug_retired.bits.instruction.bits := EX_WB_REG.bits.debug.get.instruction & Fill(32, EX_WB_REG.valid)
+    io.debug_io.get.debug_retired.bits.pc.addr := EX_WB_REG.bits.debug.get.pc.addr & Fill(params.xprlen, EX_WB_REG.valid)
     io.debug_io.get.debug_retired.valid := EX_WB_REG.valid
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }

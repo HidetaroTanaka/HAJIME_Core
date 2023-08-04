@@ -250,7 +250,7 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   nonPipelinedMultiplier.io.req.bits.tag := 0.U
   // invert if rs1.head=1 and MULH, MULHSU
   // half if op32
-  nonPipelinedMultiplier.io.req.bits.multiplicand := MuxCase(io.req.bits.rs1, Seq(
+  nonPipelinedMultiplier.io.req.bits.multiplicand.bits := MuxCase(io.req.bits.rs1, Seq(
     (io.req.bits.rs1.head(1).asBool &&
       ((io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HISU.asUInt))) -> {
       rs1_inverted := true.B
@@ -259,8 +259,8 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
     io.req.bits.funct.op32 -> io.req.bits.rs1.tail(32)
   ))
   // invert if rs2.head=1 and MULH, half if op32
-  nonPipelinedMultiplier.io.req.bits.multiplier := MuxCase(io.req.bits.rs2, Seq(
-    (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH)) -> {
+  nonPipelinedMultiplier.io.req.bits.multiplier.bits := MuxCase(io.req.bits.rs2, Seq(
+    (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt)) -> {
       rs2_inverted := true.B
       -io.req.bits.rs2
     },
