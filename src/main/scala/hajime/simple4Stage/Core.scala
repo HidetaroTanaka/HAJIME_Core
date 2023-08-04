@@ -280,7 +280,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     WB_SEL.CSR.asUInt -> true.B,
     WB_SEL.MEM.asUInt -> false.B,
     WB_SEL.NONE.asUInt -> false.B
-  ))
+  )) && ID_EX_REG.valid
 
   EX_WB_REG.valid := ID_EX_REG.valid
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
