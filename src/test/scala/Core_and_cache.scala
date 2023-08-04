@@ -21,6 +21,7 @@ class Core_and_cache(icache_hexfilename: String, dcache_hexfilename: String, ica
   core.io.dcache_axi4lite <> dcache.io
 
   core.io.reset_vector := io.reset_vector
+  core.io.hartid := 0.U
   io.toHost := dcache.debug
   io.debug_io := core.io.debug_io.get
 }

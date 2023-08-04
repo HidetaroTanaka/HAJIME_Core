@@ -10,7 +10,7 @@ object RISCV_Consts {
 
 trait ScalarOpConstants {
   object ContentValid extends ChiselEnum {
-    val Y, N = Value
+    val N, Y = Value
   }
   object Branch extends ChiselEnum {
     val NONE, EQ, NE, LT, GE, LTU, GEU, JAL, JALR, ECALL, MRET = Value

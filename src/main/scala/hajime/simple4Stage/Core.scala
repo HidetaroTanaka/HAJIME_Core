@@ -174,8 +174,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   branch_predictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decoded_inst
-  rf.io.rs1 := Mux(bypassingUnit.io.ID.out.rs1_bypassMatchAtEX, bypassingUnit.io.ID.out.rs1_value.bits, decoded_inst.rs1)
-  rf.io.rs2 := Mux(bypassingUnit.io.ID.out.rs2_bypassMatchAtEX, bypassingUnit.io.ID.out.rs2_value.bits, decoded_inst.rs2)
+  rf.io.rs1 := decoded_inst.rs1
+  rf.io.rs2 := decoded_inst.rs2
 
   /** IDステージの命令を処理するか否か
    */
@@ -190,8 +190,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
     (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
   ))
-  ID_EX_REG.bits.dataSignals.rs1 := rf.io.rs1_out
-  ID_EX_REG.bits.dataSignals.rs2 := rf.io.rs2_out
+  ID_EX_REG.bits.dataSignals.rs1 := Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
+  ID_EX_REG.bits.dataSignals.rs2 := Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out)
   ID_EX_REG.bits.dataSignals.csr := decoded_inst.csr
   ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
@@ -285,8 +285,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   EX_WB_REG.valid := ID_EX_REG.valid
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
-  EX_WB_REG.bits.dataSignals.datatoCSR := Mux(EX_WB_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
+  EX_WB_REG.bits.dataSignals.datatoCSR := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
   EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.csr
+
+  EX_WB_REG.bits.ctrlSignals := ID_EX_REG.bits.ctrlSignals
 
   EX_WB_REG.bits.interrupt := (ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt) && ID_EX_REG.valid
   // only machine-mode ecall is supported now
