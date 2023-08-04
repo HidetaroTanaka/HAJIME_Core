@@ -145,8 +145,10 @@ class ID_output extends Bundle with ScalarOpConstants {
     writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence :: Nil)
   def isCondBranch: Bool = Branch.isCondBranch(branch)
   def isJump: Bool = Branch.isJump(branch)
+  // ALUへの値でrs1を使うまたはCSRでrs1レジスタを使う
   def use_RS1: Bool = Value1.use_RS1(value1)
-  def use_RS2: Bool = Value2.use_RS2(value2)
+  // ALUへの値でrs2を使うまたはストア命令
+  def use_RS2: Bool = Value2.use_RS2(value2) || (memory_function === MEM_FCN.M_WR.asUInt)
   def use_ALU: Bool = ARITHMETIC_FCN.use_ALU(arithmetic_funct)
   def use_MUL: Bool = ARITHMETIC_FCN.use_MUL(arithmetic_funct)
   def write_to_rd: Bool = WB_SEL.write_to_rd(writeback_selector)
