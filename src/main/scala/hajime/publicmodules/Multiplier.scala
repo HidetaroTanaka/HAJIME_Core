@@ -51,12 +51,14 @@ class MultiplierReq(implicit params: HajimeCoreParams) extends Bundle {
   }
   val tag = UInt(params.robTagWidth.W)
   val sign = Bool()
+  val decode = new ID_output()
 }
 
 class MultiplierResp(implicit params: HajimeCoreParams) extends Bundle {
   val result = UInt((params.xprlen*2).W)
   val tag = UInt(params.robTagWidth.W)
   val sign = Bool()
+  val decode = new ID_output()
 }
 
 class Multiplier_InternalReg(implicit params: HajimeCoreParams, stage: Int) extends Bundle {
@@ -144,6 +146,7 @@ class NonPipelinedMultipler_InternalReg(implicit params: HajimeCoreParams) exten
   val multiplicand = UInt(params.xprlen.W)
   val multiplier = UInt(params.xprlen.W)
   val stage = UInt(3.W)
+  val decode = new ID_output
 }
 
 object NonPipelinedMultipler_InternalReg {
@@ -182,6 +185,7 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
   val executor_multiplier = Mux(accept_current_request, lessnum, internalReg.bits.multiplier)
   val executor_tag = Mux(accept_current_request, io.req.bits.tag, internalReg.bits.tag)
   val executor_sign = Mux(accept_current_request, io.req.bits.sign, internalReg.bits.sign)
+  val executor_decode = Mux(accept_current_request, io.req.bits.decode, internalReg.bits.decode)
   val executor_stage = Mux(accept_current_request, 0.U(3.W), internalReg.bits.stage + 1.U(3.W))
   val executor_valid = accept_current_request || internalReg.valid
 
@@ -200,6 +204,7 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
     internalReg.bits.multiplier := executor_multiplier(63,8)
     internalReg.bits.tag := executor_tag
     internalReg.bits.sign := executor_sign
+    internalReg.bits.decode := executor_decode
     internalReg.bits.stage := executor_stage
     internalReg.valid := Mux(io.resp.ready && io.resp.valid, false.B, executor_valid)
   } .otherwise {
@@ -212,6 +217,7 @@ class NonPipelinedMultiplier(implicit params: HajimeCoreParams) extends Module {
   io.resp.valid := executor_valid && ((executor_multiplier(63,8) === 0.U) || executor_stage === 7.U(3.W))
   io.resp.bits.tag := executor_tag
   io.resp.bits.sign := executor_sign
+  io.resp.bits.decode := executor_decode
   io.resp.bits.result := executor_result + MuxLookup(executor_stage, multiplier_64x8.io.out)(
     (0.U(3.W) -> multiplier_64x8.io.out) +: (1 until 8).map(i =>
       i.U(3.W) -> Cat(multiplier_64x8.io.out, 0.U((i * 8).W))
@@ -231,7 +237,7 @@ class NonPipelinedMultiplierWrapIOReq(implicit params: HajimeCoreParams) extends
 }
 class NonPipelinedMultiplierWrapIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Flipped(Irrevocable(new NonPipelinedMultiplierWrapIOReq()))
-  val resp = Irrevocable(new MultiplierResp())
+  val resp = Irrevocable(UInt(params.xprlen.W))
 }
 
 /**
@@ -248,6 +254,7 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   nonPipelinedMultiplier.io.req.valid := io.req.valid
   io.req.ready := nonPipelinedMultiplier.io.req.ready
   nonPipelinedMultiplier.io.req.bits.tag := 0.U
+  nonPipelinedMultiplier.io.req.bits.decode := io.req.bits.funct
   // invert if rs1.head=1 and MULH, MULHSU
   // half if op32
   nonPipelinedMultiplier.io.req.bits.multiplicand.bits := MuxCase(io.req.bits.rs1, Seq(
@@ -268,6 +275,8 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   ))
   nonPipelinedMultiplier.io.req.bits.sign := rs1_inverted ^ rs2_inverted
 
-  io.resp <> nonPipelinedMultiplier.io.resp
-  io.resp.bits.result := Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
+  io.resp.valid := nonPipelinedMultiplier.io.resp.valid
+  nonPipelinedMultiplier.io.resp.ready := io.resp.ready
+  val result128 = Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
+  io.resp.bits := Mux(nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt, result128(63,0), result128(127,64))
 }

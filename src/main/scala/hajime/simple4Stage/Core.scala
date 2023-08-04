@@ -258,7 +258,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   }
 
   val EX_arithmetic_result = if(params.useMulDiv) {
-    Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits.result, alu.io.out)
+    Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits, alu.io.out)
   } else {
     alu.io.out
   }
