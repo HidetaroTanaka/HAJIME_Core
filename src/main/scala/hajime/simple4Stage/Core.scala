@@ -197,18 +197,18 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 
   bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
-  bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1
+  bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1 && decoder.io.out.valid && io.frontend.resp.valid
   bypassingUnit.io.ID.in.rs2_index.bits := decoded_inst.rs2
-  bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2
+  bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2 && decoder.io.out.valid && io.frontend.resp.valid
 
   rs1_required_but_not_valid := MuxCase(false.B, Seq(
-    bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.rd.valid && ID_EX_REG.valid),
-    bypassingUnit.io.ID.out.rs1_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.rd.valid && EX_WB_REG.valid),
-  )) && decoder.io.out.valid && io.frontend.resp.valid
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.bits.rd.valid),
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
+  ))
   rs2_required_but_not_valid := MuxCase(false.B, Seq(
-    bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.rd.valid && ID_EX_REG.valid),
-    bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.rd.valid && EX_WB_REG.valid),
-  )) && decoder.io.out.valid && io.frontend.resp.valid
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.bits.rd.valid),
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
+  ))
 
   if(params.debug) {
     ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
@@ -268,19 +268,20 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ldstUnit.io.cpu.req.bits.data := ID_EX_REG.bits.dataSignals.rs2
   ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
 
-  bypassingUnit.io.EX.in.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
-  bypassingUnit.io.EX.in.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+  bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
+  bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
     WB_SEL.CSR.asUInt -> csrUnit.io.resp.data,
   ))
-  bypassingUnit.io.EX.in.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
+  bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
     WB_SEL.ARITH.asUInt -> (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B),
     WB_SEL.CSR.asUInt -> true.B,
     WB_SEL.MEM.asUInt -> false.B,
     WB_SEL.NONE.asUInt -> false.B
   )) && ID_EX_REG.valid
+  bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.write_to_rd && ID_EX_REG.valid
 
   EX_WB_REG.valid := ID_EX_REG.valid
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
@@ -333,9 +334,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   })
   rf.io.req.bits.rd := EX_WB_REG.bits.ctrlSignals.rd_index
 
-  bypassingUnit.io.WB.in.rd.valid := EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid)
-  bypassingUnit.io.WB.in.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
-  bypassingUnit.io.WB.in.rd.bits.value := rf.io.req.bits.data
+  bypassingUnit.io.WB.in.bits.rd.valid := bypassingUnit.io.WB.in.valid && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid)
+  bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
+  bypassingUnit.io.WB.in.bits.rd.bits.value := rf.io.req.bits.data
+  bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
 
   csrUnit.io.req.valid := EX_WB_REG.valid
   // ecallやmretの処理はcsrUnit内で行われる

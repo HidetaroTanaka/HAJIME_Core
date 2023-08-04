@@ -25,11 +25,6 @@ class BypassingLogicOutputs_ID(implicit params: HajimeCoreParams) extends Bundle
 }
 
 class BypassingLogicInputs_EX(implicit params: HajimeCoreParams) extends Bundle {
-  /**
-   * rd.valid: 該当ステージの命令がrdへ書き込むか否か
-   * rd.bits.valid: 該当ステージでrdへ書き込む値が用意されているか否か
-   * rd.bits.index: 該当ステージのrdのインデックス
-   */
   val rd = Valid(new RegIndexWithValue())
 }
 
@@ -43,11 +38,17 @@ class BypassingLogicIO_ID(implicit params: HajimeCoreParams) extends Bundle {
 }
 
 class BypassingLogicIO_EX(implicit params: HajimeCoreParams) extends Bundle {
-  val in = ValidIO(new BypassingLogicInputs_EX())
+  /**
+   * in.valid: 該当ステージの命令がrdへ書き込むか否か
+   * in.bits.rd.bits.valid: 該当ステージでrdへ書き込む値が用意されているか否か
+   * in.bits.rd.bits.index: 該当ステージのrdのインデックス
+   * in.bits.rd.bits.value: 該当ステージのrdの値
+   */
+  val in = Flipped(ValidIO(new BypassingLogicInputs_EX()))
 }
 
 class BypassingLogicIO_WB(implicit params: HajimeCoreParams) extends Bundle {
-  val in = ValidIO(new BypassingLogicInputs_WB())
+  val in = Flipped(ValidIO(new BypassingLogicInputs_WB()))
 }
 
 class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
