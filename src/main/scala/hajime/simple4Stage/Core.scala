@@ -202,13 +202,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2
 
   rs1_required_but_not_valid := MuxCase(false.B, Seq(
-    bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> !bypassingUnit.io.EX.in.rd.valid,
-    bypassingUnit.io.ID.out.rs1_bypassMatchAtWB -> !bypassingUnit.io.WB.in.rd.valid,
-  ))
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.rd.valid && ID_EX_REG.valid),
+    bypassingUnit.io.ID.out.rs1_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.rd.valid && EX_WB_REG.valid),
+  )) && decoder.io.out.valid && io.frontend.resp.valid
   rs2_required_but_not_valid := MuxCase(false.B, Seq(
-    bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> !bypassingUnit.io.EX.in.rd.valid,
-    bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> !bypassingUnit.io.WB.in.rd.valid,
-  ))
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.rd.valid && ID_EX_REG.valid),
+    bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.rd.valid && EX_WB_REG.valid),
+  )) && decoder.io.out.valid && io.frontend.resp.valid
 
   if(params.debug) {
     ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
