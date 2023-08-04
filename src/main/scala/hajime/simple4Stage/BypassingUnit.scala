@@ -25,6 +25,11 @@ class BypassingLogicOutputs_ID(implicit params: HajimeCoreParams) extends Bundle
 }
 
 class BypassingLogicInputs_EX(implicit params: HajimeCoreParams) extends Bundle {
+  /**
+   * rd.valid: 該当ステージの命令がrdへ書き込むか否か
+   * rd.bits.valid: 該当ステージでrdへ書き込む値が用意されているか否か
+   * rd.bits.index: 該当ステージのrdのインデックス
+   */
   val rd = Valid(new RegIndexWithValue())
 }
 
@@ -38,11 +43,11 @@ class BypassingLogicIO_ID(implicit params: HajimeCoreParams) extends Bundle {
 }
 
 class BypassingLogicIO_EX(implicit params: HajimeCoreParams) extends Bundle {
-  val in = Input(new BypassingLogicInputs_EX())
+  val in = ValidIO(new BypassingLogicInputs_EX())
 }
 
 class BypassingLogicIO_WB(implicit params: HajimeCoreParams) extends Bundle {
-  val in = Input(new BypassingLogicInputs_WB())
+  val in = ValidIO(new BypassingLogicInputs_WB())
 }
 
 class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
@@ -53,30 +58,30 @@ class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
   })
   // Bypass rs1 value from WB, EX to ID
   // EXステージからフォワーディングする必要があるが不可能（乗算、メモリアクセス等）な場合を考えて、IDのvalidのみ考える
-  val WB_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.WB.in.rd.bits.index) && io.ID.in.rs1_index.valid)
-  val EX_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.EX.in.rd.bits.index) && io.ID.in.rs1_index.valid)
+  val WB_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.WB.in.bits.rd.bits.index) && io.ID.in.rs1_index.valid && io.WB.in.valid)
+  val EX_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.EX.in.bits.rd.bits.index) && io.ID.in.rs1_index.valid && io.EX.in.valid)
   // EXのrdとIDのrs1が一致しており、かつIDのrs1がvalidならばEXを優先
-  io.ID.out.rs1_value.bits := Mux(EX_rd_and_ID_rs1_matches_not_zero, io.EX.in.rd.bits.value, io.WB.in.rd.bits.value)
+  io.ID.out.rs1_value.bits := Mux(EX_rd_and_ID_rs1_matches_not_zero, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
   // これがvalidでないときの挙動はCPU側でやる
   io.ID.out.rs1_value.valid := MuxCase(false.B,
     Seq(
       // EXのrdとIDのrs1が一致しており、かつIDのrs1がvalidならばEXのrdを持ってくる（EXがvalidでなければ結果もvalidではない、メモリロードや乗算など）
-      EX_rd_and_ID_rs1_matches_not_zero -> io.EX.in.rd.valid,
+      EX_rd_and_ID_rs1_matches_not_zero -> io.EX.in.bits.rd.valid,
       // 上と同様（メモリロード命令でBチャネルがvalidでない時など）
-      WB_rd_and_ID_rs1_matches_not_zero -> io.WB.in.rd.valid
+      WB_rd_and_ID_rs1_matches_not_zero -> io.WB.in.bits.rd.valid
     )
   )
   // 値が用意できるかに関わらず、EX・WBからフォワーディングすべき値があるか否か
   io.ID.out.rs1_bypassMatchAtEX := EX_rd_and_ID_rs1_matches_not_zero
   io.ID.out.rs1_bypassMatchAtWB := WB_rd_and_ID_rs1_matches_not_zero
 
-  val WB_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.WB.in.rd.bits.index) && io.ID.in.rs2_index.valid)
-  val EX_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.EX.in.rd.bits.index) && io.ID.in.rs2_index.valid)
-  io.ID.out.rs2_value.bits := Mux(EX_rd_and_ID_rs2_matches_not_zero, io.EX.in.rd.bits.value, io.WB.in.rd.bits.value)
+  val WB_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.WB.in.bits.rd.bits.index) && io.ID.in.rs2_index.valid && io.WB.in.valid)
+  val EX_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.EX.in.bits.rd.bits.index) && io.ID.in.rs2_index.valid && io.EX.in.valid)
+  io.ID.out.rs2_value.bits := Mux(EX_rd_and_ID_rs2_matches_not_zero, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
   io.ID.out.rs2_value.valid := MuxCase(false.B,
     Seq(
-      EX_rd_and_ID_rs2_matches_not_zero -> io.EX.in.rd.valid,
-      WB_rd_and_ID_rs2_matches_not_zero -> io.WB.in.rd.valid,
+      EX_rd_and_ID_rs2_matches_not_zero -> io.EX.in.bits.rd.valid,
+      WB_rd_and_ID_rs2_matches_not_zero -> io.WB.in.bits.rd.valid,
     )
   )
   io.ID.out.rs2_bypassMatchAtEX := EX_rd_and_ID_rs2_matches_not_zero
