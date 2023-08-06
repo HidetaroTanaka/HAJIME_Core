@@ -23,7 +23,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
       // 0x0000_0000 ~ 0x0000_1FFF : icache
       // 0x0000_4000 ~ 0x0000_5FFF : dcache
       // 0x1000_0000               : tohost
-      test(new Core_and_cache(icache_hexfilename = s"src/main/resources/rv64ui/${e}_inst.hex", dcache_hexfilename = null, icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      test(new Core_and_cache(icache_hexfilename = s"src/main/resources/rv64ui/${e}_inst.hex", dcache_hexfilename = null, icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation, IcarusBackendAnnotation)) { c =>
         c.clock.setTimeout(1024)
         while (c.io.toHost.peek().litValue == 0) {
           c.clock.step()
@@ -47,7 +47,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   }
   for(e <- instList_withDmem) {
     it should s"pass the test ${e}" in {
-      test(new Core_and_cache(icache_hexfilename = s"src/main/resources/rv64ui/${e}_inst.hex", dcache_hexfilename = s"src/main/resources/rv64ui/${e}_data.hex", icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      test(new Core_and_cache(icache_hexfilename = s"src/main/resources/rv64ui/${e}_inst.hex", dcache_hexfilename = s"src/main/resources/rv64ui/${e}_data.hex", icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation, IcarusBackendAnnotation)) { c =>
         c.clock.setTimeout(if(e == "ma_data") 4096 else 1024)
         while (c.io.toHost.peek().litValue == 0) {
           c.clock.step()
