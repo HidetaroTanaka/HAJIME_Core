@@ -7,9 +7,9 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
     steps:
-      - name: Install Verilator
+      - name: Install Verilator and Icarus Verilog
         run: |
-          sudo apt install -y verilator
+          sudo apt install -y verilator iverilog
       - name: Checkout
         uses: actions/checkout@v2
       - name: Cleanup
