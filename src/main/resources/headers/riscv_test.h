@@ -63,6 +63,10 @@
 # define CHECK_XLEN li a0, 1; slli a0, a0, 31; bltz a0, 1f; RVTEST_PASS; 1:
 #endif
 
+#define INIT_PERFORMANCE_MONITORS                                       \
+  csrwi mcycle, 0;                                                      \
+  csrwi minstret, 0
+
 #define INIT_XREG                                                       \
   li x1, 0;                                                             \
   li x2, 0;                                                             \
@@ -195,6 +199,7 @@ handle_exception:                                                       \
         sw TESTNUM, tohost, t5;                                         \
   2:    j 2b;                                                           \
 reset_vector:                                                           \
+        INIT_PERFORMANCE_MONITORS;                                      \
         INIT_XREG;                                                      \
         li TESTNUM, 0;                                                  \
         la t0, trap_vector;                                             \

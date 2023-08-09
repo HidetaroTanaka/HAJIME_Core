@@ -5,6 +5,7 @@ import chisel3.util._
 
 trait AXIlite_hasAddrChannel {
   val addr: UInt
+  def alignedToWord: Bool = addr.tail(30) === 0.U
 }
 /**
  * AXIlite Read Request Channel
@@ -28,7 +29,9 @@ class AXIlite_AWchannel(addr_width: Int) extends Bundle with AXIlite_hasAddrChan
 
 trait AXIlite_isResponse {
   val resp: UInt
-  def exception: Bool
+  def exception: Bool = {
+    (resp === "b010".U(3.W)) || (resp === "b011".U(3.W)) || (resp === "b101".U(3.W))
+  }
 }
 
 /**
@@ -37,9 +40,6 @@ trait AXIlite_isResponse {
  */
 class AXIlite_Bchannel extends Bundle with AXIlite_isResponse {
   val resp = Output(UInt(3.W))
-  def exception: Bool = {
-    (resp === "b010".U(3.W)) || (resp === "b011".U(3.W)) || (resp === "b101".U(3.W))
-  }
 }
 
 trait AXIlite_hasDataChannel {
@@ -53,9 +53,6 @@ trait AXIlite_hasDataChannel {
 class AXIlite_Rchannel(data_width: Int) extends Bundle with AXIlite_isResponse with AXIlite_hasDataChannel {
   val data = Output(UInt(data_width.W))
   val resp = Output(UInt(3.W))
-  def exception: Bool = {
-    (resp === "b010".U(3.W)) || (resp === "b011".U(3.W)) || (resp === "b101".U(3.W))
-  }
 }
 
 /**
