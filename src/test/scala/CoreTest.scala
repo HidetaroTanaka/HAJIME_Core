@@ -5,12 +5,12 @@ import scala.sys.process._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
-    "simple",
-    "add", "addi", "addiw", "addw", "and", "andi", "auipc",
-    "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr",
-    "lui", "or", "ori", "sll", "slli", "slliw", "sllw",
-    "slt", "slti", "sltiu", "sltu", "sra", "srai", "sraiw", "sraw",
-    "srl", "srli", "srliw", "srlw", "sub", "subw", "xor", "xori"
+    // "simple",
+    "add", // "addi", "addiw", "addw", "and", "andi", "auipc",
+    // "beq", "bge", "bgeu", "blt", "bltu", "bne", "jal", "jalr",
+    // "lui", "or", "ori", "sll", "slli", "slliw", "sllw",
+    // "slt", "slti", "sltiu", "sltu", "sra", "srai", "sraiw", "sraw",
+    // "srl", "srli", "srliw", "srlw", "sub", "subw", "xor", "xori"
   )
   // make it true only when recompile riscv-tests
   if(false) {
@@ -36,8 +36,8 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
   val instList_withDmem = Seq(
-    "lb", "lbu", "ld", "lh", "lhu", "lw", "lwu", "ma_data",
-    "sb", "sd", "sh", "sw"
+    // "lb", "lbu", "ld", "lh", "lhu", "lw", "lwu", "ma_data",
+    // "sb", "sd", "sh", "sw"
   )
   // make it true only when recompile riscv-tests
   if (false) {

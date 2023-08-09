@@ -3,7 +3,7 @@
 #ifndef _ENV_PHYSICAL_SINGLE_CORE_H
 #define _ENV_PHYSICAL_SINGLE_CORE_H
 
-// #include "./encoding.h"
+#include "./encoding.h"
 
 //-----------------------------------------------------------------------
 // Begin Macro
@@ -170,8 +170,41 @@
         .align  6;                                                      \
         .globl _start;                                                  \
 _start:                                                                 \
+        /* reset vector */                                              \
+        j reset_vector;                                                 \
+        .align 2;                                                       \
+trap_vector:                                                            \
+        /* test whether the test came from pass/fail */                 \
+        csrr t5, mcause;                                                \
+        li t6, CAUSE_USER_ECALL;                                        \
+        beq t5, t6, write_tohost;                                       \
+        li t6, CAUSE_SUPERVISOR_ECALL;                                  \
+        beq t5, t6, write_tohost;                                       \
+        li t6, CAUSE_MACHINE_ECALL;                                     \
+        beq t5, t6, write_tohost;                                       \
+        /* was it an interrupt or an exception? */                      \
+  1:    csrr t5, mcause;                                                \
+        bgez t5, handle_exception;                                      \
+        INTERRUPT_HANDLER;                                              \
+handle_exception:                                                       \
+        /* we don't know how to handle whatever the exception was */    \
+  other_exception:                                                      \
+        /* some unhandlable exception occurred */                       \
+  1:    ori TESTNUM, TESTNUM, 1337;                                     \
+  write_tohost:                                                         \
+        sw TESTNUM, tohost, t5;                                         \
+  2:    j 2b;                                                           \
+reset_vector:                                                           \
         INIT_XREG;                                                      \
-        li TESTNUM, 0;
+        li TESTNUM, 0;                                                  \
+        la t0, trap_vector;                                             \
+        csrw mtvec, t0;                                                 \
+1:      csrwi mstatus, 0;                                               \
+        la t0, 1f;                                                      \
+        csrw mepc, t0;                                                  \
+        csrr a0, mhartid;                                               \
+        mret;                                                           \
+1:
 
 //-----------------------------------------------------------------------
 // End Macro
@@ -187,9 +220,9 @@ _start:                                                                 \
 #define RVTEST_PASS                                                     \
         fence;                                                          \
         li TESTNUM, 1;                                                  \
-        la t0, tohost;                                                  \
-        sw TESTNUM, 0(t0);                                              \
-1:      j 1b;
+        li a7, 93;                                                      \
+        li a0, 0;                                                       \
+        ecall
 
 #define TESTNUM gp
 #define RVTEST_FAIL                                                     \
@@ -197,9 +230,9 @@ _start:                                                                 \
 1:      beqz TESTNUM, 1b;                                               \
         sll TESTNUM, TESTNUM, 1;                                        \
         or TESTNUM, TESTNUM, 1;                                         \
-        la t0, tohost;                                                  \
-        sw TESTNUM, 0(t0);                                              \
-2:      j 2b;
+        li a7, 93;                                                      \
+        addi a0, TESTNUM, 0;                                            \
+        ecall
 
 //-----------------------------------------------------------------------
 // Data Section Macro

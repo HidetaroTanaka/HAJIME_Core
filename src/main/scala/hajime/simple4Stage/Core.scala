@@ -272,12 +272,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
-    WB_SEL.CSR.asUInt -> csrUnit.io.resp.data,
+    // WB_SEL.CSR.asUInt -> csrUnit.io.resp.data,
   ))
   bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
     WB_SEL.ARITH.asUInt -> (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B),
-    WB_SEL.CSR.asUInt -> true.B,
+    WB_SEL.CSR.asUInt -> false.B,
     WB_SEL.MEM.asUInt -> false.B,
     WB_SEL.NONE.asUInt -> false.B
   )) && ID_EX_REG.valid

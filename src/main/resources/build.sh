@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #riscv64-unknown-elf-gcc -march=rv64i -mabi=lp64 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -I ./headers/ -T link.ld ../../../submodule/riscv-tests/isa/rv64ui/addi.S -o addi.out
-riscv64-unknown-elf-gcc -march=rv64i -mabi=lp64 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -I ./headers/ -T link.ld ../../../submodule/riscv-tests/isa/rv64ui/$1.S -o $1.out
+riscv64-unknown-elf-gcc -march=rv64i_zicsr -mabi=lp64 -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -I ./headers/ -T link.ld ../../../submodule/riscv-tests/isa/rv64ui/$1.S -o $1.out
 riscv64-unknown-elf-objdump --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data $1.out > ./rv64ui/$1.dump
 riscv64-unknown-elf-objcopy -O binary $1.out $1.bin
 riscv64-unknown-elf-objcopy --dump-section .data=$1_data.bin $1.out
