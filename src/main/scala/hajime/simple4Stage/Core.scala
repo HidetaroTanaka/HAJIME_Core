@@ -169,6 +169,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
+  io.frontend.req.valid := WB_pc_redirect || (branch_evaluator.io.out.valid && ID_EX_REG.valid) || (branch_predictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
   branch_predictor.io.pc := io.frontend.resp.bits.pc
   branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
   branch_predictor.io.BranchType := decoder.io.out.bits.branch
@@ -318,7 +319,6 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interrupt)
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
-    io.frontend.req.valid := true.B
   }
   val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && (
     !EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid
