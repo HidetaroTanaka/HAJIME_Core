@@ -5,7 +5,7 @@ import chisel3.util._
 
 trait AXIlite_hasAddrChannel {
   val addr: UInt
-  def alignedToWord: Bool = addr.tail(30) === 0.U
+  def alignedToWord: Bool = addr.tail(addr.getWidth-2) === 0.U
 }
 /**
  * AXIlite Read Request Channel
