@@ -2,6 +2,7 @@ package hajime.publicmodules
 
 import chisel3._
 import circt.stage.ChiselStage
+import chisel3.util._
 import hajime.axiIO.AXI4liteIO
 import hajime.common.COMPILE_CONSTANTS
 import chiseltest._
@@ -11,7 +12,6 @@ import scala.io._
 class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   val io = IO(new Bundle {
     val axi = Flipped(new AXI4liteIO(addr_width = 64, data_width = 32))
-    val initialising = Input(Bool())
   })
   // AR channel
   io.axi.ar.ready := true.B
@@ -20,12 +20,13 @@ class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   // W channel
   io.axi.w.ready := true.B
 
-  val mem = SyncReadMem(memsize, UInt(32.W))
+  val mem = SyncReadMem(memsize, Vec(4, UInt(8.W)))
   val addr_reg = RegNext(io.axi.ar.bits.addr)
 
   // read
   val r_channel_bits = Wire(chiselTypeOf(io.axi.r.bits))
-  r_channel_bits.data := mem.read(io.axi.ar.bits.addr.head(62))
+  // Vecでは下位要素が先頭だが，信号では逆
+  r_channel_bits.data := Cat(mem.read(io.axi.ar.bits.addr.head(62)).reverse)
   r_channel_bits.resp := Mux(RegNext(io.axi.ar.bits.alignedToWord), 0.U, "b011".U)
 
   val r_channel_bits_reg = Reg(chiselTypeOf(io.axi.r.bits))
@@ -35,26 +36,36 @@ class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   when(r_stall) {
     r_channel_bits_reg := r_channel_bits_reg
     r_channel_valid_reg := r_channel_valid_reg
-  } .otherwise {
+    io.axi.ar.ready := false.B
+  }.otherwise {
     r_channel_bits_reg := r_channel_bits
     r_channel_valid_reg := RegNext(io.axi.ar.valid && io.axi.ar.ready)
   }
 
   io.axi.r.bits := Mux(retain_r_channel, r_channel_bits_reg, r_channel_bits)
-  io.axi.r.valid := !io.initialising && RegNext(io.axi.ar.valid && io.axi.ar.ready)
+  io.axi.r.valid := Mux(retain_r_channel, r_channel_valid_reg, RegNext(io.axi.ar.valid && io.axi.ar.ready))
 
   // write
   io.axi.b.bits.resp := 0.U
-  when(io.initialising) {
-    val b_valid = RegInit(false.B)
-    when(io.axi.aw.valid && io.axi.w.valid && io.axi.w.bits.strb === 0xF.U(4.W)) {
-      mem.write(io.axi.aw.bits.addr.head(62), io.axi.w.bits.data)
-      b_valid := true.B
-    }
-    io.axi.b.valid := b_valid
-  } .otherwise {
-    io.axi.b.valid := false.B
+  val b_valid = RegInit(false.B)
+  val b_resp = RegInit(0.U(3.W))
+  val writeData_asVec = Wire(Vec(4, UInt(8.W)))
+  for((w,i) <- writeData_asVec.zipWithIndex) {
+    w := io.axi.w.bits.data(8*i+7, 8*i)
   }
+  when(io.axi.aw.valid && io.axi.w.valid && io.axi.aw.bits.alignedToWord) {
+    mem.write(io.axi.aw.bits.addr.head(62), writeData_asVec, io.axi.w.bits.strb.asBools)
+    b_valid := true.B
+    b_resp := "b000".U
+  }.elsewhen(io.axi.aw.valid && io.axi.w.valid && !io.axi.aw.bits.alignedToWord) {
+    b_valid := true.B
+    b_resp := "b011".U
+  }.otherwise {
+    b_valid := false.B
+    b_resp := "b000".U
+  }
+  io.axi.b.valid := b_valid
+  io.axi.b.bits.resp := b_resp
 }
 
 object Icache_for_Verilator extends App {
@@ -81,7 +92,6 @@ class Icache_for_VerilatorSpec extends AnyFlatSpec with ChiselScalatestTester {
       val fileSource = Source.fromFile("src/main/resources/rv64ui/add_inst.hex")
       var writtenArray: IndexedSeq[String] = Nil.toIndexedSeq
       // inputArray.foreach(println)
-      dut.io.initialising.poke(true.B)
       for((data, idx) <- fileSource.getLines().zipWithIndex) {
         writtenArray :+= data
         dut.io.axi.aw.bits.addr.poke((idx*4).U)
@@ -91,7 +101,6 @@ class Icache_for_VerilatorSpec extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.axi.w.valid.poke(true.B)
         dut.clock.step()
       }
-      dut.io.initialising.poke(false.B)
       dut.io.axi.aw.valid.poke(false.B)
       dut.io.axi.w.valid.poke(false.B)
       dut.clock.step()
