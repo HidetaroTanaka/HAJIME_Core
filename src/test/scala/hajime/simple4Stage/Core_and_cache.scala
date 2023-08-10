@@ -1,10 +1,11 @@
+package hajime.simple4Stage
+
 import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
-import hajime.simple4Stage._
 
 class Core_and_cache(dcache_hexfilename: String, icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000) extends Module {
   val params = HajimeCoreParams()

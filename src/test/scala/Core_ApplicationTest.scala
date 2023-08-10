@@ -5,7 +5,7 @@ import org.scalatest.flatspec._
 /*
 class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   it should "print Hello World in C language" in {
-    test(new Core_and_cache(icache_hexfilename = "src/main/resources/applications/helloworld_inst.hex", dcache_hexfilename = "src/main/resources/applications/helloworld_data.hex")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new hajime.simple4Stage.Core_and_cache(icache_hexfilename = "src/main/resources/applications/helloworld_inst.hex", dcache_hexfilename = "src/main/resources/applications/helloworld_data.hex")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(1024)
       def get_toHostChar(): Char = {
         dut.io.toHost.bits.peekInt().toChar
@@ -28,7 +28,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
   it should "execute median" in {
-    test(new Core_and_cache(icache_hexfilename = "src/main/resources/applications/median_inst.hex", dcache_hexfilename = "src/main/resources/applications/median_data.hex")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new hajime.simple4Stage.Core_and_cache(icache_hexfilename = "src/main/resources/applications/median_inst.hex", dcache_hexfilename = "src/main/resources/applications/median_data.hex")).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(65536)
       def get_toHostChar(): Char = {
         dut.io.toHost.bits.peekInt().toChar

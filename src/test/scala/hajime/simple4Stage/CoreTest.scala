@@ -1,8 +1,11 @@
+package hajime.simple4Stage
+
 import chisel3._
 import chiseltest._
 import org.scalatest.flatspec._
-import scala.sys.process._
+
 import scala.io._
+import scala.sys.process._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_noDmem = Seq(
