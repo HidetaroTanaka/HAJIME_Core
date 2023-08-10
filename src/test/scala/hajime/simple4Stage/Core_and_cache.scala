@@ -24,16 +24,16 @@ class Core_and_cache(dcache_hexfilename: String, icache_memsize: Int = 8192, dca
   val icache = Module(Icache_for_Verilator(memsize = icache_memsize))
   val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = tohost, hexfileName = dcache_hexfilename, memsize = dcache_memsize))
 
-  icache.io.axi := DontCare
+  icache.io := DontCare
   io.imem_initialiseAXI := DontCare
   core.io.icache_axi4lite := DontCare
   when(io.icache_initialising) {
-    icache.io.axi <> io.imem_initialiseAXI
+    icache.io <> io.imem_initialiseAXI
     core.io.icache_axi4lite.ar.ready := false.B
     core.io.icache_axi4lite.aw.ready := false.B
     core.io.icache_axi4lite.w.ready := false.B
   } .otherwise {
-    icache.io.axi <> core.io.icache_axi4lite
+    icache.io <> core.io.icache_axi4lite
     io.imem_initialiseAXI.ar.ready := false.B
     io.imem_initialiseAXI.aw.ready := false.B
     io.imem_initialiseAXI.w.ready := false.B
