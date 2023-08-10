@@ -31,7 +31,11 @@ trait ChecksAxiWriteResp {
 
 trait AXIlite_hasAddrChannel {
   val addr: UInt
-  def alignedToWord: Bool = addr.tail(addr.getWidth-2) === 0.U
+  def alignedTo(align: Int): Bool = addr.tail(addr.getWidth-align) === 0.U
+
+  def alignedToWord: Bool = alignedTo(align = 2)
+
+  def alignedToDouble: Bool = alignedTo(align = 3)
 }
 /**
  * AXIlite Read Request Channel

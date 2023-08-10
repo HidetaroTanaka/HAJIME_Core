@@ -10,6 +10,7 @@ import org.scalatest.flatspec._
 
 import scala.io._
 
+// Should I check unaligned exception in Core or Cache?
 class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
   // AR channel
