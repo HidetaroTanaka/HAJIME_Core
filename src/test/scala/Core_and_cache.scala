@@ -16,7 +16,9 @@ class Core_and_cache(dcache_hexfilename: String, icache_memsize: Int = 8192, dca
     val imem_initialiseAXI = Flipped(new AXI4liteIO(addr_width = 64, data_width = 32))
   })
 
-  val core = Module(Core(params))
+  val core = withReset(io.icache_initialising || reset.asBool) {
+    Module(Core(params))
+  }
   val icache = Module(Icache_for_Verilator(memsize = icache_memsize))
   val dcache = Module(new Dcache_model(dcacheBaseAddr = 0x00004000, tohost = tohost, hexfileName = dcache_hexfilename, memsize = dcache_memsize))
 
