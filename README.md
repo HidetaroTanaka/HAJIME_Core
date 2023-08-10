@@ -5,7 +5,13 @@ HAJIME Core
 
 The core's goal is to provide some RISC-V implementation (SMT and Vector is planned in my imagination) for embedded environment.
 
-This repository requires `riscv-gnu-toolchain` to be installed if you want to run your own RISC-V program.
+This repository requires [`riscv-gnu-toolchain`](https://github.com/riscv-collab/riscv-gnu-toolchain) to be installed if you want to run your own RISC-V program.
+
+`verilator` and `iverilog` are also needed for some tests.
+
+```bash
+$ sudo apt install verilator iverilog
+```
 
 ### Building this repository
 Use Ubuntu and sbt (IntelliJ is recommended). And fetch submodules as this:
