@@ -98,6 +98,7 @@ class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
   val pc = new ProgramCounter()
 }
 
+// TODO: add inst address misaligned exception (0x0), inst address fault (0x1), and illegal inst exception (0x2)
 class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
@@ -316,6 +317,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   }
 
   // START OF WB STAGE
+  // TODO: add memory misaligned exception (load misaligned: 0x4, store misaligned: 0x6), and memory access fault exception (load fault: 0x5, store fault: 0x7)
   WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interrupt)
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data

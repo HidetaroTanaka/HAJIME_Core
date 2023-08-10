@@ -3,13 +3,14 @@ package hajime.publicmodules
 import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.axiIO.AXI4liteIO
+import hajime.axiIO._
 import hajime.common.COMPILE_CONSTANTS
 import chiseltest._
 import org.scalatest.flatspec._
+
 import scala.io._
 
-class Icache_for_Verilator(memsize: Int = 8192) extends Module {
+class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
   // AR channel
   io.ar.ready := true.B
@@ -18,14 +19,18 @@ class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   // W channel
   io.w.ready := true.B
 
-  val mem = SyncReadMem(memsize, Vec(4, UInt(8.W)))
+  // 0x000 ~ 0x1FFC
+  val mem = SyncReadMem(memsize/4, Vec(4, UInt(8.W)))
   val addr_reg = RegNext(io.ar.bits.addr)
 
   // read
   val readDataFromMem = Wire(chiselTypeOf(io.r.bits))
   // Vecでは下位要素が先頭だが，信号では逆
   readDataFromMem.data := Cat(mem.read(io.ar.bits.addr.head(62)).reverse)
-  readDataFromMem.resp := Mux(RegNext(io.ar.bits.alignedToWord), 0.U, "b011".U)
+  readDataFromMem.resp := MuxCase(R_OKEY.U, Seq(
+    RegNext(io.ar.bits.addr > 0x1FFC.U(64.W)) -> R_DECERR.U,
+    RegNext(!io.ar.bits.alignedToWord) -> R_SLVERR.U,
+  ))
 
   val r_channel_bits_reg = Reg(chiselTypeOf(io.r.bits))
   val r_channel_valid_reg = Reg(Bool())
@@ -51,16 +56,16 @@ class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   for((w,i) <- writeData_asVec.zipWithIndex) {
     w := io.w.bits.data(8*i+7, 8*i)
   }
-  when(io.aw.valid && io.w.valid && io.aw.bits.alignedToWord) {
+  when(io.aw.valid && io.w.valid) {
     mem.write(io.aw.bits.addr.head(62), writeData_asVec, io.w.bits.strb.asBools)
     b_valid := true.B
-    b_resp := "b000".U
-  }.elsewhen(io.aw.valid && io.w.valid && !io.aw.bits.alignedToWord) {
-    b_valid := true.B
-    b_resp := "b011".U
-  }.otherwise {
+    b_resp := MuxCase(W_OKEY.U, Seq(
+      (io.aw.bits.addr > 0x1FFC.U(64.W)) -> W_DECERR.U,
+      io.aw.bits.alignedToWord -> W_SLVERR.U,
+    ))
+  } .otherwise {
     b_valid := false.B
-    b_resp := "b000".U
+    b_resp := W_OKEY.U
   }
   io.b.valid := b_valid
   io.b.bits.resp := b_resp
