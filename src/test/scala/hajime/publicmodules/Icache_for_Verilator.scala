@@ -24,25 +24,25 @@ class Icache_for_Verilator(memsize: Int = 8192) extends Module {
   val addr_reg = RegNext(io.axi.ar.bits.addr)
 
   // read
-  val r_channel_bits = Wire(chiselTypeOf(io.axi.r.bits))
+  val readDataFromMem = Wire(chiselTypeOf(io.axi.r.bits))
   // Vecでは下位要素が先頭だが，信号では逆
-  r_channel_bits.data := Cat(mem.read(io.axi.ar.bits.addr.head(62)).reverse)
-  r_channel_bits.resp := Mux(RegNext(io.axi.ar.bits.alignedToWord), 0.U, "b011".U)
+  readDataFromMem.data := Cat(mem.read(io.axi.ar.bits.addr.head(62)).reverse)
+  readDataFromMem.resp := Mux(RegNext(io.axi.ar.bits.alignedToWord), 0.U, "b011".U)
 
   val r_channel_bits_reg = Reg(chiselTypeOf(io.axi.r.bits))
   val r_channel_valid_reg = Reg(Bool())
   val r_stall = io.axi.r.valid && !io.axi.r.ready
   val retain_r_channel = RegNext(r_stall)
   when(r_stall) {
-    r_channel_bits_reg := r_channel_bits_reg
-    r_channel_valid_reg := r_channel_valid_reg
+    r_channel_bits_reg := io.axi.r.bits
+    r_channel_valid_reg := io.axi.r.valid
     io.axi.ar.ready := false.B
   }.otherwise {
-    r_channel_bits_reg := r_channel_bits
+    r_channel_bits_reg := readDataFromMem
     r_channel_valid_reg := RegNext(io.axi.ar.valid && io.axi.ar.ready)
   }
 
-  io.axi.r.bits := Mux(retain_r_channel, r_channel_bits_reg, r_channel_bits)
+  io.axi.r.bits := Mux(retain_r_channel, r_channel_bits_reg, readDataFromMem)
   io.axi.r.valid := Mux(retain_r_channel, r_channel_valid_reg, RegNext(io.axi.ar.valid && io.axi.ar.ready))
 
   // write

@@ -15,7 +15,7 @@ class debugIO(implicit params: HajimeCoreParams) extends Bundle {
     val pc = new ProgramCounter()
   })
   val debug_abi_map = new debug_map_physical_to_abi()
-  val ID_EX_Reg = Valid(new ID_EX_IO())
+  // val ID_EX_Reg = Valid(new ID_EX_IO())
 }
 
 object debugIO {
@@ -161,7 +161,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   decoded_inst := io.frontend.resp.bits.inst
   val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
   val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
-  io.debug_io.get.ID_EX_Reg := ID_EX_REG
+  // io.debug_io.get.ID_EX_Reg := ID_EX_REG
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
   // flushならばストールさせる必要はない
@@ -320,6 +320,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
   }
+  // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && (
     !EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid
     )

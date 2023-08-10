@@ -10,6 +10,7 @@ class Core_and_cache(dcache_hexfilename: String, icache_memsize: Int = 8192, dca
   val params = HajimeCoreParams()
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
+    val hartid = Input(UInt(64.W))
     val toHost = ValidIO(UInt(64.W))
     val debug_io = Output(debugIO(params))
     val icache_initialising = Input(Bool())
@@ -39,7 +40,7 @@ class Core_and_cache(dcache_hexfilename: String, icache_memsize: Int = 8192, dca
   core.io.dcache_axi4lite <> dcache.io
 
   core.io.reset_vector := io.reset_vector
-  core.io.hartid := 0.U
+  core.io.hartid := io.hartid
   io.toHost := dcache.debug
   io.debug_io := core.io.debug_io.get
 }
