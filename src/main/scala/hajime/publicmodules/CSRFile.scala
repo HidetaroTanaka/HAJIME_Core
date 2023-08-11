@@ -79,54 +79,62 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val mtinst = zeroInit_Register()
   val mtval2 = zeroInit_Register()
 
-  val readOnlyCSRs: Seq[(UInt, UInt)] = Seq(
-    CSRs.cycle.U(12.W) -> cycle,
-    CSRs.time.U(12.W) -> time,
-    CSRs.instret.U(12.W) -> instret,
-    CSRs.mvendorid.U(12.W) -> mvendorid,
-    CSRs.marchid.U(12.W) -> marchid,
-    CSRs.mimpid.U(12.W) -> mimpid,
-    CSRs.mhartid.U(12.W) -> mhartid,
-    CSRs.mconfigptr.U(12.W) -> mconfigptr,
+  val readOnlyCSRs: Seq[(Int, UInt)] = Seq(
+    CSRs.cycle -> cycle,
+    CSRs.time -> time,
+    CSRs.instret -> instret,
+    CSRs.mvendorid -> mvendorid,
+    CSRs.marchid -> marchid,
+    CSRs.mimpid -> mimpid,
+    CSRs.mhartid -> mhartid,
+    CSRs.mconfigptr -> mconfigptr,
   )
 
-  val writableCSRs: Seq[(UInt, UInt)] = Seq(
-    CSRs.mstatus.U(12.W) -> mstatus,
-    CSRs.misa.U(12.W) -> misa,
-    CSRs.medeleg.U(12.W) -> medeleg,
-    CSRs.mideleg.U(12.W) -> mideleg,
-    CSRs.mie.U(12.W) -> mie,
-    CSRs.mtvec.U(12.W) -> mtvec,
-    CSRs.mcounteren.U(12.W) -> mcounteren,
-    CSRs.mscratch.U(12.W) -> mscratch,
-    CSRs.mepc.U(12.W) -> mepc,
-    CSRs.mcause.U(12.W) -> mcause,
-    CSRs.mtval.U(12.W) -> mtval,
-    CSRs.mip.U(12.W) -> mip,
-    CSRs.mtinst.U(12.W) -> mtinst,
-    CSRs.mtval2.U(12.W) -> mtval2,
-    CSRs.mcycle.U(12.W) -> cycle, // Only M-mode can overwrite cycle and instret?
-    CSRs.minstret.U(12.W) -> instret,
+  val writableCSRs: Seq[(Int, UInt)] = Seq(
+    CSRs.mstatus -> mstatus,
+    CSRs.misa -> misa,
+    CSRs.medeleg -> medeleg,
+    CSRs.mideleg -> mideleg,
+    CSRs.mie -> mie,
+    CSRs.mtvec -> mtvec,
+    CSRs.mcounteren -> mcounteren,
+    CSRs.mscratch -> mscratch,
+    CSRs.mepc -> mepc,
+    CSRs.mcause -> mcause,
+    CSRs.mtval -> mtval,
+    CSRs.mip -> mip,
+    CSRs.mtinst -> mtinst,
+    CSRs.mtval2 -> mtval2,
+    CSRs.mcycle -> cycle, // Only M-mode can overwrite cycle and instret?
+    CSRs.minstret -> instret,
   )
 
-  // 割り込みの場合はmtvecの下位2bitをクリアしたものを出力（例外ハンドラのアドレス）
-  io.readResp.data := Mux(io.interrupt.valid,
-    Cat(mtvec.head(xprlen-2), 0.U(2.W)),
-    MuxLookup(io.csr_addr, 0.U(xprlen.W))(readOnlyCSRs ++ writableCSRs)
+  // mepcレジスタは書き込み時に下位2bitが0になっていることが保証されているのでそのまま出力する
+  io.readResp.data := MuxLookup(io.csr_addr, 0.U(xprlen.W))(
+    (readOnlyCSRs ++ writableCSRs).map {
+      case (addr, csr) => (addr.U(12.W), csr)
+    }
   )
   // 割り込みの場合は書き込まない
   when(io.writeReq.valid && !io.interrupt.valid){
-    for ((addr, register) <- writableCSRs) {
-      when(io.csr_addr === addr) {
-        register := io.writeReq.bits.data
+    for ((addr, csr) <- writableCSRs) {
+      when(io.csr_addr === addr.U(12.W)) {
+        if(addr == CSRs.mepc) {
+          csr := Cat(io.writeReq.bits.data.head(xprlen-2), "b00".U(2.W))
+        } else {
+          csr := io.writeReq.bits.data
+        }
       }
     }
   }
 
   // 割り込みの場合はmepcに例外発生PC，mcauseに例外要因を書く
+  // また，mtvecを読んでPCに書き込む
   when(io.interrupt.valid) {
+    // 例外発生PCの下位2bitは0であることが保証されている
     mepc := io.interrupt.bits.mepc_write
     mcause := io.interrupt.bits.mcause_write
+    io.readResp.data := Cat(mtvec.head(xprlen-2), 0.U(2.W))
   }
 }
 object CSRFile extends App {

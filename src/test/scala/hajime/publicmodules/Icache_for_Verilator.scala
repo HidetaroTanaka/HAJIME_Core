@@ -20,9 +20,12 @@ class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiR
   // W channel
   io.w.ready := true.B
 
-  // 0x000 ~ 0x1FFC
-  val mem = SyncReadMem(memsize/4, Vec(4, UInt(8.W)))
-  val addr_reg = RegNext(io.ar.bits.addr)
+  // 0x000 ~ 0x1FFF -> 1byte * 8192
+  // -> 4byte * 2048
+  // 2048 -> 0x000~0x3FF -> 0~1023
+  // 4096 -> 0x000~0x7FF -> 0~2023
+  // 8192 -> 0x000~0xFFF -> 0~4096
+  val mem = SyncReadMem(memsize, Vec(4, UInt(8.W)))
 
   // read
   val readDataFromMem = Wire(chiselTypeOf(io.r.bits))
@@ -62,7 +65,7 @@ class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiR
     b_valid := true.B
     b_resp := MuxCase(W_OKEY.U, Seq(
       (io.aw.bits.addr > 0x1FFC.U(64.W)) -> W_DECERR.U,
-      io.aw.bits.alignedToWord -> W_SLVERR.U,
+      !io.aw.bits.alignedToWord -> W_SLVERR.U,
     ))
   } .otherwise {
     b_valid := false.B
