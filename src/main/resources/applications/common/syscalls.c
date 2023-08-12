@@ -64,10 +64,20 @@ void printstr(char* str) {
 }
 
 void __attribute__((noreturn)) exit(int ret) {
+  unsigned long cycle, instret;
+  asm volatile("rdcycle %0":"=r" (cycle));
+  asm volatile("rdinstret %0":"=r" (instret));
+  char string[19];
   printstr("Exit code: ");
-  char hex[11];
-  int32ToHex(ret, hex);
-  printstr(hex);
+  int32ToHex(ret, string);
+  printstr(string);
+  printstr("\ncycle: ");
+  int64ToHex(cycle, string);
+  printstr(string);
+  printstr("\ninstret: ");
+  int64ToHex(instret, string);
+  printstr(string);
+
   // guarantee that register a0 holds exit code
   volatile register unsigned long exit_code asm ("a0") = ret;
   PUTCHAR_TOHOST('\0');
@@ -81,39 +91,39 @@ uintptr_t __attribute__((weak)) handle_trap(uintptr_t cause, uintptr_t epc, uint
   int64ToHex(epc, epchex);
   switch(cause) {
     case 0:
-      printstr("INSTRUCTION ADDRESS MISALIGNED at PC:");
+      printstr("INSTRUCTION ADDRESS MISALIGNED at PC: ");
       printstr(epchex);
       break;
     case 1:
-      printstr("INSTRUCTION ACCESS FAULT at PC:");
+      printstr("INSTRUCTION ACCESS FAULT at PC: ");
       printstr(epchex);
       break;
     case 2:
-      printstr("ILLEGAL INSTRUCTION at PC:");
+      printstr("ILLEGAL INSTRUCTION at PC: ");
       printstr(epchex);
       break;
     case 4:
-      printstr("LOAD ADDRESS MISALIGNED at PC:");
+      printstr("LOAD ADDRESS MISALIGNED at PC: ");
       printstr(epchex);
       break;
     case 5:
-      printstr("LOAD ACCESS FAULT at PC:");
+      printstr("LOAD ACCESS FAULT at PC: ");
       printstr(epchex);
       break;
     case 6:
-      printstr("STORE ADDRESS MISALIGNED at PC:");
+      printstr("STORE ADDRESS MISALIGNED at PC: ");
       printstr(epchex);
       break;
     case 7:
-      printstr("STORE ACCESS FAULT at PC:");
+      printstr("STORE ACCESS FAULT at PC: ");
       printstr(epchex);
       break;
     case 11:
-      printstr("ECALL FROM M-MODE at PC:");
+      printstr("ECALL FROM M-MODE at PC: ");
       printstr(epchex);
       break;
     default:
-      printstr("UNKNOWN EXCEPTION at PC:");
+      printstr("UNKNOWN EXCEPTION at PC: ");
       printstr(epchex);
       printstr("\nCHECK MCAUSE in RTL");
       break;
@@ -147,6 +157,7 @@ void _init(
   // thread_entry(cid, nc);
 
   // only single-threaded programs should ever get here.
+  asm volatile ("csrw minstret, x0; csrw mcycle, x0;");
   int ret = main(0, 0);
 
   exit(ret);
