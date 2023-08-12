@@ -47,8 +47,8 @@ Disassembly of section .text.init:
   9c:	f1402573          	csrr	a0,mhartid
   a0:	00100593          	li	a1,1
   a4:	00b57063          	bgeu	a0,a1,a4 <_start+0xa4>
-  a8:	00005137          	lui	sp,0x5
-  ac:	ff01011b          	addw	sp,sp,-16 # 4ff0 <__global_pointer$+0x663>
+  a8:	00006137          	lui	sp,0x6
+  ac:	ff01011b          	addw	sp,sp,-16 # 5ff0 <__global_pointer$+0x1663>
   b0:	5180006f          	j	5c8 <_init>
 
 00000000000000b4 <trap_entry>:
