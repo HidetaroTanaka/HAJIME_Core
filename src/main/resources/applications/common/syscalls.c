@@ -63,7 +63,7 @@ void printstr(char* str) {
   return;
 }
 
-void ___attribute__((noreturn)) exit(int ret) {
+void __attribute__((noreturn)) exit(int ret) {
   printstr("Exit code: ");
   char hex[11];
   int32ToHex(ret, hex);
