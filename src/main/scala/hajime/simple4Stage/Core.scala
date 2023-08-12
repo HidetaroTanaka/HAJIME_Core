@@ -299,14 +299,14 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
-  // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.respがreadyでない，または乗算命令で乗算器がvalidでない
-  EX_stall := (EX_WB_REG.valid && WB_stall && ID_EX_REG.valid) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
+  // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
+  EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
     (ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid)
   } else {
-    true.B
-  })
+    false.B
+  }))
 
-  when(EX_stall) {
+  when(WB_stall) {
     EX_WB_REG := EX_WB_REG
   }
 
@@ -317,15 +317,15 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   }
 
   // START OF WB STAGE
+  // メモリアクセス命令かつ，ldstUnitのrespがvalidでなければストール
+  WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.resp.valid)
   // TODO: add memory misaligned exception (load misaligned: 0x4, store misaligned: 0x6), and memory access fault exception (load fault: 0x5, store fault: 0x7)
   WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interrupt)
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
-  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && (
-    !EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid
-    )
+  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && !WB_stall
   rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
   rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
@@ -360,7 +360,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   if(params.debug) {
     io.debug_io.get.debug_retired.bits.instruction.bits := EX_WB_REG.bits.debug.get.instruction & Fill(32, EX_WB_REG.valid)
     io.debug_io.get.debug_retired.bits.pc.addr := EX_WB_REG.bits.debug.get.pc.addr & Fill(params.xprlen, EX_WB_REG.valid)
-    io.debug_io.get.debug_retired.valid := EX_WB_REG.valid
+    io.debug_io.get.debug_retired.valid := WB_inst_can_retire
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }
 }

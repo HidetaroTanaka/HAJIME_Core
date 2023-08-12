@@ -32,8 +32,8 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
   val internalWriteAddr = io.aw.bits.addr - dcacheBaseAddr.U
 
   // 8Byte * 4096 -> 32768 Byte
-  // -> 0x8000
-  // -> 0x00004000 ~ 0x0000BFFF
+  // -> 0x8000 -> 0x1000 (Vecが8要素だから？)
+  // -> 0x00004000 ~ 0x00004FFF
   val mem = SyncReadMem(memsize/2, Vec(8, UInt(8.W)))
 
   // read

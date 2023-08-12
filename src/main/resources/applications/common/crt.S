@@ -67,7 +67,7 @@ _start:
 1:bgeu a0, a1, 1b
 
   # initialise stack pointer
-  li sp, 0x0000BFFF
+  li sp, 0x00004FF0
 
   j _init
 
