@@ -16,20 +16,6 @@
 
 #define PUTCHAR_TOHOST( ch ) do { *((volatile char*)TOHOST) = ch; } while(0);
 
-void __attribute__((weak)) thread_entry(int cid, int nc)
-{
-  // multi-threaded programs override this function.
-  // for the case of single-threaded programs, only let core 0 proceed.
-  while (cid != 0);
-}
-
-int __attribute__((weak)) main(int argc, char** argv)
-{
-  // single-threaded programs override this function.
-  // printstr("Implement main(), foo!\n");
-  return -1;
-}
-
 // str.length == 11
 void int32ToHex(int num, char* str) {
   str[0] = '0'; str[1] = 'x';
@@ -49,6 +35,25 @@ void int32ToHex(int num, char* str) {
   return;
 }
 
+// str.length == 19 (0x...\0)
+void int64ToHex(long num, char* str) {
+  str[0] = '0'; str[1] = 'x';
+  int i;
+  char tmp;
+  // str[17] ~ str[2]
+  for(i=0; i<16; i++) {
+    tmp = num & 0xF;
+    if(tmp >= 0x0 && tmp <= 0x9) {
+      str[17-i] = '0' + tmp;
+    } else {
+      str[9-i] = 'A' + (tmp - 0xA);
+    }
+    num = num >> 4;
+    str[18] = '\0';
+    return;
+  }
+}
+
 void printstr(char* str) {
   char* ptr = str;
   while(*ptr != '\0') {
@@ -58,16 +63,76 @@ void printstr(char* str) {
   return;
 }
 
-void exit(int ret) {
+void ___attribute__((noreturn)) exit(int ret) {
   printstr("Exit code: ");
   char hex[11];
   int32ToHex(ret, hex);
   printstr(hex);
-  PUTCHAR_TOHOST('\0');
   // guarantee that register a0 holds exit code
   volatile register unsigned long exit_code asm ("a0") = ret;
+  PUTCHAR_TOHOST('\0');
 _exit:
   goto _exit;
+}
+
+uintptr_t __attribute__((weak)) handle_trap(uintptr_t cause, uintptr_t epc, uintptr_t regs[32])
+{
+  char epchex[19];
+  int64ToHex(epc, epchex);
+  switch(cause) {
+    case 0:
+      printstr("INSTRUCTION ADDRESS MISALIGNED at PC:");
+      printstr(epchex);
+      break;
+    case 1:
+      printstr("INSTRUCTION ACCESS FAULT at PC:");
+      printstr(epchex);
+      break;
+    case 2:
+      printstr("ILLEGAL INSTRUCTION at PC:");
+      printstr(epchex);
+      break;
+    case 4:
+      printstr("LOAD ADDRESS MISALIGNED at PC:");
+      printstr(epchex);
+      break;
+    case 5:
+      printstr("LOAD ACCESS FAULT at PC:");
+      printstr(epchex);
+      break;
+    case 6:
+      printstr("STORE ADDRESS MISALIGNED at PC:");
+      printstr(epchex);
+      break;
+    case 7:
+      printstr("STORE ACCESS FAULT at PC:");
+      printstr(epchex);
+      break;
+    case 11:
+      printstr("ECALL FROM M-MODE at PC:");
+      printstr(epchex);
+      break;
+    default:
+      printstr("UNKNOWN EXCEPTION at PC:");
+      printstr(epchex);
+      printstr("\nCHECK MCAUSE in RTL");
+      break;
+  }
+  exit(-1);
+}
+
+void __attribute__((weak)) thread_entry(int cid, int nc)
+{
+  // multi-threaded programs override this function.
+  // for the case of single-threaded programs, only let core 0 proceed.
+  while (cid != 0);
+}
+
+int __attribute__((weak)) main(int argc, char** argv)
+{
+  // single-threaded programs override this function.
+  // printstr("Implement main(), foo!\n");
+  return -1;
 }
 
 void _init(
