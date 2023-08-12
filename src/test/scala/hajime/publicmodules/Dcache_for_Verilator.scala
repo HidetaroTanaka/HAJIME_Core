@@ -62,7 +62,7 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
     w := shiftedData(8*i+7, 8*i)
   }
   when(io.aw.valid && io.w.valid && internalWriteAddr < 0x00001FFF.U) {
-    mem.write(internalWriteAddr.head(62), writeData_asVec, MuxLookup(internalWriteAddr(2,0), io.w.bits.strb)(
+    mem.write(internalWriteAddr.head(61), writeData_asVec, MuxLookup(internalWriteAddr(2,0), io.w.bits.strb)(
       (0 until 8).map(
         i => i.U -> (io.w.bits.strb << i.U).asUInt(7,0)
       )
