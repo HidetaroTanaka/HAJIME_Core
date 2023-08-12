@@ -35,16 +35,20 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
   val mem = SyncReadMem(memsize/2, Vec(8, UInt(8.W)))
 
   // read
-  val readDataFromMem = Wire(chiselTypeOf(io.r.bits))
-  readDataFromMem.data := Cat(mem.read(internalReadAddr.head(61)).reverse)
+  val readDataFromMem = Wire(UInt(64.W))
+  readDataFromMem := Cat(mem.read(internalReadAddr.head(61)).reverse)
   // Byte: 0x1FFF以下
   // HalfWord: 0x1FFE以下，addr+1が8Byteを超えない
   // Word: 0x1FFC以下，addr+3が8Byteを超えない
   // DoubleWord: 0x1FF8以下，整列のみ
   // メモリロードの際にわからないので，全てコアに丸投げすることとする
-  readDataFromMem.resp := R_OKEY.U
+  io.r.bits.resp := R_OKEY.U
 
-  io.r.bits := readDataFromMem
+  io.r.bits.data := MuxLookup(RegNext(internalReadAddr(2,0)), readDataFromMem)(
+    (0 until 8).map(
+      i => i.U -> readDataFromMem(63, i*8)
+    )
+  )
   io.r.valid := RegNext(io.ar.valid && io.ar.ready)
 
   // write
