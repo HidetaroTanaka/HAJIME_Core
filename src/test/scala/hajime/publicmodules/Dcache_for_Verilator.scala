@@ -53,11 +53,20 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
 
   // write
   val writeData_asVec = Wire(Vec(8, UInt(8.W)))
+  val shiftedData = MuxLookup(internalWriteAddr(2,0), io.w.bits.data)(
+    (0 until 8).map(
+      i => i.U -> (io.w.bits.data << (i*8).U).asUInt
+    )
+  )
   for((w,i) <- writeData_asVec.zipWithIndex) {
-    w := io.w.bits.data(8*i+7, 8*i)
+    w := shiftedData(8*i+7, 8*i)
   }
   when(io.aw.valid && io.w.valid && internalWriteAddr < 0x00001FFF.U) {
-    mem.write(internalWriteAddr.head(62), writeData_asVec, io.w.bits.strb.asBools)
+    mem.write(internalWriteAddr.head(62), writeData_asVec, MuxLookup(internalWriteAddr(2,0), io.w.bits.strb)(
+      (0 until 8).map(
+        i => i.U -> (io.w.bits.strb << i.U).asUInt(7,0)
+      )
+    ).asBools)
   } .elsewhen(io.aw.valid && io.w.valid && io.aw.bits.addr === tohost.U) {
     debugToHost.bits := io.w.bits.data
     debugToHost.valid := true.B
