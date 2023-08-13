@@ -340,7 +340,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.WB.in.bits.rd.valid := bypassingUnit.io.WB.in.valid && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid)
   bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
   bypassingUnit.io.WB.in.bits.rd.bits.value := rf.io.req.bits.data
-  bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && EX_WB_REG.valid
+  bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && WB_inst_can_retire
 
   csrUnit.io.req.valid := EX_WB_REG.valid
   // ecallやmretの処理はcsrUnit内で行われる
