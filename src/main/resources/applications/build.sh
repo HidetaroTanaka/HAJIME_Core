@@ -35,4 +35,23 @@ hexdump -v -e '1/4 "%08x" "\n"' helloworld_text_startup.bin > helloworld_text_st
 cat helloworld_rodata.temp helloworld_rodata_str1_8.temp > helloworld_data.hex
 cat helloworld_text_init.temp helloworld_text.temp helloworld_text_startup.temp > helloworld_inst.hex
 
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64i_zicsr -mabi=lp64 -o printInt64.riscv ./printInt64/printInt64.c ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+
+riscv64-unknown-elf-objdump --disassemble-all printInt64.riscv > printInt64.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=printInt64_rodata.bin printInt64.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=printInt64_rodata_str1_8.bin printInt64.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=printInt64_sdata.bin printInt64.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=printInt64_text_init.bin printInt64.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=printInt64_text.bin printInt64.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=printInt64_text_startup.bin printInt64.riscv
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_rodata.bin > printInt64_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_rodata_str1_8.bin > printInt64_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_sdata.bin > printInt64_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_text_init.bin > printInt64_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_text.bin > printInt64_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' printInt64_text_startup.bin > printInt64_text_startup.temp
+cat printInt64_rodata.temp printInt64_rodata_str1_8.temp printInt64_sdata.temp > printInt64_data.hex
+cat printInt64_text_init.temp printInt64_text.temp printInt64_text_startup.temp > printInt64_inst.hex
+
+
 rm *.riscv *.bin *.temp

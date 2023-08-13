@@ -46,12 +46,12 @@ void int64ToHex(long num, char* str) {
     if(tmp >= 0x0 && tmp <= 0x9) {
       str[17-i] = '0' + tmp;
     } else {
-      str[9-i] = 'A' + (tmp - 0xA);
+      str[17-i] = 'A' + (tmp - 0xA);
     }
     num = num >> 4;
-    str[18] = '\0';
-    return;
   }
+  str[18] = '\0';
+  return;
 }
 
 void printstr(char* str) {
