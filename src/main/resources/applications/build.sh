@@ -71,4 +71,23 @@ hexdump -v -e '1/4 "%08x" "\n"' selection_sort_text_startup.bin > selection_sort
 cat selection_sort_data.temp selection_sort_rodata.temp selection_sort_rodata_str1_8.temp > selection_sort_data.hex
 cat selection_sort_text_init.temp selection_sort_text.temp selection_sort_text_startup.temp > selection_sort_inst.hex
 
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64i_zicsr -mabi=lp64 -o memcpy.riscv ./memcpy/memcpy_main.c ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+
+riscv64-unknown-elf-objdump --disassemble-all memcpy.riscv > memcpy.dump
+riscv64-unknown-elf-objcopy --dump-section .data=memcpy_data.bin memcpy.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=memcpy_rodata.bin memcpy.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=memcpy_rodata_str1_8.bin memcpy.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=memcpy_text_init.bin memcpy.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=memcpy_text.bin memcpy.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=memcpy_text_startup.bin memcpy.riscv
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_data.bin > memcpy_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_rodata.bin > memcpy_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_rodata_str1_8.bin > memcpy_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_text_init.bin > memcpy_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_text.bin > memcpy_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' memcpy_text_startup.bin > memcpy_text_startup.temp
+cat memcpy_data.temp memcpy_rodata.temp memcpy_rodata_str1_8.temp > memcpy_data.hex
+cat memcpy_text_init.temp memcpy_text.temp memcpy_text_startup.temp > memcpy_inst.hex
+
+
 rm *.riscv *.bin *.temp
