@@ -74,12 +74,13 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   val testList = Seq(
-    "helloworld", "median", "printInt64"
+    "helloworld", "median", "printInt64", "selection_sort"
   )
 
   for(e <- testList) {
     it should s"execute $e" in {
       test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+        println(s"test $e:")
         fork {
           initialiseImem(s"src/main/resources/applications/${e}_inst.hex", dut)
         }.fork {

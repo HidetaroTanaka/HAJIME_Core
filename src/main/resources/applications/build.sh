@@ -53,5 +53,22 @@ hexdump -v -e '1/4 "%08x" "\n"' printInt64_text_startup.bin > printInt64_text_st
 cat printInt64_rodata.temp printInt64_rodata_str1_8.temp printInt64_sdata.temp > printInt64_data.hex
 cat printInt64_text_init.temp printInt64_text.temp printInt64_text_startup.temp > printInt64_inst.hex
 
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64i_zicsr -mabi=lp64 -o selection_sort.riscv ./selection_sort/selection_sort.c ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+
+riscv64-unknown-elf-objdump --disassemble-all selection_sort.riscv > selection_sort.dump
+riscv64-unknown-elf-objcopy --dump-section .data=selection_sort_data.bin selection_sort.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=selection_sort_rodata.bin selection_sort.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=selection_sort_rodata_str1_8.bin selection_sort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=selection_sort_text_init.bin selection_sort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=selection_sort_text.bin selection_sort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=selection_sort_text_startup.bin selection_sort.riscv
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_data.bin > selection_sort_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_rodata.bin > selection_sort_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_rodata_str1_8.bin > selection_sort_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_text_init.bin > selection_sort_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_text.bin > selection_sort_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' selection_sort_text_startup.bin > selection_sort_text_startup.temp
+cat selection_sort_data.temp selection_sort_rodata.temp selection_sort_rodata_str1_8.temp > selection_sort_data.hex
+cat selection_sort_text_init.temp selection_sort_text.temp selection_sort_text_startup.temp > selection_sort_inst.hex
 
 rm *.riscv *.bin *.temp

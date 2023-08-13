@@ -64,18 +64,9 @@ void printstr(char* str) {
 }
 
 void __attribute__((noreturn)) exit(int ret) {
-  unsigned long cycle, instret;
-  asm volatile("rdcycle %0":"=r" (cycle));
-  asm volatile("rdinstret %0":"=r" (instret));
-  char string[19];
+  char string[11];
   printstr("Exit code: ");
   int32ToHex(ret, string);
-  printstr(string);
-  printstr("\ncycle: ");
-  int64ToHex(cycle, string);
-  printstr(string);
-  printstr("\ninstret: ");
-  int64ToHex(instret, string);
   printstr(string);
 
   // guarantee that register a0 holds exit code

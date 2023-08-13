@@ -27,7 +27,19 @@ int main( int argc, char* argv[] )
 
   // Do the filter
   // setStats(1);
+  asm volatile ("csrw minstret, x0; csrw mcycle, x0;");
   median( DATA_SIZE, input_data, results_data );
+  unsigned long instret, cycle;
+  asm volatile("rdinstret %0":"=r" (instret));
+  asm volatile("rdcycle %0":"=r" (cycle));
+  char string[19];
+  printstr("\ncycle: ");
+  int64ToHex(cycle, string);
+  printstr(string);
+  printstr("\ninstret: ");
+  int64ToHex(instret, string);
+  printstr(string);
+  printstr("\n");
   // setStats(0);
 
   // Check the results
