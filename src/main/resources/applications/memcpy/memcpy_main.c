@@ -20,6 +20,9 @@
 //--------------------------------------------------------------------------
 // Main
 
+extern void printstr(char* str);
+extern void int64ToHex(long num, char* str);
+
 int main( int argc, char* argv[] )
 {
   int results_data[DATA_SIZE];
@@ -32,7 +35,7 @@ int main( int argc, char* argv[] )
   asm volatile("rdinstret %0":"=r" (instret));
   asm volatile("rdcycle %0":"=r" (cycle));
   char string[19];
-  printstr("\ncycle: ");
+  printstr("cycle: ");
   int64ToHex(cycle, string);
   printstr(string);
   printstr("\ninstret: ");

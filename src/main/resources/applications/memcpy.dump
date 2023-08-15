@@ -40,7 +40,7 @@ Disassembly of section .text.init:
   80:	03828293          	add	t0,t0,56 # b4 <trap_entry>
   84:	30529073          	csrw	mtvec,t0
   88:	00005197          	auipc	gp,0x5
-  8c:	abd18193          	add	gp,gp,-1347 # 4b45 <__global_pointer$>
+  8c:	ab518193          	add	gp,gp,-1355 # 4b3d <__global_pointer$>
   90:	10000217          	auipc	tp,0x10000
   94:	ff720213          	add	tp,tp,-9 # 10000087 <_end+0x3f>
   98:	fc027213          	and	tp,tp,-64
@@ -48,7 +48,7 @@ Disassembly of section .text.init:
   a0:	00100593          	li	a1,1
   a4:	00b57063          	bgeu	a0,a1,a4 <_start+0xa4>
   a8:	00006137          	lui	sp,0x6
-  ac:	ff01011b          	addw	sp,sp,-16 # 5ff0 <__global_pointer$+0x14ab>
+  ac:	ff01011b          	addw	sp,sp,-16 # 5ff0 <__global_pointer$+0x14b3>
   b0:	5240006f          	j	5d4 <_init>
 
 00000000000000b4 <trap_entry>:
@@ -180,7 +180,7 @@ Disassembly of section .text:
  280:	fe010113          	add	sp,sp,-32
  284:	00113c23          	sd	ra,24(sp)
  288:	00004717          	auipc	a4,0x4
- 28c:	f6070713          	add	a4,a4,-160 # 41e8 <input_data+0x1e8>
+ 28c:	f5870713          	add	a4,a4,-168 # 41e0 <input_data+0x1e0>
  290:	04500793          	li	a5,69
  294:	100006b7          	lui	a3,0x10000
  298:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -229,7 +229,7 @@ Disassembly of section .text:
  33c:	00e787b3          	add	a5,a5,a4
  340:	00078067          	jr	a5
  344:	00004717          	auipc	a4,0x4
- 348:	fcc70713          	add	a4,a4,-52 # 4310 <input_data+0x310>
+ 348:	fc470713          	add	a4,a4,-60 # 4308 <input_data+0x308>
  34c:	05500793          	li	a5,85
  350:	100006b7          	lui	a3,0x10000
  354:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -245,7 +245,7 @@ Disassembly of section .text:
  37c:	00170713          	add	a4,a4,1
  380:	fe079ae3          	bnez	a5,374 <handle_trap+0x98>
  384:	00004717          	auipc	a4,0x4
- 388:	fac70713          	add	a4,a4,-84 # 4330 <input_data+0x330>
+ 388:	fa470713          	add	a4,a4,-92 # 4328 <input_data+0x328>
  38c:	00a00793          	li	a5,10
  390:	100006b7          	lui	a3,0x10000
  394:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -255,7 +255,7 @@ Disassembly of section .text:
  3a4:	fff00513          	li	a0,-1
  3a8:	ed9ff0ef          	jal	280 <exit>
  3ac:	00004717          	auipc	a4,0x4
- 3b0:	e4c70713          	add	a4,a4,-436 # 41f8 <input_data+0x1f8>
+ 3b0:	e4470713          	add	a4,a4,-444 # 41f0 <input_data+0x1f0>
  3b4:	04900793          	li	a5,73
  3b8:	100006b7          	lui	a3,0x10000
  3bc:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -272,7 +272,7 @@ Disassembly of section .text:
  3e8:	fe079ae3          	bnez	a5,3dc <handle_trap+0x100>
  3ec:	fb9ff06f          	j	3a4 <handle_trap+0xc8>
  3f0:	00004717          	auipc	a4,0x4
- 3f4:	e3070713          	add	a4,a4,-464 # 4220 <input_data+0x220>
+ 3f4:	e2870713          	add	a4,a4,-472 # 4218 <input_data+0x218>
  3f8:	04900793          	li	a5,73
  3fc:	100006b7          	lui	a3,0x10000
  400:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -289,7 +289,7 @@ Disassembly of section .text:
  42c:	fe079ae3          	bnez	a5,420 <handle_trap+0x144>
  430:	f75ff06f          	j	3a4 <handle_trap+0xc8>
  434:	00004717          	auipc	a4,0x4
- 438:	e1470713          	add	a4,a4,-492 # 4248 <input_data+0x248>
+ 438:	e0c70713          	add	a4,a4,-500 # 4240 <input_data+0x240>
  43c:	04900793          	li	a5,73
  440:	100006b7          	lui	a3,0x10000
  444:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -306,7 +306,7 @@ Disassembly of section .text:
  470:	fe079ae3          	bnez	a5,464 <handle_trap+0x188>
  474:	f31ff06f          	j	3a4 <handle_trap+0xc8>
  478:	00004717          	auipc	a4,0x4
- 47c:	df070713          	add	a4,a4,-528 # 4268 <input_data+0x268>
+ 47c:	de870713          	add	a4,a4,-536 # 4260 <input_data+0x260>
  480:	04c00793          	li	a5,76
  484:	100006b7          	lui	a3,0x10000
  488:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -323,7 +323,7 @@ Disassembly of section .text:
  4b4:	fe079ae3          	bnez	a5,4a8 <handle_trap+0x1cc>
  4b8:	eedff06f          	j	3a4 <handle_trap+0xc8>
  4bc:	00004717          	auipc	a4,0x4
- 4c0:	dcc70713          	add	a4,a4,-564 # 4288 <input_data+0x288>
+ 4c0:	dc470713          	add	a4,a4,-572 # 4280 <input_data+0x280>
  4c4:	04c00793          	li	a5,76
  4c8:	100006b7          	lui	a3,0x10000
  4cc:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -340,7 +340,7 @@ Disassembly of section .text:
  4f8:	fe079ae3          	bnez	a5,4ec <handle_trap+0x210>
  4fc:	ea9ff06f          	j	3a4 <handle_trap+0xc8>
  500:	00004717          	auipc	a4,0x4
- 504:	da870713          	add	a4,a4,-600 # 42a8 <input_data+0x2a8>
+ 504:	da070713          	add	a4,a4,-608 # 42a0 <input_data+0x2a0>
  508:	05300793          	li	a5,83
  50c:	100006b7          	lui	a3,0x10000
  510:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -357,7 +357,7 @@ Disassembly of section .text:
  53c:	fe079ae3          	bnez	a5,530 <handle_trap+0x254>
  540:	e65ff06f          	j	3a4 <handle_trap+0xc8>
  544:	00004717          	auipc	a4,0x4
- 548:	d8c70713          	add	a4,a4,-628 # 42d0 <input_data+0x2d0>
+ 548:	d8470713          	add	a4,a4,-636 # 42c8 <input_data+0x2c8>
  54c:	05300793          	li	a5,83
  550:	100006b7          	lui	a3,0x10000
  554:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -374,7 +374,7 @@ Disassembly of section .text:
  580:	fe079ae3          	bnez	a5,574 <handle_trap+0x298>
  584:	e21ff06f          	j	3a4 <handle_trap+0xc8>
  588:	00004717          	auipc	a4,0x4
- 58c:	d6870713          	add	a4,a4,-664 # 42f0 <input_data+0x2f0>
+ 58c:	d6070713          	add	a4,a4,-672 # 42e8 <input_data+0x2e8>
  590:	04500793          	li	a5,69
  594:	100006b7          	lui	a3,0x10000
  598:	00f68023          	sb	a5,0(a3) # 10000000 <tohost>
@@ -574,7 +574,7 @@ Disassembly of section .text.startup:
  850:	00810513          	add	a0,sp,8
  854:	a0dff0ef          	jal	260 <printstr>
  858:	00004517          	auipc	a0,0x4
- 85c:	97850513          	add	a0,a0,-1672 # 41d0 <input_data+0x1d0>
+ 85c:	97050513          	add	a0,a0,-1680 # 41c8 <input_data+0x1c8>
  860:	a01ff0ef          	jal	260 <printstr>
  864:	00810593          	add	a1,sp,8
  868:	00040513          	mv	a0,s0
@@ -582,7 +582,7 @@ Disassembly of section .text.startup:
  870:	00810513          	add	a0,sp,8
  874:	9edff0ef          	jal	260 <printstr>
  878:	00004517          	auipc	a0,0x4
- 87c:	96850513          	add	a0,a0,-1688 # 41e0 <input_data+0x1e0>
+ 87c:	96050513          	add	a0,a0,-1696 # 41d8 <input_data+0x1d8>
  880:	9e1ff0ef          	jal	260 <printstr>
  884:	02010793          	add	a5,sp,32
  888:	00003717          	auipc	a4,0x3
@@ -824,159 +824,157 @@ Disassembly of section .rodata:
 Disassembly of section .rodata.str1.8:
 
 00000000000041c0 <.rodata.str1.8>:
-    41c0:	630a                	.2byte	0x630a
-    41c2:	6379                	.2byte	0x6379
-    41c4:	656c                	.2byte	0x656c
-    41c6:	203a                	.2byte	0x203a
-	...
-    41d0:	690a                	.2byte	0x690a
-    41d2:	736e                	.2byte	0x736e
-    41d4:	7274                	.2byte	0x7274
-    41d6:	7465                	.2byte	0x7465
-    41d8:	203a                	.2byte	0x203a
+    41c0:	6c637963          	bgeu	t1,t1,4892 <_tbss_end+0x555>
+    41c4:	3a65                	.2byte	0x3a65
+    41c6:	0020                	.2byte	0x20
+    41c8:	690a                	.2byte	0x690a
+    41ca:	736e                	.2byte	0x736e
+    41cc:	7274                	.2byte	0x7274
+    41ce:	7465                	.2byte	0x7465
+    41d0:	203a                	.2byte	0x203a
+    41d2:	0000                	.2byte	0x0
+    41d4:	0000                	.2byte	0x0
+    41d6:	0000                	.2byte	0x0
+    41d8:	000a                	.2byte	0xa
     41da:	0000                	.2byte	0x0
     41dc:	0000                	.2byte	0x0
     41de:	0000                	.2byte	0x0
-    41e0:	000a                	.2byte	0xa
-    41e2:	0000                	.2byte	0x0
-    41e4:	0000                	.2byte	0x0
-    41e6:	0000                	.2byte	0x0
-    41e8:	7845                	.2byte	0x7845
-    41ea:	7469                	.2byte	0x7469
-    41ec:	6320                	.2byte	0x6320
-    41ee:	3a65646f          	jal	s0,5a594 <__global_pointer$+0x55a4f>
-    41f2:	0020                	.2byte	0x20
-    41f4:	0000                	.2byte	0x0
-    41f6:	0000                	.2byte	0x0
-    41f8:	4e49                	.2byte	0x4e49
-    41fa:	55525453          	.4byte	0x55525453
-    41fe:	4f495443          	.4byte	0x4f495443
-    4202:	204e                	.2byte	0x204e
-    4204:	4441                	.2byte	0x4441
-    4206:	5244                	.2byte	0x5244
-    4208:	5345                	.2byte	0x5345
-    420a:	494d2053          	.4byte	0x494d2053
-    420e:	494c4153          	.4byte	0x494c4153
-    4212:	44454e47          	.4byte	0x44454e47
-    4216:	6120                	.2byte	0x6120
-    4218:	2074                	.2byte	0x2074
-    421a:	4350                	.2byte	0x4350
-    421c:	203a                	.2byte	0x203a
-    421e:	0000                	.2byte	0x0
-    4220:	4e49                	.2byte	0x4e49
-    4222:	55525453          	.4byte	0x55525453
-    4226:	4f495443          	.4byte	0x4f495443
-    422a:	204e                	.2byte	0x204e
-    422c:	4341                	.2byte	0x4341
-    422e:	53534543          	.4byte	0x53534543
-    4232:	4620                	.2byte	0x4620
-    4234:	5541                	.2byte	0x5541
-    4236:	544c                	.2byte	0x544c
-    4238:	6120                	.2byte	0x6120
-    423a:	2074                	.2byte	0x2074
-    423c:	4350                	.2byte	0x4350
-    423e:	203a                	.2byte	0x203a
+    41e0:	7845                	.2byte	0x7845
+    41e2:	7469                	.2byte	0x7469
+    41e4:	6320                	.2byte	0x6320
+    41e6:	3a65646f          	jal	s0,5a58c <__global_pointer$+0x55a4f>
+    41ea:	0020                	.2byte	0x20
+    41ec:	0000                	.2byte	0x0
+    41ee:	0000                	.2byte	0x0
+    41f0:	4e49                	.2byte	0x4e49
+    41f2:	55525453          	.4byte	0x55525453
+    41f6:	4f495443          	.4byte	0x4f495443
+    41fa:	204e                	.2byte	0x204e
+    41fc:	4441                	.2byte	0x4441
+    41fe:	5244                	.2byte	0x5244
+    4200:	5345                	.2byte	0x5345
+    4202:	494d2053          	.4byte	0x494d2053
+    4206:	494c4153          	.4byte	0x494c4153
+    420a:	44454e47          	.4byte	0x44454e47
+    420e:	6120                	.2byte	0x6120
+    4210:	2074                	.2byte	0x2074
+    4212:	4350                	.2byte	0x4350
+    4214:	203a                	.2byte	0x203a
+    4216:	0000                	.2byte	0x0
+    4218:	4e49                	.2byte	0x4e49
+    421a:	55525453          	.4byte	0x55525453
+    421e:	4f495443          	.4byte	0x4f495443
+    4222:	204e                	.2byte	0x204e
+    4224:	4341                	.2byte	0x4341
+    4226:	53534543          	.4byte	0x53534543
+    422a:	4620                	.2byte	0x4620
+    422c:	5541                	.2byte	0x5541
+    422e:	544c                	.2byte	0x544c
+    4230:	6120                	.2byte	0x6120
+    4232:	2074                	.2byte	0x2074
+    4234:	4350                	.2byte	0x4350
+    4236:	203a                	.2byte	0x203a
 	...
-    4248:	4c49                	.2byte	0x4c49
-    424a:	454c                	.2byte	0x454c
-    424c:	204c4147          	.4byte	0x204c4147
-    4250:	4e49                	.2byte	0x4e49
-    4252:	55525453          	.4byte	0x55525453
-    4256:	4f495443          	.4byte	0x4f495443
-    425a:	204e                	.2byte	0x204e
-    425c:	7461                	.2byte	0x7461
-    425e:	5020                	.2byte	0x5020
-    4260:	00203a43          	.4byte	0x203a43
-    4264:	0000                	.2byte	0x0
-    4266:	0000                	.2byte	0x0
-    4268:	4f4c                	.2byte	0x4f4c
-    426a:	4441                	.2byte	0x4441
-    426c:	4120                	.2byte	0x4120
-    426e:	4444                	.2byte	0x4444
-    4270:	4552                	.2byte	0x4552
-    4272:	4d205353          	.4byte	0x4d205353
-    4276:	5349                	.2byte	0x5349
-    4278:	4c41                	.2byte	0x4c41
-    427a:	4749                	.2byte	0x4749
-    427c:	454e                	.2byte	0x454e
-    427e:	2044                	.2byte	0x2044
-    4280:	7461                	.2byte	0x7461
-    4282:	5020                	.2byte	0x5020
-    4284:	00203a43          	.4byte	0x203a43
-    4288:	4f4c                	.2byte	0x4f4c
-    428a:	4441                	.2byte	0x4441
-    428c:	4120                	.2byte	0x4120
-    428e:	53454343          	.4byte	0x53454343
-    4292:	41462053          	.4byte	0x41462053
-    4296:	4c55                	.2byte	0x4c55
-    4298:	2054                	.2byte	0x2054
-    429a:	7461                	.2byte	0x7461
-    429c:	5020                	.2byte	0x5020
-    429e:	00203a43          	.4byte	0x203a43
-    42a2:	0000                	.2byte	0x0
-    42a4:	0000                	.2byte	0x0
-    42a6:	0000                	.2byte	0x0
-    42a8:	524f5453          	.4byte	0x524f5453
-    42ac:	2045                	.2byte	0x2045
-    42ae:	4441                	.2byte	0x4441
-    42b0:	5244                	.2byte	0x5244
-    42b2:	5345                	.2byte	0x5345
-    42b4:	494d2053          	.4byte	0x494d2053
-    42b8:	494c4153          	.4byte	0x494c4153
-    42bc:	44454e47          	.4byte	0x44454e47
-    42c0:	6120                	.2byte	0x6120
-    42c2:	2074                	.2byte	0x2074
-    42c4:	4350                	.2byte	0x4350
-    42c6:	203a                	.2byte	0x203a
+    4240:	4c49                	.2byte	0x4c49
+    4242:	454c                	.2byte	0x454c
+    4244:	204c4147          	.4byte	0x204c4147
+    4248:	4e49                	.2byte	0x4e49
+    424a:	55525453          	.4byte	0x55525453
+    424e:	4f495443          	.4byte	0x4f495443
+    4252:	204e                	.2byte	0x204e
+    4254:	7461                	.2byte	0x7461
+    4256:	5020                	.2byte	0x5020
+    4258:	00203a43          	.4byte	0x203a43
+    425c:	0000                	.2byte	0x0
+    425e:	0000                	.2byte	0x0
+    4260:	4f4c                	.2byte	0x4f4c
+    4262:	4441                	.2byte	0x4441
+    4264:	4120                	.2byte	0x4120
+    4266:	4444                	.2byte	0x4444
+    4268:	4552                	.2byte	0x4552
+    426a:	4d205353          	.4byte	0x4d205353
+    426e:	5349                	.2byte	0x5349
+    4270:	4c41                	.2byte	0x4c41
+    4272:	4749                	.2byte	0x4749
+    4274:	454e                	.2byte	0x454e
+    4276:	2044                	.2byte	0x2044
+    4278:	7461                	.2byte	0x7461
+    427a:	5020                	.2byte	0x5020
+    427c:	00203a43          	.4byte	0x203a43
+    4280:	4f4c                	.2byte	0x4f4c
+    4282:	4441                	.2byte	0x4441
+    4284:	4120                	.2byte	0x4120
+    4286:	53454343          	.4byte	0x53454343
+    428a:	41462053          	.4byte	0x41462053
+    428e:	4c55                	.2byte	0x4c55
+    4290:	2054                	.2byte	0x2054
+    4292:	7461                	.2byte	0x7461
+    4294:	5020                	.2byte	0x5020
+    4296:	00203a43          	.4byte	0x203a43
+    429a:	0000                	.2byte	0x0
+    429c:	0000                	.2byte	0x0
+    429e:	0000                	.2byte	0x0
+    42a0:	524f5453          	.4byte	0x524f5453
+    42a4:	2045                	.2byte	0x2045
+    42a6:	4441                	.2byte	0x4441
+    42a8:	5244                	.2byte	0x5244
+    42aa:	5345                	.2byte	0x5345
+    42ac:	494d2053          	.4byte	0x494d2053
+    42b0:	494c4153          	.4byte	0x494c4153
+    42b4:	44454e47          	.4byte	0x44454e47
+    42b8:	6120                	.2byte	0x6120
+    42ba:	2074                	.2byte	0x2074
+    42bc:	4350                	.2byte	0x4350
+    42be:	203a                	.2byte	0x203a
 	...
-    42d0:	524f5453          	.4byte	0x524f5453
-    42d4:	2045                	.2byte	0x2045
-    42d6:	4341                	.2byte	0x4341
-    42d8:	53534543          	.4byte	0x53534543
-    42dc:	4620                	.2byte	0x4620
-    42de:	5541                	.2byte	0x5541
-    42e0:	544c                	.2byte	0x544c
-    42e2:	6120                	.2byte	0x6120
-    42e4:	2074                	.2byte	0x2074
-    42e6:	4350                	.2byte	0x4350
-    42e8:	203a                	.2byte	0x203a
-    42ea:	0000                	.2byte	0x0
-    42ec:	0000                	.2byte	0x0
-    42ee:	0000                	.2byte	0x0
-    42f0:	4345                	.2byte	0x4345
-    42f2:	4c41                	.2byte	0x4c41
-    42f4:	204c                	.2byte	0x204c
-    42f6:	5246                	.2byte	0x5246
-    42f8:	4d204d4f          	.4byte	0x4d204d4f
-    42fc:	4d2d                	.2byte	0x4d2d
-    42fe:	2045444f          	.4byte	0x2045444f
-    4302:	7461                	.2byte	0x7461
-    4304:	5020                	.2byte	0x5020
-    4306:	00203a43          	.4byte	0x203a43
-    430a:	0000                	.2byte	0x0
-    430c:	0000                	.2byte	0x0
-    430e:	0000                	.2byte	0x0
-    4310:	4e55                	.2byte	0x4e55
-    4312:	574f4e4b          	.4byte	0x574f4e4b
-    4316:	204e                	.2byte	0x204e
-    4318:	5845                	.2byte	0x5845
-    431a:	54504543          	.4byte	0x54504543
-    431e:	4f49                	.2byte	0x4f49
-    4320:	204e                	.2byte	0x204e
-    4322:	7461                	.2byte	0x7461
-    4324:	5020                	.2byte	0x5020
-    4326:	00203a43          	.4byte	0x203a43
-    432a:	0000                	.2byte	0x0
-    432c:	0000                	.2byte	0x0
-    432e:	0000                	.2byte	0x0
-    4330:	430a                	.2byte	0x430a
-    4332:	4548                	.2byte	0x4548
-    4334:	4d204b43          	.4byte	0x4d204b43
-    4338:	53554143          	.4byte	0x53554143
-    433c:	2045                	.2byte	0x2045
-    433e:	6e69                	.2byte	0x6e69
-    4340:	5220                	.2byte	0x5220
-    4342:	4c54                	.2byte	0x4c54
+    42c8:	524f5453          	.4byte	0x524f5453
+    42cc:	2045                	.2byte	0x2045
+    42ce:	4341                	.2byte	0x4341
+    42d0:	53534543          	.4byte	0x53534543
+    42d4:	4620                	.2byte	0x4620
+    42d6:	5541                	.2byte	0x5541
+    42d8:	544c                	.2byte	0x544c
+    42da:	6120                	.2byte	0x6120
+    42dc:	2074                	.2byte	0x2074
+    42de:	4350                	.2byte	0x4350
+    42e0:	203a                	.2byte	0x203a
+    42e2:	0000                	.2byte	0x0
+    42e4:	0000                	.2byte	0x0
+    42e6:	0000                	.2byte	0x0
+    42e8:	4345                	.2byte	0x4345
+    42ea:	4c41                	.2byte	0x4c41
+    42ec:	204c                	.2byte	0x204c
+    42ee:	5246                	.2byte	0x5246
+    42f0:	4d204d4f          	.4byte	0x4d204d4f
+    42f4:	4d2d                	.2byte	0x4d2d
+    42f6:	2045444f          	.4byte	0x2045444f
+    42fa:	7461                	.2byte	0x7461
+    42fc:	5020                	.2byte	0x5020
+    42fe:	00203a43          	.4byte	0x203a43
+    4302:	0000                	.2byte	0x0
+    4304:	0000                	.2byte	0x0
+    4306:	0000                	.2byte	0x0
+    4308:	4e55                	.2byte	0x4e55
+    430a:	574f4e4b          	.4byte	0x574f4e4b
+    430e:	204e                	.2byte	0x204e
+    4310:	5845                	.2byte	0x5845
+    4312:	54504543          	.4byte	0x54504543
+    4316:	4f49                	.2byte	0x4f49
+    4318:	204e                	.2byte	0x204e
+    431a:	7461                	.2byte	0x7461
+    431c:	5020                	.2byte	0x5020
+    431e:	00203a43          	.4byte	0x203a43
+    4322:	0000                	.2byte	0x0
+    4324:	0000                	.2byte	0x0
+    4326:	0000                	.2byte	0x0
+    4328:	430a                	.2byte	0x430a
+    432a:	4548                	.2byte	0x4548
+    432c:	4d204b43          	.4byte	0x4d204b43
+    4330:	53554143          	.4byte	0x53554143
+    4334:	2045                	.2byte	0x2045
+    4336:	6e69                	.2byte	0x6e69
+    4338:	5220                	.2byte	0x5220
+    433a:	4c54                	.2byte	0x4c54
 	...
 
 Disassembly of section .tohost:
@@ -992,10 +990,15 @@ Disassembly of section .comment:
 0000000000000000 <.comment>:
    0:	3a434347          	.4byte	0x3a434347
    4:	2820                	.2byte	0x2820
-   6:	2029                	.2byte	0x2029
-   8:	3231                	.2byte	0x3231
-   a:	322e                	.2byte	0x322e
-   c:	302e                	.2byte	0x302e
+   6:	65653267          	.4byte	0x65653267
+   a:	6535                	.2byte	0x6535
+   c:	3334                	.2byte	0x3334
+   e:	3030                	.2byte	0x3030
+  10:	3831                	.2byte	0x3831
+  12:	2029                	.2byte	0x2029
+  14:	3231                	.2byte	0x3231
+  16:	322e                	.2byte	0x322e
+  18:	302e                	.2byte	0x302e
 	...
 
 Disassembly of section .riscv.attributes:

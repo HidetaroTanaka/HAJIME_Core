@@ -739,10 +739,15 @@ Disassembly of section .comment:
 0000000000000000 <.comment>:
    0:	3a434347          	.4byte	0x3a434347
    4:	2820                	.2byte	0x2820
-   6:	2029                	.2byte	0x2029
-   8:	3231                	.2byte	0x3231
-   a:	322e                	.2byte	0x322e
-   c:	302e                	.2byte	0x302e
+   6:	65653267          	.4byte	0x65653267
+   a:	6535                	.2byte	0x6535
+   c:	3334                	.2byte	0x3334
+   e:	3030                	.2byte	0x3030
+  10:	3831                	.2byte	0x3831
+  12:	2029                	.2byte	0x2029
+  14:	3231                	.2byte	0x3231
+  16:	322e                	.2byte	0x322e
+  18:	302e                	.2byte	0x302e
 	...
 
 Disassembly of section .riscv.attributes:
