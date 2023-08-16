@@ -157,5 +157,61 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  val instList_multiply = Seq(
+    "mul", "mulh", "mulhsu", "mulhu", "mulw"
+  )
+  if(true) {
+    instList_multiply.foreach(e => {
+      Process(Seq("sh", "-c", s"export PATH=\"$$PATH:/opt/riscv/riscv-gnu-toolchain/bin\" && cd ~/github/HAJIME_Core/src/main/resources/rv64um && sh build_rv64um.sh ${e}")).!
+    })
+    Process(Seq("sh", "-c", s"cd ~/github/HAJIME_Core/src/main/resources/rv64um && rm *_data.hex")).!
+  }
+  for(e <- instList_multiply) {
+    it should s"pass the test ${e}" in {
+      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+        def initialiseImem(filename: String): Unit = {
+          dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
+          dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
+          dut.io.imem_initialiseAXI.ar.valid.poke(false.B)
+          dut.io.imem_initialiseAXI.aw.bits.addr.poke(0.U)
+          dut.io.imem_initialiseAXI.aw.bits.prot.poke(0.U)
+          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
+          dut.io.imem_initialiseAXI.b.ready.poke(true.B)
+          dut.io.imem_initialiseAXI.r.ready.poke(true.B)
+          dut.io.imem_initialiseAXI.w.bits.data.poke(0.U)
+          dut.io.imem_initialiseAXI.w.bits.strb.poke(0.U)
+          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
+          dut.io.icache_initialising.poke(true.B)
+          // initialise icache from file
+          val fileSource = Source.fromFile(filename)
+          for ((data, idx) <- fileSource.getLines().zipWithIndex) {
+            dut.io.imem_initialiseAXI.aw.bits.addr.poke((idx * 4).U)
+            dut.io.imem_initialiseAXI.aw.valid.poke(true.B)
+            dut.io.imem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
+            dut.io.imem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
+            dut.io.imem_initialiseAXI.w.valid.poke(true.B)
+            dut.clock.step()
+          }
+          fileSource.close()
+          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
+          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
+          dut.io.icache_initialising.poke(false.B)
+        }
+        dut.clock.setTimeout(1024)
+        dut.io.reset_vector.poke(0.U)
+        dut.io.hartid.poke(0.U)
+        initialiseImem(s"src/main/resources/rv64um/${e}_inst.hex")
+
+        while (dut.io.toHost.peek().litValue == 0) {
+          dut.clock.step()
+        }
+        dut.io.toHost.bits.expect("h01".U(64.W))
+        val toHost_Value = dut.io.toHost.bits.peek().litValue
+        if (toHost_Value == 1) println(s"${e} test passed.") else println(s"${e} test failed at ${toHost_Value}")
+        // println(s"IPC for ${e} test: ${c.io.performance_counters.retired_inst_count.peek().litValue.toDouble / c.io.performance_counters.cycle_count.peek().litValue.toDouble}")
+      }
+    }
+  }
 }
 
