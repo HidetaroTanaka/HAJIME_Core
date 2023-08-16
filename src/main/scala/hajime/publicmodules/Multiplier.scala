@@ -275,5 +275,8 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   io.resp.valid := nonPipelinedMultiplier.io.resp.valid
   nonPipelinedMultiplier.io.resp.ready := io.resp.ready
   val result128 = Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
-  io.resp.bits := Mux(nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt, result128(63,0), result128(127,64))
+  io.resp.bits := MuxCase(result128(127,64), Seq(
+    nonPipelinedMultiplier.io.resp.bits.decode.op32 -> Functions.sign_ext(result128(31,0), 64),
+    (nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt) -> result128(63,0),
+  ))
 }
