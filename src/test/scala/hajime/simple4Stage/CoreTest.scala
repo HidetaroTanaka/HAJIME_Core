@@ -161,7 +161,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   val instList_multiply = Seq(
     "mul", "mulh", "mulhsu", "mulhu", "mulw"
   )
-  if(true) {
+  if(false) {
     instList_multiply.foreach(e => {
       Process(Seq("sh", "-c", s"export PATH=\"$$PATH:/opt/riscv/riscv-gnu-toolchain/bin\" && cd ~/github/HAJIME_Core/src/main/resources/rv64um && sh build_rv64um.sh ${e}")).!
     })

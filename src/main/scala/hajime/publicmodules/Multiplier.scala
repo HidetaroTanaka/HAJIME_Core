@@ -248,29 +248,26 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
 
   val nonPipelinedMultiplier = Module(new NonPipelinedMultiplier())
 
-  val rs1_inverted = WireInit(false.B)
-  val rs2_inverted = WireInit(false.B)
+  // rs1のMSBが1であり，かつrs1が符号付きであればrs1の符号を逆転させる
+  val rs1_inverted = (io.req.bits.rs1.head(1).asBool &&
+    ((io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HISU.asUInt)))
+  // rs2に関しても同様
+  val rs2_inverted = (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt))
 
   nonPipelinedMultiplier.io.req.valid := io.req.valid
   io.req.ready := nonPipelinedMultiplier.io.req.ready
   nonPipelinedMultiplier.io.req.bits.tag := 0.U
   nonPipelinedMultiplier.io.req.bits.decode := io.req.bits.funct
+
   // invert if rs1.head=1 and MULH, MULHSU
   // half if op32
   nonPipelinedMultiplier.io.req.bits.multiplicand.bits := MuxCase(io.req.bits.rs1, Seq(
-    (io.req.bits.rs1.head(1).asBool &&
-      ((io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HISU.asUInt))) -> {
-      rs1_inverted := true.B
-      -io.req.bits.rs1
-    },
+    rs1_inverted -> -io.req.bits.rs1,
     io.req.bits.funct.op32 -> io.req.bits.rs1.tail(32)
   ))
   // invert if rs2.head=1 and MULH, half if op32
   nonPipelinedMultiplier.io.req.bits.multiplier.bits := MuxCase(io.req.bits.rs2, Seq(
-    (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt)) -> {
-      rs2_inverted := true.B
-      -io.req.bits.rs2
-    },
+    rs2_inverted -> -io.req.bits.rs2,
     io.req.bits.funct.op32 -> io.req.bits.rs2.tail(32)
   ))
   nonPipelinedMultiplier.io.req.bits.sign := rs1_inverted ^ rs2_inverted

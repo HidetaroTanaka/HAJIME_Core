@@ -285,7 +285,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   )) && ID_EX_REG.valid
   bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.write_to_rd && ID_EX_REG.valid
 
-  EX_WB_REG.valid := ID_EX_REG.valid
+  // メモリアクセス命令であればldstUnitがreadyである必要があり，
+  // 乗算命令であればmultiplier.respがvalidである必要がある
+  EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) && (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B)
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
   EX_WB_REG.bits.dataSignals.datatoCSR := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
