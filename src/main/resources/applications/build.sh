@@ -89,5 +89,22 @@ hexdump -v -e '1/4 "%08x" "\n"' memcpy_text_startup.bin > memcpy_text_startup.te
 cat memcpy_data.temp memcpy_rodata.temp memcpy_rodata_str1_8.temp > memcpy_data.hex
 cat memcpy_text_init.temp memcpy_text.temp memcpy_text_startup.temp > memcpy_inst.hex
 
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64i_zicsr -mabi=lp64 -o quicksort.riscv ./quicksort/quicksort.c ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+
+riscv64-unknown-elf-objdump --disassemble-all quicksort.riscv > quicksort.dump
+riscv64-unknown-elf-objcopy --dump-section .data=quicksort_data.bin quicksort.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=quicksort_rodata.bin quicksort.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=quicksort_rodata_str1_8.bin quicksort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=quicksort_text_init.bin quicksort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=quicksort_text.bin quicksort.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=quicksort_text_startup.bin quicksort.riscv
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_data.bin > quicksort_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_rodata.bin > quicksort_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_rodata_str1_8.bin > quicksort_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_text_init.bin > quicksort_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_text.bin > quicksort_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' quicksort_text_startup.bin > quicksort_text_startup.temp
+cat quicksort_data.temp quicksort_rodata.temp quicksort_rodata_str1_8.temp > quicksort_data.hex
+cat quicksort_text_init.temp quicksort_text.temp quicksort_text_startup.temp > quicksort_inst.hex
 
 rm *.riscv *.bin *.temp

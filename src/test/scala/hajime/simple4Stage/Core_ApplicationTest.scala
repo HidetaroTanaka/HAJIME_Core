@@ -74,7 +74,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   val testList = Seq(
-    "helloworld", "median", "printInt64", "selection_sort", "memcpy"
+    "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
   )
 
   for(e <- testList) {
