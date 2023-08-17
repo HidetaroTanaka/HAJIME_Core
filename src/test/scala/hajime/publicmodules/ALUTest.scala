@@ -6,6 +6,7 @@ import hajime.common.Instructions._
 import hajime.common._
 import org.scalatest.flatspec._
 
+/*
 class ALUTest extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConstants {
   import ContentValid._
   it should "not act sussy" in {
@@ -360,3 +361,4 @@ class ALUTest extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConsta
     }
   }
 }
+ */

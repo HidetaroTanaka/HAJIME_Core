@@ -8,6 +8,64 @@ import scala.io._
 import scala.sys.process._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
+  def initialiseImem(filename: String, dut: Core_and_cache): Unit = {
+    dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
+    dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
+    dut.io.imem_initialiseAXI.ar.valid.poke(false.B)
+    dut.io.imem_initialiseAXI.aw.bits.addr.poke(0.U)
+    dut.io.imem_initialiseAXI.aw.bits.prot.poke(0.U)
+    dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
+    dut.io.imem_initialiseAXI.b.ready.poke(true.B)
+    dut.io.imem_initialiseAXI.r.ready.poke(true.B)
+    dut.io.imem_initialiseAXI.w.bits.data.poke(0.U)
+    dut.io.imem_initialiseAXI.w.bits.strb.poke(0.U)
+    dut.io.imem_initialiseAXI.w.valid.poke(false.B)
+    dut.io.icache_initialising.poke(true.B)
+    // initialise icache from file
+    val fileSource = Source.fromFile(filename)
+    for ((data, idx) <- fileSource.getLines().zipWithIndex) {
+      dut.io.imem_initialiseAXI.aw.bits.addr.poke((idx * 4).U)
+      dut.io.imem_initialiseAXI.aw.valid.poke(true.B)
+      dut.io.imem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
+      dut.io.imem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
+      dut.io.imem_initialiseAXI.w.valid.poke(true.B)
+      dut.clock.step()
+    }
+    fileSource.close()
+    dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
+    dut.io.imem_initialiseAXI.w.valid.poke(false.B)
+    dut.io.icache_initialising.poke(false.B)
+  }
+
+  def initialiseDmem(filename: String, dut: Core_and_cache): Unit = {
+    dut.io.dmem_initialiseAXI.ar.bits.addr.poke(0.U)
+    dut.io.dmem_initialiseAXI.ar.bits.prot.poke(0.U)
+    dut.io.dmem_initialiseAXI.ar.valid.poke(false.B)
+    dut.io.dmem_initialiseAXI.aw.bits.addr.poke(0.U)
+    dut.io.dmem_initialiseAXI.aw.bits.prot.poke(0.U)
+    dut.io.dmem_initialiseAXI.aw.valid.poke(false.B)
+    dut.io.dmem_initialiseAXI.b.ready.poke(true.B)
+    dut.io.dmem_initialiseAXI.r.ready.poke(true.B)
+    dut.io.dmem_initialiseAXI.w.bits.data.poke(0.U)
+    dut.io.dmem_initialiseAXI.w.bits.strb.poke(0.U)
+    dut.io.dmem_initialiseAXI.w.valid.poke(false.B)
+    dut.io.dcache_initialising.poke(true.B)
+    // initialise icache from file
+    val fileSource = Source.fromFile(filename)
+    for ((data, idx) <- fileSource.getLines().zipWithIndex) {
+      dut.io.dmem_initialiseAXI.aw.bits.addr.poke((idx * 4 + 0x4000).U)
+      dut.io.dmem_initialiseAXI.aw.valid.poke(true.B)
+      dut.io.dmem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
+      dut.io.dmem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
+      dut.io.dmem_initialiseAXI.w.valid.poke(true.B)
+      dut.clock.step()
+    }
+    fileSource.close()
+    dut.io.dmem_initialiseAXI.aw.valid.poke(false.B)
+    dut.io.dmem_initialiseAXI.w.valid.poke(false.B)
+    dut.io.dcache_initialising.poke(false.B)
+  }
+
   val instList_noDmem = Seq(
     "simple",
     "add", "addi", "addiw", "addw", "and", "andi", "auipc",
@@ -32,32 +90,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
         dut.clock.setTimeout(1024)
         dut.io.reset_vector.poke(0.U)
         dut.io.hartid.poke(0.U)
-        dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
-        dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
-        dut.io.imem_initialiseAXI.ar.valid.poke(false.B)
-        dut.io.imem_initialiseAXI.aw.bits.addr.poke(0.U)
-        dut.io.imem_initialiseAXI.aw.bits.prot.poke(0.U)
-        dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-        dut.io.imem_initialiseAXI.b.ready.poke(true.B)
-        dut.io.imem_initialiseAXI.r.ready.poke(true.B)
-        dut.io.imem_initialiseAXI.w.bits.data.poke(0.U)
-        dut.io.imem_initialiseAXI.w.bits.strb.poke(0.U)
-        dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-        dut.io.icache_initialising.poke(true.B)
-        // initialise icache from file
-        val fileSource = Source.fromFile(s"src/main/resources/rv64ui/${e}_inst.hex")
-        for((data, idx) <- fileSource.getLines().zipWithIndex) {
-          dut.io.imem_initialiseAXI.aw.bits.addr.poke((idx * 4).U)
-          dut.io.imem_initialiseAXI.aw.valid.poke(true.B)
-          dut.io.imem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
-          dut.io.imem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
-          dut.io.imem_initialiseAXI.w.valid.poke(true.B)
-          dut.clock.step()
-        }
-        fileSource.close()
-        dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-        dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-        dut.io.icache_initialising.poke(false.B)
+        initialiseImem(s"src/main/resources/rv64ui/${e}_inst.hex", dut)
         while (dut.io.toHost.peek().litValue == 0) {
           dut.clock.step()
         }
@@ -82,69 +115,13 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   for(e <- instList_withDmem) {
     it should s"pass the test ${e}" in {
       test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
-        def initialiseImem(filename: String): Unit = {
-          dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
-          dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
-          dut.io.imem_initialiseAXI.ar.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.aw.bits.addr.poke(0.U)
-          dut.io.imem_initialiseAXI.aw.bits.prot.poke(0.U)
-          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.b.ready.poke(true.B)
-          dut.io.imem_initialiseAXI.r.ready.poke(true.B)
-          dut.io.imem_initialiseAXI.w.bits.data.poke(0.U)
-          dut.io.imem_initialiseAXI.w.bits.strb.poke(0.U)
-          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.icache_initialising.poke(true.B)
-          // initialise icache from file
-          val fileSource = Source.fromFile(filename)
-          for ((data, idx) <- fileSource.getLines().zipWithIndex) {
-            dut.io.imem_initialiseAXI.aw.bits.addr.poke((idx * 4).U)
-            dut.io.imem_initialiseAXI.aw.valid.poke(true.B)
-            dut.io.imem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
-            dut.io.imem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
-            dut.io.imem_initialiseAXI.w.valid.poke(true.B)
-            dut.clock.step()
-          }
-          fileSource.close()
-          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.icache_initialising.poke(false.B)
-        }
-        def initialiseDmem(filename: String): Unit = {
-          dut.io.dmem_initialiseAXI.ar.bits.addr.poke(0.U)
-          dut.io.dmem_initialiseAXI.ar.bits.prot.poke(0.U)
-          dut.io.dmem_initialiseAXI.ar.valid.poke(false.B)
-          dut.io.dmem_initialiseAXI.aw.bits.addr.poke(0.U)
-          dut.io.dmem_initialiseAXI.aw.bits.prot.poke(0.U)
-          dut.io.dmem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.dmem_initialiseAXI.b.ready.poke(true.B)
-          dut.io.dmem_initialiseAXI.r.ready.poke(true.B)
-          dut.io.dmem_initialiseAXI.w.bits.data.poke(0.U)
-          dut.io.dmem_initialiseAXI.w.bits.strb.poke(0.U)
-          dut.io.dmem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.dcache_initialising.poke(true.B)
-          // initialise icache from file
-          val fileSource = Source.fromFile(filename)
-          for ((data, idx) <- fileSource.getLines().zipWithIndex) {
-            dut.io.dmem_initialiseAXI.aw.bits.addr.poke((idx * 4 + 0x4000).U)
-            dut.io.dmem_initialiseAXI.aw.valid.poke(true.B)
-            dut.io.dmem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
-            dut.io.dmem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
-            dut.io.dmem_initialiseAXI.w.valid.poke(true.B)
-            dut.clock.step()
-          }
-          fileSource.close()
-          dut.io.dmem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.dmem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.dcache_initialising.poke(false.B)
-        }
         dut.clock.setTimeout(1024)
         dut.io.reset_vector.poke(0.U)
         dut.io.hartid.poke(0.U)
         fork {
-          initialiseImem(s"src/main/resources/rv64ui/${e}_inst.hex")
+          initialiseImem(s"src/main/resources/rv64ui/${e}_inst.hex", dut)
         } .fork {
-          initialiseDmem(s"src/main/resources/rv64ui/${e}_data.hex")
+          initialiseDmem(s"src/main/resources/rv64ui/${e}_data.hex", dut)
         } .join()
 
         while (dut.io.toHost.peek().litValue == 0) {
@@ -170,38 +147,10 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   for(e <- instList_multiply) {
     it should s"pass the test ${e}" in {
       test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
-        def initialiseImem(filename: String): Unit = {
-          dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
-          dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
-          dut.io.imem_initialiseAXI.ar.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.aw.bits.addr.poke(0.U)
-          dut.io.imem_initialiseAXI.aw.bits.prot.poke(0.U)
-          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.b.ready.poke(true.B)
-          dut.io.imem_initialiseAXI.r.ready.poke(true.B)
-          dut.io.imem_initialiseAXI.w.bits.data.poke(0.U)
-          dut.io.imem_initialiseAXI.w.bits.strb.poke(0.U)
-          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.icache_initialising.poke(true.B)
-          // initialise icache from file
-          val fileSource = Source.fromFile(filename)
-          for ((data, idx) <- fileSource.getLines().zipWithIndex) {
-            dut.io.imem_initialiseAXI.aw.bits.addr.poke((idx * 4).U)
-            dut.io.imem_initialiseAXI.aw.valid.poke(true.B)
-            dut.io.imem_initialiseAXI.w.bits.data.poke(s"h$data".U(32.W))
-            dut.io.imem_initialiseAXI.w.bits.strb.poke(0xF.U(8.W))
-            dut.io.imem_initialiseAXI.w.valid.poke(true.B)
-            dut.clock.step()
-          }
-          fileSource.close()
-          dut.io.imem_initialiseAXI.aw.valid.poke(false.B)
-          dut.io.imem_initialiseAXI.w.valid.poke(false.B)
-          dut.io.icache_initialising.poke(false.B)
-        }
         dut.clock.setTimeout(1024)
         dut.io.reset_vector.poke(0.U)
         dut.io.hartid.poke(0.U)
-        initialiseImem(s"src/main/resources/rv64um/${e}_inst.hex")
+        initialiseImem(s"src/main/resources/rv64um/${e}_inst.hex", dut)
 
         while (dut.io.toHost.peek().litValue == 0) {
           dut.clock.step()
