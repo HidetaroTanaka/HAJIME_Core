@@ -74,7 +74,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   val rv64iTestList = Seq(
-    // "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
+    "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
   )
 
   for(e <- rv64iTestList) {
@@ -106,7 +106,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   val rv64mTestList = Seq(
-    "factorial"
+    "factorial", "power"
   )
 
   for(e <- rv64mTestList) {
