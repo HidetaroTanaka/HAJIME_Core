@@ -106,7 +106,7 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   val rv64mTestList = Seq(
-    "factorial", "power"
+    "factorial", "power", "vector_innerproduct"
   )
 
   for(e <- rv64mTestList) {

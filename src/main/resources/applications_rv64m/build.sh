@@ -36,4 +36,23 @@ hexdump -v -e '1/4 "%08x" "\n"' power_text_startup.bin > power_text_startup.temp
 cat power_data.temp power_rodata.temp power_rodata_str1_8.temp power_sdata.temp > power_data.hex
 cat power_text_init.temp power_text.temp power_text_startup.temp > power_inst.hex
 
+riscv64-unknown-elf-gcc -I ./common -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr -mabi=lp64 -o vector_innerproduct.riscv ./vector_innerproduct/vector_innerproduct.c ./common/syscalls.c ./common/crt.S -static -nostdlib -nostartfiles -T ./common/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vector_innerproduct.riscv > vector_innerproduct.dump
+riscv64-unknown-elf-objcopy --dump-section .data=vector_innerproduct_data.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=vector_innerproduct_rodata.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vector_innerproduct_rodata_str1_8.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vector_innerproduct_sdata.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vector_innerproduct_text_init.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vector_innerproduct_text.bin vector_innerproduct.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vector_innerproduct_text_startup.bin vector_innerproduct.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_data.bin > vector_innerproduct_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_rodata.bin > vector_innerproduct_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_rodata_str1_8.bin > vector_innerproduct_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_sdata.bin > vector_innerproduct_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_text_init.bin > vector_innerproduct_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_text.bin > vector_innerproduct_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_innerproduct_text_startup.bin > vector_innerproduct_text_startup.temp
+cat vector_innerproduct_data.temp vector_innerproduct_rodata.temp vector_innerproduct_rodata_str1_8.temp vector_innerproduct_sdata.temp > vector_innerproduct_data.hex
+cat vector_innerproduct_text_init.temp vector_innerproduct_text.temp vector_innerproduct_text_startup.temp > vector_innerproduct_inst.hex
+
 rm *.riscv *.bin *.temp

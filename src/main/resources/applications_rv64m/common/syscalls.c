@@ -166,7 +166,6 @@ void _init(
   // thread_entry(cid, nc);
 
   // only single-threaded programs should ever get here.
-  asm volatile ("csrw minstret, x0; csrw mcycle, x0;");
   int ret = main(0, 0);
 
   exit(ret);
