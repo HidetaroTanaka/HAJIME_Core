@@ -21,5 +21,6 @@ int main(int argc, char** argv) {
   char hexString[19];
   int64ToHex(ans, hexString);
   printstr(hexString);
+  printstr("\n");
   return (ans != (unsigned long)0x1C8CFC00);
 }

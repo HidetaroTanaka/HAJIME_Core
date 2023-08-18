@@ -78,6 +78,7 @@ void printCounters() {
   printstr("\ninstret: ");
   int64ToHex(instret, string);
   printstr(string);
+  printstr("\n");
 }
 
 void __attribute__((noreturn)) exit(int ret) {
