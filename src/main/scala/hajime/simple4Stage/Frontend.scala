@@ -34,6 +34,7 @@ class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
   val exception = Output(Bool())
 }
 
+// TODO: add inst address misaligned, access fault
 class Frontend(implicit params: HajimeCoreParams) extends Module {
   import params._
   val io = IO(new FrontEndIO())

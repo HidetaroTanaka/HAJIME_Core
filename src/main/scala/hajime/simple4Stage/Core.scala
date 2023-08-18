@@ -102,6 +102,8 @@ class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
 class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
+  val interrupt = Bool()
+  val interrupt_cause = UInt(params.xprlen.W)
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -179,10 +181,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   rf.io.rs1 := decoded_inst.rs1
   rf.io.rs2 := decoded_inst.rs2
 
-  /** IDステージの命令を処理するか否か
-   */
-  val ID_inst_valid = decoder.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready
+  // TODO: add illegal instruction
+  val ID_illegal_instruction = !decoder.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready
+  val ID_inst_valid = io.frontend.resp.valid && io.frontend.resp.ready
   ID_EX_REG.valid := ID_inst_valid
+  ID_EX_REG.bits.interrupt := ID_illegal_instruction
+  ID_EX_REG.bits.interrupt_cause := Mux(ID_illegal_instruction, 0x2.U, 0.U)
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
   ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid

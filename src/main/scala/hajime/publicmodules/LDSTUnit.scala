@@ -27,6 +27,7 @@ class LDSTIO(implicit params: HajimeCoreParams) extends Bundle {
   val dcache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = params.xprlen)
 }
 
+// TODO: Add load/store address misaligned, access fault
 // TODO: Add Atomic Extension Support
 class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new LDSTIO())
