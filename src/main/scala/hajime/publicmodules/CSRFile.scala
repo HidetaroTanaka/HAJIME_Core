@@ -15,7 +15,7 @@ class CSRFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val data = UInt(xprlen.W)
 }
 
-class CSRInterruptReq(implicit params: HajimeCoreParams) extends Bundle {
+class CSRExceptionReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val mepc_write = UInt(xprlen.W)
   val mcause_write = UInt(xprlen.W)
@@ -34,7 +34,7 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val readResp = Output(new CSRFileReadResp())
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
-  val interrupt = Flipped(ValidIO(new CSRInterruptReq()))
+  val exception = Flipped(ValidIO(new CSRExceptionReq()))
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -116,7 +116,7 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     }
   )
   // 割り込みの場合は書き込まない
-  when(io.writeReq.valid && !io.interrupt.valid){
+  when(io.writeReq.valid && !io.exception.valid){
     for ((addr, csr) <- writableCSRs) {
       when(io.csr_addr === addr.U(12.W)) {
         if(addr == CSRs.mepc) {
@@ -130,10 +130,10 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
 
   // 割り込みの場合はmepcに例外発生PC，mcauseに例外要因を書く
   // また，mtvecを読んでPCに書き込む
-  when(io.interrupt.valid) {
+  when(io.exception.valid) {
     // 例外発生PCの下位2bitは0であることが保証されている
-    mepc := io.interrupt.bits.mepc_write
-    mcause := io.interrupt.bits.mcause_write
+    mepc := io.exception.bits.mepc_write
+    mcause := io.exception.bits.mcause_write
     io.readResp.data := Cat(mtvec.head(xprlen-2), 0.U(2.W))
   }
 }

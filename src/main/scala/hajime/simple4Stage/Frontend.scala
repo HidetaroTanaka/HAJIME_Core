@@ -20,6 +20,7 @@ class FrontEndResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val pc = new ProgramCounter()
   val inst = new InstBundle()
+  val exceptionSignals = new ValidIO(UInt(params.xprlen.W))
 }
 
 class FrontEndCpuIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -31,7 +32,6 @@ class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
   val cpu = new FrontEndCpuIO()
   val icache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = 32)
   val reset_vector = Input(UInt(params.xprlen.W))
-  val exception = Output(Bool())
 }
 
 // TODO: add inst address misaligned, access fault
@@ -61,7 +61,13 @@ class Frontend(implicit params: HajimeCoreParams) extends Module {
   io.cpu.resp.valid := io.icache_axi4lite.r.valid
   io.icache_axi4lite.r.ready := io.cpu.resp.ready // || io.cpu.out.valid
 
-  io.exception := io.icache_axi4lite.r.bits.exception
+  val instAccessFault = pc_reg.addr > 0x1FFC.U
+  val instAddressMisaligned = pc_reg.addr(1,0) =/= 0.U
+  io.cpu.resp.bits.exceptionSignals.bits := MuxCase(0.U, Seq(
+    instAccessFault -> Causes.fetch_access.U,
+    instAddressMisaligned -> Causes.misaligned_fetch.U,
+  ))
+  io.cpu.resp.bits.exceptionSignals.valid := instAccessFault || instAddressMisaligned
 }
 
 object Frontend extends App {

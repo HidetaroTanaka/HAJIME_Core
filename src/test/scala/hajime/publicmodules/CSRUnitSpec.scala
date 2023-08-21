@@ -32,9 +32,9 @@ class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpCo
       dut.io.fromCPU.cpu_operating.poke(true.B)
       dut.io.fromCPU.inst_retire.poke(true.B)
       dut.io.fromCPU.hartid.poke(1.U)
-      dut.io.interrupt.valid.poke(false.B)
-      dut.io.interrupt.bits.mcause_write.poke(0.U)
-      dut.io.interrupt.bits.mepc_write.poke(0.U)
+      dut.io.exception.valid.poke(false.B)
+      dut.io.exception.bits.mcause_write.poke(0.U)
+      dut.io.exception.bits.mepc_write.poke(0.U)
       dut.io.resp.data.expect("h0001145141919810".U(xprlen.W))
       dut.clock.step()
       // mimpid is MRO, should not be overwritten
@@ -48,14 +48,14 @@ class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpCo
       dut.io.resp.data.expect("h1919".U(xprlen.W))
       dut.clock.step()
       // ecall test
-      dut.io.interrupt.valid.poke(true.B)
-      dut.io.interrupt.bits.mcause_write.poke(Causes.machine_ecall)
-      dut.io.interrupt.bits.mepc_write.poke("h00008040".U(xprlen.W))
+      dut.io.exception.valid.poke(true.B)
+      dut.io.exception.bits.mcause_write.poke(Causes.machine_ecall)
+      dut.io.exception.bits.mepc_write.poke("h00008040".U(xprlen.W))
       // mtvec(63,2), 2'b00
       dut.io.resp.data.expect("h1918".U)
       dut.clock.step()
       // mret test
-      dut.io.interrupt.valid.poke(false.B)
+      dut.io.exception.valid.poke(false.B)
       dut.io.req.bits.funct.branch.poke(Branch.MRET.litValue.U)
       dut.io.resp.data.expect("h00008040".U(xprlen.W))
       dut.clock.step()

@@ -73,7 +73,7 @@ object RV32IDecode extends DecodeConstants {
     MRET   -> List(Y, Branch.MRET,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.R, N),
     // ebreak is unimplemented
     EBREAK -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-    // TODO: implement wfi and external interrupt
+    // TODO: implement wfi and external exception
   )
 }
 

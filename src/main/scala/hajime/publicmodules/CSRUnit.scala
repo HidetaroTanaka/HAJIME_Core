@@ -16,7 +16,7 @@ class CSRUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Flipped(ValidIO(new CSRUnitReq()))
   val resp = Output(new CSRFileReadResp())
   val fromCPU = Input(new CPUtoCSR())
-  val interrupt = Flipped(ValidIO(new CSRInterruptReq()))
+  val exception = Flipped(ValidIO(new CSRExceptionReq()))
 }
 
 class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
@@ -42,7 +42,7 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCon
   ))
 
   io.resp := csrFile.io.readResp
-  csrFile.io.interrupt := io.interrupt
+  csrFile.io.exception := io.exception
 }
 
 object CSRUnit extends App {

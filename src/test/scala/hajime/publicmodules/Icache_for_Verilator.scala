@@ -11,7 +11,7 @@ import org.scalatest.flatspec._
 import scala.io._
 
 // Should I check unaligned exception in Core or Cache?
-class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp {
+class Icache_for_Verilator(memsize: Int = 0x2000) extends Module {
   val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
   // AR channel
   io.ar.ready := true.B
@@ -31,10 +31,7 @@ class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiR
   val readDataFromMem = Wire(chiselTypeOf(io.r.bits))
   // Vecでは下位要素が先頭だが，信号では逆
   readDataFromMem.data := Cat(mem.read(io.ar.bits.addr.head(62)).reverse)
-  readDataFromMem.resp := MuxCase(R_OKEY.U, Seq(
-    RegNext(io.ar.bits.addr > 0x1FFC.U(64.W)) -> R_DECERR.U,
-    RegNext(!io.ar.bits.alignedToWord) -> R_SLVERR.U,
-  ))
+  readDataFromMem.resp := 0.U
 
   val r_channel_bits_reg = Reg(chiselTypeOf(io.r.bits))
   val r_channel_valid_reg = Reg(Bool())
@@ -63,13 +60,10 @@ class Icache_for_Verilator(memsize: Int = 0x2000) extends Module with ChecksAxiR
   when(io.aw.valid && io.w.valid) {
     mem.write(io.aw.bits.addr.head(62), writeData_asVec, io.w.bits.strb.asBools)
     b_valid := true.B
-    b_resp := MuxCase(W_OKEY.U, Seq(
-      (io.aw.bits.addr > 0x1FFC.U(64.W)) -> W_DECERR.U,
-      !io.aw.bits.alignedToWord -> W_SLVERR.U,
-    ))
+    b_resp := 0.U
   } .otherwise {
     b_valid := false.B
-    b_resp := W_OKEY.U
+    b_resp := 0.U
   }
   io.b.valid := b_valid
   io.b.bits.resp := b_resp
