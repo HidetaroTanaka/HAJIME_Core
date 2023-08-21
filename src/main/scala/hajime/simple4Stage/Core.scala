@@ -208,6 +208,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 
   bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
+  // exceptionの際にこれを下げる必要があるかもしれない
   bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1 && decoder.io.out.valid && io.frontend.resp.valid
   bypassingUnit.io.ID.in.rs2_index.bits := decoded_inst.rs2
   bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2 && decoder.io.out.valid && io.frontend.resp.valid
