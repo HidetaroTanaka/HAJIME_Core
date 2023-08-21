@@ -6,7 +6,7 @@ import org.scalatest.flatspec._
 
 import scala.io._
 
-class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
+object Core_ApplicationTest {
   def initialiseImem(filename: String, dut: Core_and_cache): Unit = {
     dut.io.imem_initialiseAXI.ar.bits.addr.poke(0.U)
     dut.io.imem_initialiseAXI.ar.bits.prot.poke(0.U)
@@ -73,98 +73,69 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.toHost.valid.peekBoolean()
   }
 
+  def executeTest(dut: Core_and_cache, testName: String, testType: String): Unit = {
+    println(s"test $testName:")
+    fork {
+      initialiseImem(s"src/main/resources/applications_${testType}/${testName}_inst.hex", dut)
+    }.fork {
+      initialiseDmem(s"src/main/resources/applications_${testType}/${testName}_data.hex", dut)
+    }.join()
+    dut.clock.setTimeout(65536)
+    dut.io.reset_vector.poke(0.U)
+    dut.io.hartid.poke(0.U)
+
+    var toHostWrittenChar: List[Char] = Nil
+    while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
+      dut.clock.step()
+      if (get_toHostValid(dut)) {
+        // print(get_toHostChar())
+        toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
+      }
+    }
+    dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
+    toHostWrittenChar.foreach(print)
+    println()
+  }
+}
+
+import Core_ApplicationTest._
+
+class Rv64iApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   val rv64iTestList = Seq(
     "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
   )
-
   for(e <- rv64iTestList) {
     it should s"execute $e" in {
       test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
-        println(s"test $e:")
-        fork {
-          initialiseImem(s"src/main/resources/applications_rv64i/${e}_inst.hex", dut)
-        }.fork {
-          initialiseDmem(s"src/main/resources/applications_rv64i/${e}_data.hex", dut)
-        }.join()
-        dut.clock.setTimeout(65536)
-        dut.io.reset_vector.poke(0.U)
-        dut.io.hartid.poke(0.U)
-
-        var toHostWrittenChar: List[Char] = List()
-        while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
-          dut.clock.step()
-          if (get_toHostValid(dut)) {
-            // print(get_toHostChar())
-            toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
-          }
-        }
-        dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
-        toHostWrittenChar.foreach(print)
-        println()
+        executeTest(dut, e, "rv64i")
       }
     }
   }
+}
 
+class Rv64mApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   val rv64mTestList = Seq(
     "factorial", "power", "vector_innerproduct"
   )
-
   for(e <- rv64mTestList) {
     it should s"execute $e" in {
       test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
-        println(s"test $e:")
-        fork {
-          initialiseImem(s"src/main/resources/applications_rv64m/${e}_inst.hex", dut)
-        }.fork {
-          initialiseDmem(s"src/main/resources/applications_rv64m/${e}_data.hex", dut)
-        }.join()
-        dut.clock.setTimeout(65536)
-        dut.io.reset_vector.poke(0.U)
-        dut.io.hartid.poke(0.U)
-
-        var toHostWrittenChar: List[Char] = List()
-        while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
-          dut.clock.step()
-          if (get_toHostValid(dut)) {
-            // print(get_toHostChar())
-            toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
-          }
-        }
-        dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
-        toHostWrittenChar.foreach(print)
-        println()
+        executeTest(dut, e, "rv64m")
       }
     }
   }
+}
 
+class ExceptionApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   val exceptionTestList = Seq(
     "illegal_inst"
   )
   for(e <- exceptionTestList) {
     it should s"execute $e" in {
       test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
-        println(s"test $e:")
-        fork {
-          initialiseImem(s"src/main/resources/applications_exceptions/${e}_inst.hex", dut)
-        }.fork {
-          initialiseDmem(s"src/main/resources/applications_exceptions/${e}_data.hex", dut)
-        }.join()
-        dut.clock.setTimeout(65536)
-        dut.io.reset_vector.poke(0.U)
-        dut.io.hartid.poke(0.U)
-
-        var toHostWrittenChar: List[Char] = List()
-        while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
-          dut.clock.step()
-          if (get_toHostValid(dut)) {
-            // print(get_toHostChar())
-            toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
-          }
-        }
-        dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
-        toHostWrittenChar.foreach(print)
-        println()
+        executeTest(dut, e, "exceptions")
       }
     }
   }
 }
+
