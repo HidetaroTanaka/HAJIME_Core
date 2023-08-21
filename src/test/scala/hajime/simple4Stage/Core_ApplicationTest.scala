@@ -127,8 +127,9 @@ class Rv64mApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
 }
 
 class ExceptionApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
+  // TODO: Memory Access MisAligned and Fault
   val exceptionTestList = Seq(
-    "illegal_inst"
+    "illegal_inst", "ecall"
   )
   for(e <- exceptionTestList) {
     it should s"execute $e" in {
