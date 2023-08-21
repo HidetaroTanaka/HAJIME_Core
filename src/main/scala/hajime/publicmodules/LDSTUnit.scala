@@ -14,7 +14,7 @@ class LDSTReq(implicit params: HajimeCoreParams) extends Bundle {
 
 class LDSTResp(implicit params: HajimeCoreParams) extends Bundle {
   val data = UInt(params.xprlen.W)
-  val exception = Bool()
+  val exceptionSignals = new ValidIO(UInt(params.xprlen.W))
 }
 
 class LDSTCpuIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -46,10 +46,8 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
     req_reg.funct.memRead -> io.dcache_axi4lite.r.valid,
     req_reg.funct.memWrite -> io.dcache_axi4lite.b.valid,
   ))
-  io.cpu.resp.bits.exception := MuxCase(false.B, Seq(
-    req_reg.funct.memRead -> io.dcache_axi4lite.r.bits.exception,
-    req_reg.funct.memWrite -> io.dcache_axi4lite.b.bits.exception,
-  ))
+  // TODO: Check Access Fault and Address Misaligned
+  io.cpu.resp.bits.exceptionSignals := DontCare
   io.cpu.resp.bits.data := MuxLookup(req_reg.funct.memory_length, io.dcache_axi4lite.r.bits.data)(Seq(
     MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
     MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),
@@ -86,6 +84,5 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
 
 object LDSTUnit extends App {
   def apply(implicit params: HajimeCoreParams): LDSTUnit = new LDSTUnit()
-
-  (ChiselStage).emitSystemVerilogFile(LDSTUnit(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  ChiselStage.emitSystemVerilogFile(LDSTUnit(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
