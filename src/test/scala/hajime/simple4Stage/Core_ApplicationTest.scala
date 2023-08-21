@@ -136,4 +136,35 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
       }
     }
   }
+
+  val exceptionTestList = Seq(
+    "illegal_inst"
+  )
+  for(e <- exceptionTestList) {
+    it should s"execute $e" in {
+      test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+        println(s"test $e:")
+        fork {
+          initialiseImem(s"src/main/resources/applications_exceptions/${e}_inst.hex", dut)
+        }.fork {
+          initialiseDmem(s"src/main/resources/applications_exceptions/${e}_data.hex", dut)
+        }.join()
+        dut.clock.setTimeout(65536)
+        dut.io.reset_vector.poke(0.U)
+        dut.io.hartid.poke(0.U)
+
+        var toHostWrittenChar: List[Char] = List()
+        while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
+          dut.clock.step()
+          if (get_toHostValid(dut)) {
+            // print(get_toHostChar())
+            toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
+          }
+        }
+        dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
+        toHostWrittenChar.foreach(print)
+        println()
+      }
+    }
+  }
 }
