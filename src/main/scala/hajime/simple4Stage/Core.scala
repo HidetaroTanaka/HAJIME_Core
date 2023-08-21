@@ -102,16 +102,14 @@ class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
 class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
-  val interrupt = Bool()
-  val interrupt_cause = UInt(params.xprlen.W)
+  val interruptSignals = new Valid(UInt(params.xprlen.W))
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
 class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new EX_WB_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
-  val interrupt = Bool()
-  val interrupt_cause = UInt(params.xprlen.W)
+  val interruptSignals = new Valid(UInt(params.xprlen.W))
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -181,12 +179,16 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   rf.io.rs1 := decoded_inst.rs1
   rf.io.rs2 := decoded_inst.rs2
 
-  // TODO: add illegal instruction
-  val ID_illegal_instruction = !decoder.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready
   val ID_inst_valid = io.frontend.resp.valid && io.frontend.resp.ready
+  val ID_illegal_instruction = !decoder.io.out.valid && ID_inst_valid
+  val ID_ecall = decoder.io.out.valid && (decoder.io.out.bits.branch === Branch.ECALL.asUInt) && ID_inst_valid
+
   ID_EX_REG.valid := ID_inst_valid
-  ID_EX_REG.bits.interrupt := ID_illegal_instruction
-  ID_EX_REG.bits.interrupt_cause := Mux(ID_illegal_instruction, 0x2.U, 0.U)
+  ID_EX_REG.bits.interruptSignals.valid := ID_illegal_instruction || ID_ecall
+  ID_EX_REG.bits.interruptSignals.bits := MuxCase(0.U, Seq(
+    ID_illegal_instruction -> Causes.illegal_instruction.U,
+    ID_ecall -> Causes.machine_ecall.U,
+  ))
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
   ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
@@ -299,9 +301,14 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   EX_WB_REG.bits.ctrlSignals := ID_EX_REG.bits.ctrlSignals
 
-  EX_WB_REG.bits.interrupt := (ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt) && ID_EX_REG.valid
-  // only machine-mode ecall is supported now
-  EX_WB_REG.bits.interrupt_cause := Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
+  EX_WB_REG.bits.interruptSignals.valid := (ID_EX_REG.valid && ID_EX_REG.bits.interruptSignals.valid) || (ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt) && ID_EX_REG.valid
+  // only machine-mode ecall and illegal inst is supported now
+  EX_WB_REG.bits.interruptSignals.bits := MuxCase(0.U, Seq(
+    // if there is already exception before ID, then retain
+    ID_EX_REG.bits.interruptSignals.valid -> ID_EX_REG.bits.interruptSignals.bits,
+    // else if exception in EX (load/store misaligned or access fault),
+  ))
+    Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
@@ -326,12 +333,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // メモリアクセス命令かつ，ldstUnitのrespがvalidでなければストール
   WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.resp.valid)
   // TODO: add memory misaligned exception (load misaligned: 0x4, store misaligned: 0x6), and memory access fault exception (load fault: 0x5, store fault: 0x7)
-  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interrupt)
+  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.interruptSignals.valid)
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
-  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interrupt && !WB_stall
+  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.interruptSignals.valid && !WB_stall
   rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
   rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
@@ -356,9 +363,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   csrUnit.io.fromCPU.hartid := io.hartid
   csrUnit.io.fromCPU.cpu_operating := cpu_operating
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
-  csrUnit.io.interrupt.valid := EX_WB_REG.bits.interrupt
+  csrUnit.io.interrupt.valid := EX_WB_REG.bits.interruptSignals.valid
   csrUnit.io.interrupt.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
-  csrUnit.io.interrupt.bits.mcause_write := EX_WB_REG.bits.interrupt_cause
+  csrUnit.io.interrupt.bits.mcause_write := EX_WB_REG.bits.interruptSignals.bits
 
   // EXまたはWBステージにfence, ecall, mretがある
   sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)

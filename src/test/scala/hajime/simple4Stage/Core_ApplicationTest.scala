@@ -82,9 +82,9 @@ class Core_ApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
       test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         println(s"test $e:")
         fork {
-          initialiseImem(s"src/main/resources/applications/${e}_inst.hex", dut)
+          initialiseImem(s"src/main/resources/applications_rv64i/${e}_inst.hex", dut)
         }.fork {
-          initialiseDmem(s"src/main/resources/applications/${e}_data.hex", dut)
+          initialiseDmem(s"src/main/resources/applications_rv64i/${e}_data.hex", dut)
         }.join()
         dut.clock.setTimeout(65536)
         dut.io.reset_vector.poke(0.U)
