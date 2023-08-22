@@ -132,4 +132,24 @@ hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_text_startup.bin > stor
 cat store_address_misaligned_data.temp store_address_misaligned_rodata.temp store_address_misaligned_rodata_str1_8.temp store_address_misaligned_sdata.temp > store_address_misaligned_data.hex
 cat store_address_misaligned_text_init.temp store_address_misaligned_text.temp store_address_misaligned_text_startup.temp > store_address_misaligned_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr -mabi=lp64 -o store_access_fault.riscv ./store_access_fault/store_access_fault.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all store_access_fault.riscv > store_access_fault.dump
+
+riscv64-unknown-elf-objcopy --dump-section .data=store_access_fault_data.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=store_access_fault_rodata.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=store_access_fault_rodata_str1_8.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=store_access_fault_sdata.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=store_access_fault_text_init.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=store_access_fault_text.bin store_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=store_access_fault_text_startup.bin store_access_fault.riscv
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_data.bin > store_access_fault_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_rodata.bin > store_access_fault_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_rodata_str1_8.bin > store_access_fault_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_sdata.bin > store_access_fault_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_text_init.bin > store_access_fault_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_text.bin > store_access_fault_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_access_fault_text_startup.bin > store_access_fault_text_startup.temp
+cat store_access_fault_data.temp store_access_fault_rodata.temp store_access_fault_rodata_str1_8.temp store_access_fault_sdata.temp > store_access_fault_data.hex
+cat store_access_fault_text_init.temp store_access_fault_text.temp store_access_fault_text_startup.temp > store_access_fault_inst.hex
+
 rm *.riscv *.bin *.temp

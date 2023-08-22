@@ -1,4 +1,5 @@
 #include "util.h"
+#include "encoding.h"
 
 unsigned long array[2] = {0, 1};
 _Bool handled_exception = 0;
@@ -14,8 +15,8 @@ uintptr_t handle_trap(uintptr_t cause, uintptr_t epc, uintptr_t regs[32]) {
   handled_exception = 1;
   char epchex[19];
   int64ToHex(epc, epchex);
-  if(cause == 5) {
-    printstr("SUCCESSFULLY HANDLED LOAD ACCESS FAULT EXCEPTION AT PC:");
+  if(cause == 7) {
+    printstr("SUCCESSFULLY HANDLED STORE ACCESS FAULT EXCEPTION AT PC:");
     printstr(epchex);
     printstr("\n");
     return epc+4;
@@ -30,7 +31,7 @@ int main(int argc, char** argv) {
   printstr("BYTE ACCESS FAULT TEST:\n");
   void* ptr = (void*)0x6000;
   printstr("ADDRESS 0x6000:\n");
-  asm volatile("lb zero, 0(%0)"
+  asm volatile("sb zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -44,7 +45,7 @@ int main(int argc, char** argv) {
 
   ptr = (void*)0x5FFF;
   printstr("ADDRESS 0x5FFF:\n");
-  asm volatile("lb zero, 0(%0)"
+  asm volatile("sb zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -59,7 +60,7 @@ int main(int argc, char** argv) {
   printstr("HALFWORD ACCESS FAULT TEST:\n");
   ptr = (void*)0x5FFF;
   printstr("ADDRESS 0x5FFF:\n");
-  asm volatile("lh zero, 0(%0)"
+  asm volatile("sh zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -72,7 +73,7 @@ int main(int argc, char** argv) {
   }
   ptr = (void*)0x5FFE;
   printstr("ADDRESS 0x5FFE:\n");
-  asm volatile("lh zero, 0(%0)"
+  asm volatile("sh zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
   printstr("WORD ACCESS FAULT TEST:\n");
   ptr = (void*)0x5FFD;
   printstr("ADDRESS 0x5FFD:\n");
-  asm volatile("lw zero, 0(%0)"
+  asm volatile("sw zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -100,7 +101,7 @@ int main(int argc, char** argv) {
   }
   ptr = (void*)0x5FFC;
   printstr("ADDRESS 0x5FFC:\n");
-  asm volatile("lh zero, 0(%0)"
+  asm volatile("sh zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -115,7 +116,7 @@ int main(int argc, char** argv) {
   printstr("DOUBLEWORD ACCESS FAULT TEST:\n");
   ptr = (void*)0x5FF9;
   printstr("ADDRESS 0x5FF9:\n");
-  asm volatile("ld zero, 0(%0)"
+  asm volatile("sd zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
@@ -128,7 +129,7 @@ int main(int argc, char** argv) {
   }
   ptr = (void*)0x5FF8;
   printstr("ADDRESS 0x5FF0:\n");
-  asm volatile("ld zero, 0(%0)"
+  asm volatile("sd zero, 0(%0)"
   :
   : "r"(ptr));
   asm volatile("nop");
