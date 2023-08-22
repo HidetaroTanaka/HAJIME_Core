@@ -49,7 +49,7 @@ class FrontEnd(implicit params: HajimeCoreParams) extends Module {
   io.cpu.resp.valid := io.icache_axi4lite.r.valid
   io.icache_axi4lite.r.ready := io.cpu.resp.ready || io.cpu.req.valid
 
-  io.exception := AXI4SIG_CHECK.resp_exception(io.icache_axi4lite.r.bits.resp)
+  io.exception := io.icache_axi4lite.r.bits.exception
 }
 
 object FrontEnd extends App {

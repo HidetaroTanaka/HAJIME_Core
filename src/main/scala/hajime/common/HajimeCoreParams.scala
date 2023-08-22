@@ -3,16 +3,18 @@ package hajime.common
 import chisel3._
 import chisel3.util._
 
+// TODO: add inst/data memory info
 case class HajimeCoreParams(
   issue_width: Int = 2,
   xprlen: Int = 64,
-  frequency: Long = 50*1000*1000,
+  frequency: Int = 50*1000*1000, // x[MHz] = x * 1000 * 1000
   physicalRegFileEntries: Int = 48,
+  ras_depth: Int = 8,
   robEntries: Int = 8,
   useAtomics: Boolean = false,
   useCompressed: Boolean = false,
-  useZicsr: Boolean = false,
-  useMulDiv: Boolean = false,
+  useZicsr: Boolean = true,
+  useMulDiv: Boolean = true, // Umm actually, this core only supports multiplication
   useFloat32: Boolean = false,
   useFloat64: Boolean = false,
   useFloat128: Boolean = false,

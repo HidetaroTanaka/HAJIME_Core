@@ -1,12 +1,9 @@
 package hajime.publicmodules
 
+import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.common._
-
-class CSRFileReadReq() extends Bundle {
-  val csr = UInt(12.W)
-}
 
 class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -15,8 +12,13 @@ class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
 
 class CSRFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val csr = UInt(12.W)
   val data = UInt(xprlen.W)
+}
+
+class CSRExceptionReq(implicit params: HajimeCoreParams) extends Bundle {
+  import params._
+  val mepc_write = UInt(xprlen.W)
+  val mcause_write = UInt(xprlen.W)
 }
 
 class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
@@ -28,10 +30,11 @@ class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
 
 class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._
-  val readReq = Input(new CSRFileReadReq())
+  val csr_addr = Input(UInt(12.W))
   val readResp = Output(new CSRFileReadResp())
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
+  val exception = Flipped(ValidIO(new CSRExceptionReq()))
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -44,15 +47,13 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   }
 
   val cycle = zeroInit_Register()
-  val time_counter = RegInit(0.U(log2Up(frequency).W))
+  val (_, counterWrap) = Counter(true.B, frequency)
   when(io.fromCPU.cpu_operating) {
     cycle := cycle + 1.U(xprlen.W)
-    time_counter := time_counter + 1.U(time_counter.getWidth.W)
   }
   val time = zeroInit_Register()
-  when(time_counter === frequency.U) {
+  when(counterWrap) {
     time := time + 1.U(xprlen.W)
-    time_counter := 0.U
   }
   val instret = zeroInit_Register()
   when(io.fromCPU.inst_retire) {
@@ -78,46 +79,65 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val mtinst = zeroInit_Register()
   val mtval2 = zeroInit_Register()
 
-  val readOnlyCSRs: Seq[(UInt, UInt)] = Seq(
-    "hC00".U(12.W) -> cycle,
-    "hC01".U(12.W) -> time,
-    "hC02".U(12.W) -> instret,
-    "hF11".U(12.W) -> mvendorid,
-    "hF12".U(12.W) -> marchid,
-    "hF13".U(12.W) -> mimpid,
-    "hF14".U(12.W) -> mhartid,
-    "hF15".U(12.W) -> mconfigptr,
+  val readOnlyCSRs: Seq[(Int, UInt)] = Seq(
+    CSRs.cycle -> cycle,
+    CSRs.time -> time,
+    CSRs.instret -> instret,
+    CSRs.mvendorid -> mvendorid,
+    CSRs.marchid -> marchid,
+    CSRs.mimpid -> mimpid,
+    CSRs.mhartid -> mhartid,
+    CSRs.mconfigptr -> mconfigptr,
   )
 
-  val writableCSRs: Seq[(UInt, UInt)] = Seq(
-    "h300".U(12.W) -> mstatus,
-    "h301".U(12.W) -> misa,
-    "h302".U(12.W) -> medeleg,
-    "h303".U(12.W) -> mideleg,
-    "h304".U(12.W) -> mie,
-    "h305".U(12.W) -> mtvec,
-    "h306".U(12.W) -> mcounteren,
-    "h340".U(12.W) -> mscratch,
-    "h341".U(12.W) -> mepc,
-    "h342".U(12.W) -> mcause,
-    "h343".U(12.W) -> mtval,
-    "h344".U(12.W) -> mip,
-    "h34A".U(12.W) -> mtinst,
-    "h34B".U(12.W) -> mtval2,
-    "hB00".U(12.W) -> cycle, // Only M-mode can overwrite cycle and instret?
-    "hB02".U(12.W) -> instret,
+  val writableCSRs: Seq[(Int, UInt)] = Seq(
+    CSRs.mstatus -> mstatus,
+    CSRs.misa -> misa,
+    CSRs.medeleg -> medeleg,
+    CSRs.mideleg -> mideleg,
+    CSRs.mie -> mie,
+    CSRs.mtvec -> mtvec,
+    CSRs.mcounteren -> mcounteren,
+    CSRs.mscratch -> mscratch,
+    CSRs.mepc -> mepc,
+    CSRs.mcause -> mcause,
+    CSRs.mtval -> mtval,
+    CSRs.mip -> mip,
+    CSRs.mtinst -> mtinst,
+    CSRs.mtval2 -> mtval2,
+    CSRs.mcycle -> cycle, // Only M-mode can overwrite cycle and instret?
+    CSRs.minstret -> instret,
   )
 
-  io.readResp.data := MuxLookup(io.readReq.csr, 0.U(xprlen.W))(readOnlyCSRs ++ writableCSRs)
-  when(io.writeReq.valid){
-    for ((addr, register) <- writableCSRs) {
-      when(io.writeReq.bits.csr === addr) {
-        register := io.writeReq.bits.data
+  // mepcレジスタは書き込み時に下位2bitが0になっていることが保証されているのでそのまま出力する
+  io.readResp.data := MuxLookup(io.csr_addr, 0.U(xprlen.W))(
+    (readOnlyCSRs ++ writableCSRs).map {
+      case (addr, csr) => (addr.U(12.W), csr)
+    }
+  )
+  // 割り込みの場合は書き込まない
+  when(io.writeReq.valid && !io.exception.valid){
+    for ((addr, csr) <- writableCSRs) {
+      when(io.csr_addr === addr.U(12.W)) {
+        if(addr == CSRs.mepc) {
+          csr := Cat(io.writeReq.bits.data.head(xprlen-2), "b00".U(2.W))
+        } else {
+          csr := io.writeReq.bits.data
+        }
       }
     }
+  }
+
+  // 割り込みの場合はmepcに例外発生PC，mcauseに例外要因を書く
+  // また，mtvecを読んでPCに書き込む
+  when(io.exception.valid) {
+    // 例外発生PCの下位2bitは0であることが保証されている
+    mepc := io.exception.bits.mepc_write
+    mcause := io.exception.bits.mcause_write
+    io.readResp.data := Cat(mtvec.head(xprlen-2), 0.U(2.W))
   }
 }
 object CSRFile extends App {
   def apply(implicit params: HajimeCoreParams): CSRFile = new CSRFile()
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(HajimeCoreParams()), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(CSRFile(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

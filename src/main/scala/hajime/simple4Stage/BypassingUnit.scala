@@ -1,12 +1,13 @@
 package hajime.simple4Stage
 
+import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
-import hajime.common.{COMPILE_CONSTANTS, RISCV_Consts}
+import hajime.common._
 
-class RegIndexWithValue(xprlen: Int) extends Bundle {
+class RegIndexWithValue(implicit params: HajimeCoreParams) extends Bundle {
   val index = UInt(5.W)
-  val value = UInt(xprlen.W)
+  val value = UInt(params.xprlen.W)
 }
 
 class BypassingLogicInputs_ID extends Bundle {
@@ -14,85 +15,81 @@ class BypassingLogicInputs_ID extends Bundle {
   val rs2_index = Valid(UInt(5.W))
 }
 
-class BypassingLogicOutputs_ID(xprlen: Int) extends Bundle {
-  val rs1_value = Valid(UInt(xprlen.W))
-  val rs2_value = Valid(UInt(xprlen.W))
-  val stall = Bool()
+class BypassingLogicOutputs_ID(implicit params: HajimeCoreParams) extends Bundle {
+  val rs1_value = Valid(UInt(params.xprlen.W))
+  val rs1_bypassMatchAtEX = Bool()
+  val rs1_bypassMatchAtWB = Bool()
+  val rs2_value = Valid(UInt(params.xprlen.W))
+  val rs2_bypassMatchAtEX = Bool()
+  val rs2_bypassMatchAtWB = Bool()
 }
 
-class BypassingLogicInputs_EX(xprlen: Int) extends Bundle {
-  val rd = Valid(new RegIndexWithValue(xprlen))
-  val dcache_req_not_ready_and_has_mem_inst_in_EX_stage = Bool()
+class BypassingLogicInputs_EX(implicit params: HajimeCoreParams) extends Bundle {
+  val rd = Valid(new RegIndexWithValue())
 }
 
-class BypassingLogicOutputs_EX extends Bundle {
-  val stall = Bool()
+class BypassingLogicInputs_WB(implicit params: HajimeCoreParams) extends Bundle {
+  val rd = Valid(new RegIndexWithValue())
 }
 
-class BypassingLogicInputs_WB(xprlen: Int) extends Bundle {
-  val rd = Valid(new RegIndexWithValue(xprlen))
-  val dcache_requested_but_not_valid = Bool()
+class BypassingLogicIO_ID(implicit params: HajimeCoreParams) extends Bundle {
+  val in = Input(new BypassingLogicInputs_ID)
+  val out = Output(new BypassingLogicOutputs_ID())
 }
 
-class BypassingLogicIO_ID(xprlen: Int) extends Bundle {
-  val in = Input(Valid(new BypassingLogicInputs_ID))
-  val out = Output(new BypassingLogicOutputs_ID(xprlen))
+class BypassingLogicIO_EX(implicit params: HajimeCoreParams) extends Bundle {
+  /**
+   * in.valid: 該当ステージの命令がrdへ書き込むか否か
+   * in.bits.rd.bits.valid: 該当ステージでrdへ書き込む値が用意されているか否か
+   * in.bits.rd.bits.index: 該当ステージのrdのインデックス
+   * in.bits.rd.bits.value: 該当ステージのrdの値
+   */
+  val in = Flipped(ValidIO(new BypassingLogicInputs_EX()))
 }
 
-class BypassingLogicIO_EX(xprlen: Int) extends Bundle {
-  val in = Input(Valid(new BypassingLogicInputs_EX(xprlen)))
-  val out = Output(new BypassingLogicOutputs_EX)
+class BypassingLogicIO_WB(implicit params: HajimeCoreParams) extends Bundle {
+  val in = Flipped(ValidIO(new BypassingLogicInputs_WB()))
 }
 
-class BypassingLogicIO_WB(xprlen: Int) extends Bundle {
-  val in = Input(Valid(new BypassingLogicInputs_WB(xprlen)))
-  val out = Output(new BypassingLogicOutputs_EX)
-}
-
-class BypassingUnit(xprlen: Int) extends Module {
-  val io = IO(new Bundle{
-    val ID = new BypassingLogicIO_ID(xprlen)
-    val EX = new BypassingLogicIO_EX(xprlen)
-    val WB = new BypassingLogicIO_WB(xprlen)
+class BypassingUnit(implicit params: HajimeCoreParams) extends Module {
+  val io = IO(new Bundle {
+    val ID = new BypassingLogicIO_ID()
+    val EX = new BypassingLogicIO_EX()
+    val WB = new BypassingLogicIO_WB()
   })
-
-  // WBステージがvalidかつ，WBステージでメモリアクセスを行っているが返答がvalidでない場合にWBステージをストールさせる
-  io.WB.out.stall := (io.WB.in.bits.dcache_requested_but_not_valid && io.WB.in.valid)
-  // WBステージをストールさせる（この場合WBステージにvalidな命令が存在する）または，EXステージでメモリへリクエストを送信したがメモリがreadyでない場合にストール
-  io.EX.out.stall := (io.WB.out.stall || io.EX.in.bits.dcache_req_not_ready_and_has_mem_inst_in_EX_stage) && io.EX.in.valid
-
   // Bypass rs1 value from WB, EX to ID
-  val WB_rd_index_and_ID_rs1_index_matches_and_not_zero = ((io.ID.in.bits.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.bits.rs1_index.bits === io.WB.in.bits.rd.bits.index))
-  val EX_rd_index_and_ID_rs1_index_matches_and_not_zero = ((io.ID.in.bits.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.bits.rs1_index.bits === io.EX.in.bits.rd.bits.index))
-  io.ID.out.rs1_value.bits := Mux(EX_rd_index_and_ID_rs1_index_matches_and_not_zero && io.EX.in.bits.rd.valid, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
-  io.ID.out.rs1_value.valid := io.ID.in.bits.rs1_index.valid && io.ID.in.valid && MuxCase(false.B,
+  // EXステージからフォワーディングする必要があるが不可能（乗算、メモリアクセス等）な場合を考えて、IDのvalidのみ考える
+  val WB_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.WB.in.bits.rd.bits.index) && io.ID.in.rs1_index.valid && io.WB.in.valid)
+  val EX_rd_and_ID_rs1_matches_not_zero = ((io.ID.in.rs1_index.bits =/= 0.U(5.W)) && (io.ID.in.rs1_index.bits === io.EX.in.bits.rd.bits.index) && io.ID.in.rs1_index.valid && io.EX.in.valid)
+  // EXのrdとIDのrs1が一致しており、かつIDのrs1がvalidならばEXを優先
+  io.ID.out.rs1_value.bits := Mux(EX_rd_and_ID_rs1_matches_not_zero, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
+  // これがvalidでないときの挙動はCPU側でやる
+  io.ID.out.rs1_value.valid := MuxCase(false.B,
     Seq(
-      // EXステージの命令がrdへ書き込む命令であり、かつIDステージのrs1とレジスタ番号が一致する場合、EXステージのrdの値をフォワーディングする
-      // メモリロード命令であればWBステージで正しい値が出てくる
-      (EX_rd_index_and_ID_rs1_index_matches_and_not_zero && io.EX.in.bits.rd.valid && io.EX.in.valid) -> io.EX.in.bits.rd.valid,
-      (WB_rd_index_and_ID_rs1_index_matches_and_not_zero && io.WB.in.bits.rd.valid && io.WB.in.valid) -> io.WB.in.bits.rd.valid
+      // EXのrdとIDのrs1が一致しており、かつIDのrs1がvalidならばEXのrdを持ってくる（EXがvalidでなければ結果もvalidではない、メモリロードや乗算など）
+      EX_rd_and_ID_rs1_matches_not_zero -> io.EX.in.bits.rd.valid,
+      // 上と同様（メモリロード命令でBチャネルがvalidでない時など）
+      WB_rd_and_ID_rs1_matches_not_zero -> io.WB.in.bits.rd.valid
     )
   )
+  // 値が用意できるかに関わらず、EX・WBからフォワーディングすべき値があるか否か
+  io.ID.out.rs1_bypassMatchAtEX := EX_rd_and_ID_rs1_matches_not_zero
+  io.ID.out.rs1_bypassMatchAtWB := WB_rd_and_ID_rs1_matches_not_zero
 
-  val WB_rd_index_and_ID_rs2_index_matches_and_not_zero = ((io.ID.in.bits.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.bits.rs2_index.bits === io.WB.in.bits.rd.bits.index))
-  val EX_rd_index_and_ID_rs2_index_matches_and_not_zero = ((io.ID.in.bits.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.bits.rs2_index.bits === io.EX.in.bits.rd.bits.index))
-  io.ID.out.rs2_value.bits := Mux(EX_rd_index_and_ID_rs2_index_matches_and_not_zero && io.EX.in.bits.rd.valid, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
-  io.ID.out.rs2_value.valid := io.ID.in.bits.rs2_index.valid && io.ID.in.valid && MuxCase(false.B,
-      Seq(
-        (EX_rd_index_and_ID_rs2_index_matches_and_not_zero && io.EX.in.bits.rd.valid && io.EX.in.valid) -> io.EX.in.bits.rd.valid,
-        (WB_rd_index_and_ID_rs2_index_matches_and_not_zero && io.WB.in.bits.rd.valid && io.WB.in.valid) -> io.WB.in.bits.rd.valid
-      )
+  val WB_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.WB.in.bits.rd.bits.index) && io.ID.in.rs2_index.valid && io.WB.in.valid)
+  val EX_rd_and_ID_rs2_matches_not_zero = ((io.ID.in.rs2_index.bits =/= 0.U(5.W)) && (io.ID.in.rs2_index.bits === io.EX.in.bits.rd.bits.index) && io.ID.in.rs2_index.valid && io.EX.in.valid)
+  io.ID.out.rs2_value.bits := Mux(EX_rd_and_ID_rs2_matches_not_zero, io.EX.in.bits.rd.bits.value, io.WB.in.bits.rd.bits.value)
+  io.ID.out.rs2_value.valid := MuxCase(false.B,
+    Seq(
+      EX_rd_and_ID_rs2_matches_not_zero -> io.EX.in.bits.rd.valid,
+      WB_rd_and_ID_rs2_matches_not_zero -> io.WB.in.bits.rd.valid,
     )
-  // ID, EXステージが共にvalidであり、かつEXステージがストールまたはEXステージのrdからIDステージのrs1またはrs2へ値をフォワーディングする必要があるが、
-  // EXステージのrdレジスタの値がvalidでない場合（例：メモリロード等）にストール
-  // TODO: This signal is acting sus in sb test
-  io.ID.out.stall := io.ID.in.valid && io.EX.in.valid && (io.EX.out.stall ||
-    (((EX_rd_index_and_ID_rs1_index_matches_and_not_zero && io.ID.in.bits.rs1_index.valid) ||
-      (EX_rd_index_and_ID_rs2_index_matches_and_not_zero && io.ID.in.bits.rs2_index.valid)) &&
-      !io.EX.in.bits.rd.valid))
+  )
+  io.ID.out.rs2_bypassMatchAtEX := EX_rd_and_ID_rs2_matches_not_zero
+  io.ID.out.rs2_bypassMatchAtWB := WB_rd_and_ID_rs2_matches_not_zero
 }
 
 object BypassingUnit extends App {
-  def apply(xprlen: Int): BypassingUnit = new BypassingUnit(xprlen)
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(RISCV_Consts.XLEN), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  def apply(implicit params: HajimeCoreParams): BypassingUnit = new BypassingUnit()
+  ChiselStage.emitSystemVerilogFile(BypassingUnit(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

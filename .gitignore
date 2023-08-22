@@ -133,6 +133,7 @@ local.properties
 *.anno.json
 *.fir
 *.v
+*.sv
 
 # Debug files
 *.dSYM/

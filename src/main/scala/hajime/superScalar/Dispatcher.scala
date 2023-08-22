@@ -1,10 +1,9 @@
 package hajime.superScalar
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
-import hajime.publicmodules.{ALU_functIO, MEM_ctrl_IO}
+import hajime.publicmodules._
 
 class DispatcherResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
