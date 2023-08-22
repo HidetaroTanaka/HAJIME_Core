@@ -55,15 +55,15 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
     MEM_LEN.D.asUInt -> 7.U,
   ))
   val access_fault = (topAddress >= 0x00006000.U && topAddress =/= 0x10000000.U)
-  val access_misaligned = (topAddress(3) =/= req_reg.addr(3))
+  val address_misaligned = (topAddress(3) =/= req_reg.addr(3))
 
   io.cpu.resp.bits.exceptionSignals.bits := MuxCase(0.U, Seq(
     (req_reg.funct.memRead && access_fault) -> Causes.load_access.U,
     (req_reg.funct.memWrite && access_fault) -> Causes.store_access.U,
-    (req_reg.funct.memRead && access_misaligned) -> Causes.misaligned_load.U,
-    (req_reg.funct.memWrite && access_misaligned) -> Causes.misaligned_store.U,
+    (req_reg.funct.memRead && address_misaligned) -> Causes.misaligned_load.U,
+    (req_reg.funct.memWrite && address_misaligned) -> Causes.misaligned_store.U,
   ))
-  io.cpu.resp.bits.exceptionSignals.valid := (access_fault || access_misaligned) && req_reg.funct.memValid
+  io.cpu.resp.bits.exceptionSignals.valid := (access_fault || address_misaligned) && req_reg.funct.memValid
   io.cpu.resp.bits.data := MuxLookup(req_reg.funct.memory_length, io.dcache_axi4lite.r.bits.data)(Seq(
     MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
     MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),

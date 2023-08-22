@@ -92,4 +92,25 @@ hexdump -v -e '1/4 "%08x" "\n"' load_address_misaligned_text_startup.bin > load_
 cat load_address_misaligned_data.temp load_address_misaligned_rodata.temp load_address_misaligned_rodata_str1_8.temp load_address_misaligned_sdata.temp > load_address_misaligned_data.hex
 cat load_address_misaligned_text_init.temp load_address_misaligned_text.temp load_address_misaligned_text_startup.temp > load_address_misaligned_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr -mabi=lp64 -o load_access_fault.riscv ./load_access_fault/load_access_fault.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all load_access_fault.riscv > load_access_fault.dump
+
+riscv64-unknown-elf-objcopy --dump-section .data=load_access_fault_data.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=load_access_fault_rodata.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=load_access_fault_rodata_str1_8.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=load_access_fault_sdata.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=load_access_fault_text_init.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=load_access_fault_text.bin load_access_fault.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=load_access_fault_text_startup.bin load_access_fault.riscv
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_data.bin > load_access_fault_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_rodata.bin > load_access_fault_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_rodata_str1_8.bin > load_access_fault_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_sdata.bin > load_access_fault_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_text_init.bin > load_access_fault_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_text.bin > load_access_fault_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_text_startup.bin > load_access_fault_text_startup.temp
+cat load_access_fault_data.temp load_access_fault_rodata.temp load_access_fault_rodata_str1_8.temp load_access_fault_sdata.temp > load_access_fault_data.hex
+cat load_access_fault_text_init.temp load_access_fault_text.temp load_access_fault_text_startup.temp > load_access_fault_inst.hex
+
+
 rm *.riscv *.bin *.temp
