@@ -36,6 +36,8 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
   val req_reg = Reg(chiselTypeOf(io.cpu.req.bits))
   when(io.cpu.req.ready && io.cpu.req.valid) {
     req_reg := io.cpu.req.bits
+  } .elsewhen(io.cpu.resp.valid) {
+    req_reg.funct.memory_function := MEM_FCN.M_NONE.asUInt
   }
 
   io.cpu.req.ready := io.cpu.req.valid && MuxCase(true.B, Seq(
@@ -52,7 +54,7 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
     MEM_LEN.W.asUInt -> 3.U,
     MEM_LEN.D.asUInt -> 7.U,
   ))
-  val access_fault = topAddress >= 0x00006000.U
+  val access_fault = (topAddress >= 0x00006000.U && topAddress =/= 0x10000000.U)
   val access_misaligned = (topAddress(3) =/= req_reg.addr(3))
 
   io.cpu.resp.bits.exceptionSignals.bits := MuxCase(0.U, Seq(

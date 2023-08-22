@@ -337,12 +337,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // メモリアクセス命令かつ，ldstUnitのrespがvalidでなければストール
   WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.resp.valid)
   // TODO: add memory misaligned exception (load misaligned: 0x4, store misaligned: 0x6), and memory access fault exception (load fault: 0x5, store fault: 0x7)
-  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.exceptionSignals.valid)
+  val dmemoryAccessException = (EX_WB_REG.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
+  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException)
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
-  val WB_inst_can_retire = EX_WB_REG.valid && !EX_WB_REG.bits.exceptionSignals.valid && !WB_stall
+  val WB_inst_can_retire = EX_WB_REG.valid && !(EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && !WB_stall
   rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
   rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
@@ -367,9 +368,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   csrUnit.io.fromCPU.hartid := io.hartid
   csrUnit.io.fromCPU.cpu_operating := cpu_operating
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
-  csrUnit.io.exception.valid := EX_WB_REG.bits.exceptionSignals.valid && EX_WB_REG.valid
+  csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
   csrUnit.io.exception.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
-  csrUnit.io.exception.bits.mcause_write := EX_WB_REG.bits.exceptionSignals.bits
+  csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, ldstUnit.io.cpu.resp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)
 
   // EXまたはWBステージにfence, ecall, mretがある
   sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)
