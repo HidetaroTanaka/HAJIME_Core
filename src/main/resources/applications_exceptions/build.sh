@@ -112,5 +112,24 @@ hexdump -v -e '1/4 "%08x" "\n"' load_access_fault_text_startup.bin > load_access
 cat load_access_fault_data.temp load_access_fault_rodata.temp load_access_fault_rodata_str1_8.temp load_access_fault_sdata.temp > load_access_fault_data.hex
 cat load_access_fault_text_init.temp load_access_fault_text.temp load_access_fault_text_startup.temp > load_access_fault_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr -mabi=lp64 -o store_address_misaligned.riscv ./store_address_misaligned/store_address_misaligned.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all store_address_misaligned.riscv > store_address_misaligned.dump
+
+riscv64-unknown-elf-objcopy --dump-section .data=store_address_misaligned_data.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=store_address_misaligned_rodata.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=store_address_misaligned_rodata_str1_8.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=store_address_misaligned_sdata.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=store_address_misaligned_text_init.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=store_address_misaligned_text.bin store_address_misaligned.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=store_address_misaligned_text_startup.bin store_address_misaligned.riscv
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_data.bin > store_address_misaligned_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_rodata.bin > store_address_misaligned_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_rodata_str1_8.bin > store_address_misaligned_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_sdata.bin > store_address_misaligned_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_text_init.bin > store_address_misaligned_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_text.bin > store_address_misaligned_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' store_address_misaligned_text_startup.bin > store_address_misaligned_text_startup.temp
+cat store_address_misaligned_data.temp store_address_misaligned_rodata.temp store_address_misaligned_rodata_str1_8.temp store_address_misaligned_sdata.temp > store_address_misaligned_data.hex
+cat store_address_misaligned_text_init.temp store_address_misaligned_text.temp store_address_misaligned_text_startup.temp > store_address_misaligned_inst.hex
 
 rm *.riscv *.bin *.temp
