@@ -27,7 +27,7 @@ class LDSTIO(implicit params: HajimeCoreParams) extends Bundle {
   val dcache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = params.xprlen)
 }
 
-// TODO: Add load/store address misaligned, access fault
+// TODO: Retain req signals when AXI resp is not valid
 // TODO: Add Atomic Extension Support
 class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   val io = IO(new LDSTIO())
@@ -46,8 +46,22 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
     req_reg.funct.memRead -> io.dcache_axi4lite.r.valid,
     req_reg.funct.memWrite -> io.dcache_axi4lite.b.valid,
   ))
-  // TODO: Check Access Fault and Address Misaligned
-  io.cpu.resp.bits.exceptionSignals := DontCare
+  val topAddress = req_reg.addr + MuxLookup(req_reg.funct.memory_length, 0.U)(Seq(
+    MEM_LEN.B.asUInt -> 0.U,
+    MEM_LEN.H.asUInt -> 1.U,
+    MEM_LEN.W.asUInt -> 3.U,
+    MEM_LEN.D.asUInt -> 7.U,
+  ))
+  val access_fault = topAddress >= 0x00006000.U
+  val access_misaligned = (topAddress(3) =/= req_reg.addr(3))
+
+  io.cpu.resp.bits.exceptionSignals.bits := MuxCase(0.U, Seq(
+    (req_reg.funct.memRead && access_fault) -> Causes.load_access.U,
+    (req_reg.funct.memWrite && access_fault) -> Causes.store_access.U,
+    (req_reg.funct.memRead && access_misaligned) -> Causes.misaligned_load.U,
+    (req_reg.funct.memWrite && access_misaligned) -> Causes.misaligned_store.U,
+  ))
+  io.cpu.resp.bits.exceptionSignals.valid := (access_fault || access_misaligned) && req_reg.funct.memValid
   io.cpu.resp.bits.data := MuxLookup(req_reg.funct.memory_length, io.dcache_axi4lite.r.bits.data)(Seq(
     MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
     MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),

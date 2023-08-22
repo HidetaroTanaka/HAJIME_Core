@@ -3,6 +3,7 @@ package hajime.common
 import chisel3._
 import chisel3.util._
 
+// TODO: add inst/data memory info
 case class HajimeCoreParams(
   issue_width: Int = 2,
   xprlen: Int = 64,
