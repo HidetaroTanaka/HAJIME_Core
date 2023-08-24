@@ -35,6 +35,7 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
+  val vtype = if(params.useVector) Some(Flipped(ValidIO(UInt(64.W)))) else None
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -79,6 +80,19 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val mtinst = zeroInit_Register()
   val mtval2 = zeroInit_Register()
 
+  /*
+  // TODO: Vector Trap and Fixed-Point
+  val vstart = if(params.useVector) Some(zeroInit_Register()) else None
+  val vxsat = if(params.useVector) Some(zeroInit_Register()) else None
+  val vxrm = if(params.useVector) Some(zeroInit_Register()) else None
+  val vcsr = if(params.useVector) Some(zeroInit_Register()) else None
+   */
+  // TODO: Support LMUL != 1
+  // max: vlen/8
+  val vl = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlenb).W))) else None
+  val vtype = if(params.useVector) Some(zeroInit_Register()) else None
+  val vlenb = if(params.useVector) Some(params.vlenb.U) else None
+
   val readOnlyCSRs: Seq[(Int, UInt)] = Seq(
     CSRs.cycle -> cycle,
     CSRs.time -> time,
@@ -88,7 +102,15 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.mimpid -> mimpid,
     CSRs.mhartid -> mhartid,
     CSRs.mconfigptr -> mconfigptr,
-  )
+  ) ++ (if(params.useVector) {
+    Seq(
+      CSRs.vl -> vl,
+      CSRs.vtype -> vtype,
+      CSRs.vlenb -> vlenb,
+    ).map{
+      case (addr, reg) => (addr, reg.get)
+    }
+  } else Nil)
 
   val writableCSRs: Seq[(Int, UInt)] = Seq(
     CSRs.mstatus -> mstatus,
@@ -135,6 +157,12 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     mepc := io.exception.bits.mepc_write
     mcause := io.exception.bits.mcause_write
     io.readResp.data := Cat(mtvec.head(xprlen-2), 0.U(2.W))
+  }
+
+  if(params.useVector) {
+    when(io.vtype.get.valid) {
+      vtype.get := io.vtype.get.bits
+    }
   }
 }
 object CSRFile extends App {

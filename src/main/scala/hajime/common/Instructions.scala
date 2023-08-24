@@ -149,6 +149,13 @@ object Causes {
   }
 }
 object CSRs {
+  val vstart = 0x008
+  val vxsat = 0x009
+  val vxrm = 0x00A
+  val vcsr = 0x00F
+  val vl = 0xC20
+  val vtype = 0xC21
+  val vlenb = 0xC22
   val cycle = 0xc00
   val time = 0xc01
   val instret = 0xc02

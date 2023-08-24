@@ -26,7 +26,7 @@ case class HajimeCoreParams(
   useUser: Boolean = false,
   useDynamicTransLang: Boolean = false,
   useUserLevelInt: Boolean = false,
-  useVector: Boolean = false,
+  useVector: Boolean = true,
   usePackedSIMD: Boolean = false,
   debug: Boolean = true,
   vlen: Int = 256,
@@ -70,4 +70,5 @@ case class HajimeCoreParams(
       )
     )
   }
+  def vlenb: Int = vlen/8
 }
