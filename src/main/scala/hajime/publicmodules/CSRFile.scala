@@ -35,7 +35,10 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
-  val vtype = if(params.useVector) Some(Flipped(ValidIO(UInt(64.W)))) else None
+  val vectorCsrPorts = if(params.useVector) Some(Flipped(ValidIO(new Bundle {
+    val vtype = UInt(64.W)
+    val vl    = UInt(log2Up(params.vlenb).W)
+  }))) else None
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -160,8 +163,9 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   }
 
   if(params.useVector) {
-    when(io.vtype.get.valid) {
-      vtype.get := io.vtype.get.bits
+    when(io.vectorCsrPorts.get.valid) {
+      vtype.get := io.vectorCsrPorts.get.bits.vtype
+      vl.get := io.vectorCsrPorts.get.bits.vl
     }
   }
 }

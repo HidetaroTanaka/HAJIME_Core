@@ -197,13 +197,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
-    (decoder.io.out.bits.value1 === Value1.CSR.asUInt) -> decoded_inst.csr_uimm,
+    (decoder.io.out.bits.value1 === Value1.CSR.asUInt) -> decoded_inst.uimm,
     (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
     (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
   ))
   ID_EX_REG.bits.dataSignals.rs1 := Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
   ID_EX_REG.bits.dataSignals.rs2 := Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out)
-  ID_EX_REG.bits.dataSignals.csr := decoded_inst.csr
+  ID_EX_REG.bits.dataSignals.csr := decoded_inst.zimm
   ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 

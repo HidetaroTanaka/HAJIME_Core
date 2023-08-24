@@ -18,8 +18,8 @@ class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
   def b_imm: UInt     = Functions.sign_ext(Cat(bits(31), bits(7), bits(30, 25), bits(11,8), 0.U(1.W)), xprlen)
   def u_imm: UInt     = Functions.sign_ext(Cat(bits(31,12), 0.U(12.W)), xprlen)
   def j_imm: UInt     = Functions.sign_ext(Cat(bits(31), bits(19,12), bits(20), bits(30,21), 0.U(1.W)), xprlen)
-  def csr: UInt       = bits(31,20)
-  def csr_uimm: UInt      = Cat(false.B, this.rs1)
+  def zimm: UInt       = bits(31,20)
+  def uimm: UInt      = Cat(false.B, this.rs1)
 }
 
 class ProgramCounter(implicit params: HajimeCoreParams) extends Bundle {
