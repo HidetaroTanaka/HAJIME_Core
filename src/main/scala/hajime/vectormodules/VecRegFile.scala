@@ -1,4 +1,4 @@
-package hajime.vectorUnits
+package hajime.vectormodules
 
 import chisel3._
 import chisel3.util._

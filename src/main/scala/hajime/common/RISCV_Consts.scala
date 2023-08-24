@@ -48,7 +48,7 @@ trait ScalarOpConstants {
     }
   }
   object WB_SEL extends ChiselEnum {
-    val NONE, PC4, ARITH, CSR, MEM = Value
+    val NONE, PC4, ARITH, CSR, MEM, VECTOR = Value
     def write_to_rd(signal: UInt): Bool = {
       signal =/= WB_SEL.NONE.asUInt
     }

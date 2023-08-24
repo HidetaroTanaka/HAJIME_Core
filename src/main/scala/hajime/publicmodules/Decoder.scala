@@ -74,7 +74,10 @@ object RV32IDecode extends DecodeConstants {
     // ebreak is unimplemented
     EBREAK -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
     // TODO: implement wfi and external exception
-  )
+  ).map {
+    // not vector instructions
+    case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
+  }
 }
 
 object RV64IDecode extends DecodeConstants {
@@ -97,7 +100,10 @@ object RV64IDecode extends DecodeConstants {
 
     // S-type
     SD     -> List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N),
-  )
+  ).map {
+    // not vector instructions
+    case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
+  }
 }
 
 object RV32MDecode extends DecodeConstants {
@@ -107,14 +113,20 @@ object RV32MDecode extends DecodeConstants {
     MULH   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIGH, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
     MULHSU -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HISU, N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
     MULHU  -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_HIU,  N, N, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-  )
+  ).map {
+    // not vector instructions
+    case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
+  }
 }
 
 object RV64MDecode extends DecodeConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
     MULW   -> List(Y, Branch.NONE,  Value1.RS1,   Value2.RS2,  ARITHMETIC_FCN.MUL_LOW,  N, Y, WB_SEL.ARITH,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
-  )
+  ).map {
+    // not vector instructions
+    case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
+  }
 }
 
 object ZicsrDecode extends DecodeConstants {
@@ -126,6 +138,20 @@ object ZicsrDecode extends DecodeConstants {
     CSRRWI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
     CSRRSI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
     CSRRCI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
+  ).map {
+    // not vector instructions
+    case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
+  }
+}
+
+object RvvDecode extends DecodeConstants {
+  import ContentValid._
+  import VectorInstructions._
+  val table: Array[(BitPat, List[EnumType])] = Array(
+    // Probably use Vector Specified Decoder outside?
+    VSETVLI  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSETIVLI -> List(Y, Branch.NONE,  Value1.ZERO, Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,   ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y)
   )
 }
 
@@ -171,9 +197,11 @@ class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConst
     (if(params.xprlen == 64) RV64IDecode.table else Nil.toArray) ++
     (if(params.useZicsr) ZicsrDecode.table else Nil.toArray) ++
     (if(params.useMulDiv) RV32MDecode.table else Nil.toArray) ++
-    (if(params.useMulDiv && (params.xprlen == 64)) RV64MDecode.table else Nil.toArray)
-  val tableForListLookup = table.map{
-    case (inst, ls) => (inst, ls.map(_.asUInt))
+    (if(params.useMulDiv && (params.xprlen == 64)) RV64MDecode.table else Nil.toArray) ++
+    (if(params.useVector) RvvDecode.table else Nil.toArray)
+  val tableForListLookup = table.map {
+    // V拡張が無ければ最後の要素を抜く
+    case (inst, ls) => (inst, (if(params.useVector) ls else ls.init).map(_.asUInt))
   }
 
   val csignals = {

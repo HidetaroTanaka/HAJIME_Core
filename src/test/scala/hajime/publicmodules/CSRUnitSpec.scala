@@ -8,7 +8,7 @@ import chisel3.experimental.BundleLiterals._
 
 class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConstants {
   it should "act correctly" in {
-    val params = HajimeCoreParams()
+    val params = HajimeCoreParams(useVector = false)
     import params._
     test(CSRUnit(params)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // should read mimpid
