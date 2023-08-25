@@ -7,17 +7,20 @@ import hajime.common.VectorInstructions._
 import hajime.common._
 import hajime.publicmodules._
 
-object VectorDecoder extends App with DecodeConstants with VectorOpConstants {
+object VDecode extends DecodeConstants with VectorOpConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
     //               Is configuration-setting?
     //               |  AVL selector
     //               |  |             vtype selector
     //               |  |             |
-    VSETVLI  -> List(Y, AVL_SEL.RS1,  VTYPE_SEL.ZIMM10),
+    VSETVLI -> List(Y, AVL_SEL.RS1, VTYPE_SEL.ZIMM10),
     VSETIVLI -> List(Y, AVL_SEL.UIMM, VTYPE_SEL.ZIMM9),
-    VSETVL   -> List(Y, AVL_SEL.RS1,  VTYPE_SEL.RS2),
+    VSETVL -> List(Y, AVL_SEL.RS1, VTYPE_SEL.RS2),
   )
+}
+
+object VectorDecoder extends App {
   def apply(implicit params: HajimeCoreParams): VectorDecoder = new VectorDecoder()
   ChiselStage.emitSystemVerilogFile(VectorDecoder(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
@@ -37,15 +40,7 @@ class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {
 class VectorDecoder(implicit params: HajimeCoreParams) extends Module with DecodeConstants with VectorOpConstants {
   val io = IO(new VectorDecoderIO)
   import ContentValid._
-  val table: Array[(BitPat, List[EnumType])] = Array(
-    //               Is configuration-setting?
-    //               |  AVL selector
-    //               |  |             vtype selector
-    //               |  |             |
-    VSETVLI -> List(Y, AVL_SEL.RS1, VTYPE_SEL.ZIMM10),
-    VSETIVLI -> List(Y, AVL_SEL.UIMM, VTYPE_SEL.ZIMM9),
-    VSETVL -> List(Y, AVL_SEL.RS1, VTYPE_SEL.RS2),
-  )
+  val table: Array[(BitPat, List[EnumType])] = VDecode.table
   val tableForListLookup = table.map {
     case (inst, ls) => (inst, ls.map(_.asUInt))
   }
