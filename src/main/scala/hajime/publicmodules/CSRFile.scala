@@ -4,6 +4,7 @@ import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.common._
+import hajime.vectormodules._
 
 class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -35,10 +36,7 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
-  val vectorCsrPorts = if(params.useVector) Some(Input(new Bundle {
-    val vtype = UInt(64.W)
-    val vl    = UInt(log2Up(params.vlenb).W)
-  })) else None
+  val vectorCsrPorts = if(params.useVector) Some(Input(new VecCtrlUnitResp())) else None
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -107,7 +105,7 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   ) ++ (if(params.useVector) {
     Seq(
       CSRs.vl -> io.vectorCsrPorts.get.vl,
-      CSRs.vtype -> io.vectorCsrPorts.get.vtype,
+      CSRs.vtype -> io.vectorCsrPorts.get.vtype.bits,
       CSRs.vlenb -> vlenb.get,
     )
   } else Nil)

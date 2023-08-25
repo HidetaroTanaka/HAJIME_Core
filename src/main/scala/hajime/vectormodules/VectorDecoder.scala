@@ -36,7 +36,16 @@ class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {
 
 class VectorDecoder(implicit params: HajimeCoreParams) extends Module with DecodeConstants with VectorOpConstants {
   val io = IO(new VectorDecoderIO)
-  val table: Array[(BitPat, List[EnumType])] = VectorDecoder.table
+  import ContentValid._
+  val table: Array[(BitPat, List[EnumType])] = Array(
+    //               Is configuration-setting?
+    //               |  AVL selector
+    //               |  |             vtype selector
+    //               |  |             |
+    VSETVLI -> List(Y, AVL_SEL.RS1, VTYPE_SEL.ZIMM10),
+    VSETIVLI -> List(Y, AVL_SEL.UIMM, VTYPE_SEL.ZIMM9),
+    VSETVL -> List(Y, AVL_SEL.RS1, VTYPE_SEL.RS2),
+  )
   val tableForListLookup = table.map {
     case (inst, ls) => (inst, ls.map(_.asUInt))
   }

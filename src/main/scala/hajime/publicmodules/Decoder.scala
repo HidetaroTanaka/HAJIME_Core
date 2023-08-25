@@ -135,9 +135,9 @@ object ZicsrDecode extends DecodeConstants {
     CSRRW  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
     CSRRS  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
     CSRRC  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
-    CSRRWI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
-    CSRRSI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
-    CSRRCI -> List(Y, Branch.NONE,  Value1.CSR,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
+    CSRRWI -> List(Y, Branch.NONE,  Value1.UIMM19_15,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.W, N),
+    CSRRSI -> List(Y, Branch.NONE,  Value1.UIMM19_15,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.S, N),
+    CSRRCI -> List(Y, Branch.NONE,  Value1.UIMM19_15,  Value2.ZERO, ARITHMETIC_FCN.NONE,     N, N, WB_SEL.CSR,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.C, N),
   ).map {
     // not vector instructions
     case (bitpat, enumTypeList) => (bitpat, enumTypeList :+ N)
@@ -150,12 +150,12 @@ object RvvDecode extends DecodeConstants {
   val table: Array[(BitPat, List[EnumType])] = Array(
     // Probably use Vector Specified Decoder outside?
     VSETVLI  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VSETIVLI -> List(Y, Branch.NONE,  Value1.ZERO, Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSETIVLI -> List(Y, Branch.NONE,  Value1.UIMM19_15, Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
     VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,   ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y)
   )
 }
 
-class ID_output extends Bundle with ScalarOpConstants {
+class ID_output(implicit params: HajimeCoreParams) extends Bundle with ScalarOpConstants {
   val branch = UInt(Branch.getWidth.W)
   val value1 = UInt(Value1.getWidth.W)
   val value2 = UInt(Value2.getWidth.W)
@@ -168,8 +168,10 @@ class ID_output extends Bundle with ScalarOpConstants {
   val mem_sext = Bool()
   val csr_funct = UInt(CSR_FCN.getWidth.W)
   val fence = Bool()
+  val vector = if(params.useVector) Some(Bool()) else None
   def toList: List[UInt] = (branch :: value1 :: value2 :: arithmetic_funct :: alu_flag :: op32 ::
-    writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence :: Nil)
+    writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence ::
+    (if(params.useVector) vector.get :: Nil else Nil))
   def isCondBranch: Bool = Branch.isCondBranch(branch)
   def isJump: Bool = Branch.isJump(branch)
   // ALUへの値でrs1を使うまたはCSRでrs1レジスタを使う
@@ -187,7 +189,7 @@ class ID_output extends Bundle with ScalarOpConstants {
 
 class DecoderIO(implicit params: HajimeCoreParams) extends Bundle {
   val inst = Input(new InstBundle())
-  val out = Output(Valid(new ID_output))
+  val out = Output(Valid(new ID_output()))
 }
 
 class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConstants {
@@ -206,7 +208,7 @@ class Decoder(implicit params: HajimeCoreParams) extends Module with DecodeConst
 
   val csignals = {
     ListLookup(io.inst.bits,
-      default = List(N, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N).map(_.asUInt),
+      default = (List(N, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N).map(_.asUInt) ++ (if(params.useVector) List(N.asUInt) else Nil)),
       mapping = tableForListLookup
     )
   }

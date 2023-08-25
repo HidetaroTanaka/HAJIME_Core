@@ -24,7 +24,7 @@ trait ScalarOpConstants {
     }
   }
   object Value1 extends ChiselEnum {
-    val ZERO, RS1, U_IMM, CSR = Value
+    val ZERO, RS1, U_IMM, UIMM19_15 = Value
     def use_RS1(signal: UInt): Bool = {
       signal === RS1.asUInt
     }

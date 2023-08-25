@@ -3,7 +3,8 @@ package hajime.publicmodules
 import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
-import hajime.common.{ScalarOpConstants, _}
+import hajime.common._
+import hajime.vectormodules._
 
 class CSRUnitReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -17,6 +18,7 @@ class CSRUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val resp = Output(new CSRFileReadResp())
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
+  val vectorCsrPorts = if(params.useVector) Some(Input(new VecCtrlUnitResp())) else None
 }
 
 class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
@@ -43,6 +45,8 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCon
 
   io.resp := csrFile.io.readResp
   csrFile.io.exception := io.exception
+
+  if(params.useVector) csrFile.io.vectorCsrPorts.get := io.vectorCsrPorts.get
 }
 
 object CSRUnit extends App {

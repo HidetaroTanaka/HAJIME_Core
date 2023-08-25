@@ -8,13 +8,13 @@ import chisel3.experimental.BundleLiterals._
 
 class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConstants {
   it should "act correctly" in {
-    val params = HajimeCoreParams(useVector = false)
+    implicit val params = HajimeCoreParams(useVector = false)
     import params._
     test(CSRUnit(params)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // should read mimpid
       dut.io.req.bits.data.poke("h114514".U(xprlen.W))
       dut.io.req.bits.csr_addr.poke(CSRs.mimpid.U(12.W))
-      dut.io.req.bits.funct.poke((new ID_output).Lit(
+      dut.io.req.bits.funct.poke((new ID_output()).Lit(
         _.branch -> 0.U,
         _.value1 -> Value1.RS1.litValue.U,
         _.value2 -> Value2.ZERO.litValue.U,

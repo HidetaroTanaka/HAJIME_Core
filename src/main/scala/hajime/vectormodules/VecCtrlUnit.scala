@@ -33,16 +33,12 @@ class VecCtrlUnitResp(implicit params: HajimeCoreParams) extends Bundle {
 
 class VecCtrlUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Input(Valid(new VecCtrlUnitReq))
-  val resp = Output(new VecCtrlUnitResp())
+  val resp = Output(Valid(new VecCtrlUnitResp()))
 }
 
 class VecCtrlUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
   val io = IO(new VecCtrlUnitIO())
 
-  val vtype = RegInit((new VtypeBundle()).Lit(
-    _.bits -> 0.U
-  ))
-  val vl = RegInit(0.U(log2Up(params.vlenb).W))
   val avl = Mux(io.req.bits.vDecode.avl_sel === AVL_SEL.RS1.asUInt, io.req.bits.rs1_value, io.req.bits.uimm)
   val vtypeBits = Wire(new VtypeBundle())
   vtypeBits.bits := MuxLookup(io.req.bits.vDecode.vtype_sel, 0.U)(Seq(
@@ -50,10 +46,9 @@ class VecCtrlUnit(implicit params: HajimeCoreParams) extends Module with VectorO
     VTYPE_SEL.ZIMM9.asUInt -> Cat(false.B, io.req.bits.zimm(9,0)),
     VTYPE_SEL.RS2.asUInt -> io.req.bits.rs2_value
   ))
-  val usedVectorBits = MuxLookup(vtypeBits.vsew, 0.U)(
-    (0 until 4).map(i => i.U(3.W) -> (avl << (3+i).U).asUInt)
-  )
-  // TODO: add maximum vl for each SEW
+  // val usedVectorBits = MuxLookup(vtypeBits.vsew, 0.U)(
+  //   (0 until 4).map(i => i.U(3.W) -> (avl << (3+i).U).asUInt)
+  // )
   val maxVl = MuxLookup(vtypeBits.vsew, 0.U)(
     // 0 -> Byte (8bits) -> params.vlen / 8 -> params.vlen >> 3
     // 1 -> Halfword (16bits) -> params.vlen / 16
@@ -62,16 +57,17 @@ class VecCtrlUnit(implicit params: HajimeCoreParams) extends Module with VectorO
 
   when(io.req.valid) {
     // non zero LMUL is not supported here
-    vtype.bits := Mux(vtypeBits.vill || vtypeBits.reserved || vtypeBits.vlmul =/= 0.U || vtypeBits.vsew(2),
+    io.resp.bits.vtype.bits := Mux(vtypeBits.vill || vtypeBits.reserved || vtypeBits.vlmul =/= 0.U || vtypeBits.vsew(2),
       Cat(true.B, 0.U((params.xprlen-1).W)),
       vtypeBits.bits
     )
     // if avl >= maxVl, then vl = maxVl, else vl = avl
-    vl := Mux(avl >= maxVl, maxVl, avl)
+    io.resp.bits.vl := Mux(avl >= maxVl, maxVl, avl)
+    io.resp.valid := true.B
+  } .otherwise {
+    io.resp := DontCare
+    io.resp.valid := false.B
   }
-
-  io.resp.vtype := vtype
-  io.resp.vl := vl
 }
 
 object VecCtrlUnit extends App {

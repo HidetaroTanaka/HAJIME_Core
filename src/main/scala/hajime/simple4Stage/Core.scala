@@ -6,6 +6,7 @@ import chisel3.util._
 import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
+import hajime.vectormodules._
 
 import scala.annotation.unused
 
@@ -69,8 +70,8 @@ class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   // val accelerators = Vec(2, new AcceleratorInterface)
 }
 
-class BasicCtrlSignals() extends Bundle {
-  val decode = new ID_output
+class BasicCtrlSignals(implicit params: HajimeCoreParams) extends Bundle {
+  val decode = new ID_output()
   val rd_index = UInt(5.W)
 }
 
@@ -79,16 +80,17 @@ class ID_EX_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
   val pc = new ProgramCounter()
   val bp_destPC = UInt(xprlen.W)
   val bp_taken = Bool()
+  // Should I change these signals to value1, value2? (Only two of these are actually used)
   val imm = UInt(xprlen.W)
   val rs1 = UInt(xprlen.W)
   val rs2 = UInt(xprlen.W)
-  val csr = UInt(12.W)
+  val zimm = UInt(12.W)
 }
 
 class EX_WB_dataSignals(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val pc = new ProgramCounter()
-  val arith_logic_result = UInt(xprlen.W)
+  val exResult = UInt(xprlen.W)
   val datatoCSR = UInt(xprlen.W)
   val csr_addr = UInt(12.W)
 }
@@ -98,11 +100,11 @@ class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
   val pc = new ProgramCounter()
 }
 
-// TODO: add inst address misaligned exception (0x0), inst address fault (0x1), and illegal inst exception (0x2)
 class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
+  val vectorCtrlSignals = if(params.useVector) Some(new VectorDecoderResp()) else None
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -110,6 +112,7 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new EX_WB_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
+  val vectorCsrPorts = if(params.useVector) Some(new VecCtrlUnitResp()) else None
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -137,6 +140,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val csrUnit = Module(new CSRUnit())
   csrUnit.io := DontCare
   val multiplier = if(params.useMulDiv) Some(Module(new NonPipelinedMultiplierWrap())) else None
+  val vectorDecoder = if(params.useVector) Some(Module(new VectorDecoder())) else None
+  val vecCtrlUnit = if(params.useVector) Some(Module(new VecCtrlUnit())) else None
   if(params.useMulDiv) multiplier.get.io := DontCare
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
@@ -197,13 +202,17 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
-    (decoder.io.out.bits.value1 === Value1.CSR.asUInt) -> decoded_inst.uimm,
+    (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm,
     (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
     (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
   ))
-  ID_EX_REG.bits.dataSignals.rs1 := Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
-  ID_EX_REG.bits.dataSignals.rs2 := Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out)
-  ID_EX_REG.bits.dataSignals.csr := decoded_inst.zimm
+
+  val rs1ValueToEX = Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
+  val rs2ValueToEX = Mux(bypassingUnit.io.ID.out.rs2_value.valid, bypassingUnit.io.ID.out.rs2_value.bits, rf.io.rs2_out)
+
+  ID_EX_REG.bits.dataSignals.rs1 := rs1ValueToEX
+  ID_EX_REG.bits.dataSignals.rs2 := rs2ValueToEX
+  ID_EX_REG.bits.dataSignals.zimm := decoded_inst.zimm
   ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 
@@ -221,6 +230,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.bits.rd.valid),
     bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
   ))
+
+  if(params.useVector) {
+    vectorDecoder.get.io.inst := decoded_inst
+    when(vecCtrlUnit.get.io.resp.valid) {
+      ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.get.io.out
+    }
+  }
 
   if(params.debug) {
     ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
@@ -269,11 +285,22 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
 
+  if(params.useVector) {
+    vecCtrlUnit.get.io.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst
+    vecCtrlUnit.get.io.req.bits.vDecode := ID_EX_REG.bits.vectorCtrlSignals.get
+    vecCtrlUnit.get.io.req.bits.rs1_value := ID_EX_REG.bits.dataSignals.rs1
+    vecCtrlUnit.get.io.req.bits.rs2_value := ID_EX_REG.bits.dataSignals.rs2
+    vecCtrlUnit.get.io.req.bits.zimm := ID_EX_REG.bits.dataSignals.zimm
+    vecCtrlUnit.get.io.req.bits.uimm := ID_EX_REG.bits.dataSignals.imm
+  }
+
   val EX_arithmetic_result = if(params.useMulDiv) {
     Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits, alu.io.out)
   } else {
     alu.io.out
   }
+
+  val EX_vector_result = if(params.useVector) Some(vecCtrlUnit.get.io.resp.bits.vl) else None
 
   ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid && !EX_flush
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
@@ -284,14 +311,15 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
-    // WB_SEL.CSR.asUInt -> csrUnit.io.resp.data,
+    WB_SEL.VECTOR.asUInt -> (if(params.useVector) EX_vector_result.get else 0.U)
   ))
   bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
     WB_SEL.ARITH.asUInt -> (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B),
     WB_SEL.CSR.asUInt -> false.B,
     WB_SEL.MEM.asUInt -> false.B,
-    WB_SEL.NONE.asUInt -> false.B
+    WB_SEL.NONE.asUInt -> false.B,
+    WB_SEL.VECTOR.asUInt -> (if(params.useVector) true.B else false.B)
   )) && ID_EX_REG.valid
   bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.write_to_rd && ID_EX_REG.valid
 
@@ -299,9 +327,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // 乗算命令であればmultiplier.respがvalidである必要がある
   EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) && (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B)
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
-  EX_WB_REG.bits.dataSignals.arith_logic_result := EX_arithmetic_result
+  EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+    WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
+    WB_SEL.VECTOR.asUInt -> (if(params.useVector) EX_vector_result.get else 0.U),
+  ))
   EX_WB_REG.bits.dataSignals.datatoCSR := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
-  EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.csr
+  EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.zimm
 
   EX_WB_REG.bits.ctrlSignals := ID_EX_REG.bits.ctrlSignals
 
@@ -313,6 +344,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     // else if exception in EX (load/store misaligned or access fault),
   ))
     Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
+
+  if(params.useVector) {
+    when(vecCtrlUnit.get.io.resp.valid) {
+      EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.get.io.resp.bits
+    }
+  }
 
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
@@ -347,9 +384,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
   rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
-    WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.arith_logic_result,
+    WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.exResult,
     WB_SEL.CSR -> csrUnit.io.resp.data,
     WB_SEL.MEM -> ldstUnit.io.cpu.resp.bits.data,
+    WB_SEL.VECTOR -> (if(params.useVector) EX_WB_REG.bits.dataSignals.exResult else 0.U)
   ).map{
     case (wb_sel, data) => (wb_sel.asUInt, data)
   })
@@ -371,6 +409,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
   csrUnit.io.exception.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
   csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, ldstUnit.io.cpu.resp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)
+
+  if(params.useVector) csrUnit.io.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
 
   // EXまたはWBステージにfence, ecall, mretがある
   sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)
