@@ -35,10 +35,10 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
-  val vectorCsrPorts = if(params.useVector) Some(Flipped(ValidIO(new Bundle {
+  val vectorCsrPorts = if(params.useVector) Some(Input(new Bundle {
     val vtype = UInt(64.W)
     val vl    = UInt(log2Up(params.vlenb).W)
-  }))) else None
+  })) else None
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -90,10 +90,9 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val vxrm = if(params.useVector) Some(zeroInit_Register()) else None
   val vcsr = if(params.useVector) Some(zeroInit_Register()) else None
    */
-  // TODO: Support LMUL != 1
-  // max: vlen/8
-  val vl = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlenb).W))) else None
-  val vtype = if(params.useVector) Some(zeroInit_Register()) else None
+  // vl and vtype can be read from EX_WB register
+  // val vl = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlenb).W))) else None
+  // val vtype = if(params.useVector) Some(zeroInit_Register()) else None
   val vlenb = if(params.useVector) Some(params.vlenb.U) else None
 
   val readOnlyCSRs: Seq[(Int, UInt)] = Seq(
@@ -107,12 +106,10 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.mconfigptr -> mconfigptr,
   ) ++ (if(params.useVector) {
     Seq(
-      CSRs.vl -> vl,
-      CSRs.vtype -> vtype,
-      CSRs.vlenb -> vlenb,
-    ).map{
-      case (addr, reg) => (addr, reg.get)
-    }
+      CSRs.vl -> io.vectorCsrPorts.get.vl,
+      CSRs.vtype -> io.vectorCsrPorts.get.vtype,
+      CSRs.vlenb -> vlenb.get,
+    )
   } else Nil)
 
   val writableCSRs: Seq[(Int, UInt)] = Seq(
@@ -160,13 +157,6 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     mepc := io.exception.bits.mepc_write
     mcause := io.exception.bits.mcause_write
     io.readResp.data := Cat(mtvec.head(xprlen-2), 0.U(2.W))
-  }
-
-  if(params.useVector) {
-    when(io.vectorCsrPorts.get.valid) {
-      vtype.get := io.vectorCsrPorts.get.bits.vtype
-      vl.get := io.vectorCsrPorts.get.bits.vl
-    }
   }
 }
 object CSRFile extends App {
