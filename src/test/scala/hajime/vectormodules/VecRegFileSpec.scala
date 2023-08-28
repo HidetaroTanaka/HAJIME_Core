@@ -15,12 +15,11 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(VecRegFile(params)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       println("a")
       dut.io.sew.poke("b000".U(3.W))
-      dut.io.rs1.poke(0.U)
-      dut.io.rs1_index.poke(0.U)
-      dut.io.rs2.poke(0.U)
-      dut.io.rs2_index.poke(0.U)
+      dut.io.vs1.poke(0.U)
+      dut.io.readIndex.poke(0.U)
+      dut.io.vs2.poke(0.U)
       dut.io.req.valid.poke(true.B)
-      dut.io.req.bits.rd.poke(3.U)
+      dut.io.req.bits.vd.poke(3.U)
       dut.io.req.bits.sew.poke("b000".U)
       println("a")
       for(i <- 0 until params.vlen/8) {
@@ -31,12 +30,12 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.req.bits.index.poke(i.U)
         dut.clock.step()
       }
-      dut.io.rs1.poke(3.U)
+      dut.io.vs1.poke(3.U)
       for(i <- 0 until params.vlen/8) {
         println(s"Read Index: $i")
-        dut.io.rs1_index.poke(i.U)
-        println(s"Read Data: ${dut.io.rs1_out.peekInt()}")
-        dut.io.rs1_out.expect(input_array(i))
+        dut.io.readIndex.poke(i.U)
+        println(s"Read Data: ${dut.io.vs1Out.peekInt()}")
+        dut.io.vs1Out.expect(input_array(i))
         dut.clock.step()
       }
     }
