@@ -8,6 +8,7 @@ import hajime.common._
 import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
 
+// should i optimise this bundle? (vill can be encoded using vlmul != 0, and reserved is not needed)
 class VtypeBundle(implicit params: HajimeCoreParams) extends Bundle {
   val bits = UInt(params.xprlen.W)
   def vill: Bool = bits(params.xprlen-1)

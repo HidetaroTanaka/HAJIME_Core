@@ -6,6 +6,52 @@ extern void int32ToHex(int num, char* str);
 extern void clearCounters();
 extern void printCounters();
 
+void printVtypeInfo(long vtype) {
+char string[19];
+  printstr("vtype: ");
+  int64ToHex(vtype, string);
+  printstr(string);
+  printstr("\nillegal: ");
+  if(vtype < 0) {
+    printstr("true");
+  } else {
+    printstr("false");
+  }
+  printstr("\nreserved: ");
+  if((vtype & 0x7FFFFFFFFFFFFF00L) != 0) {
+    printstr("true");
+  } else {
+    printstr("false");
+  }
+  printstr("\nMask: ");
+  if((vtype & 0x0000000000000080L) != 0) {
+    printstr("Agnostic");
+  } else {
+    printstr("Undisturbed");
+  }
+  printstr("\nTail: ");
+  if((vtype & 0x0000000000000040L) != 0) {
+    printstr("Agnostic");
+  } else {
+    printstr("Undisturbed");
+  }
+  printstr("\nSEW: ");
+  int vsew = (int)(8 << ((vtype >> 3) & 0x7));
+  if(vsew <= 64 && vsew >= 0) {
+    int32ToHex(vsew, string);
+    printstr(string);
+  } else {
+    printstr("Reserved");
+  }
+  printstr("\nLMUL: ");
+  if((vtype & 0x0000000000000007L) == 0) {
+    printstr("1");
+  } else {
+    printstr("illegal for this implementation.");
+  }
+  printstr("\n");
+}
+
 int main(int argc, char** argv) {
   int i;
   char string[19];
@@ -24,9 +70,7 @@ int main(int argc, char** argv) {
     int64ToHex(vl, string);
     printstr(string);
     printstr("\n");
-    printstr("vtype: ");
-    int64ToHex(vtype, string);
-    printstr(string);
+    printVtypeInfo(vtype);
     printstr("\n");
     avl -= vl;
   }
