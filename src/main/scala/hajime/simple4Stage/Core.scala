@@ -233,7 +233,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   if(params.useVector) {
     vectorDecoder.get.io.inst := decoded_inst
-    when(vecCtrlUnit.get.io.resp.valid) {
+    when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
       ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.get.io.out
     }
   }

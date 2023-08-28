@@ -7,8 +7,8 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
 
-class Core_and_cache(icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000) extends Module {
-  val params = HajimeCoreParams(useVector = false)
+class Core_and_cache(icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000, useVector: Boolean = false) extends Module {
+  val params = HajimeCoreParams(useVector = useVector)
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
     val hartid = Input(UInt(64.W))
