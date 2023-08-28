@@ -8,15 +8,20 @@ import hajime.common._
 import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
 
-// should i optimise this bundle? (vill can be encoded using vlmul != 0, and reserved is not needed)
 class VtypeBundle(implicit params: HajimeCoreParams) extends Bundle {
-  val bits = UInt(params.xprlen.W)
-  def vill: Bool = bits(params.xprlen-1)
-  def vma: Bool = bits(7)
-  def vta: Bool = bits(6)
-  def vsew: UInt = bits(5,3)
-  def vlmul: UInt = bits(2,0)
-  def reserved: Bool = bits(params.xprlen-2, 8) =/= 0.U
+  val vill = Bool()
+  val vma = Bool()
+  val vta = Bool()
+  val vsew = UInt(3.W)
+  val vlmul = UInt(3.W)
+  def getBits: UInt = Mux(vill, Cat(true.B, 0.U((params.xprlen-1).W)), Cat(0.U((params.xprlen-8).W), vma, vta, vsew, vlmul))
+  def setBits(vtypei: UInt): Unit = {
+    vill := vtypei(params.xprlen-1) || (vtypei(params.xprlen-2, 8) =/= 0.U) || vtypei(5) || (vtypei(2,0) =/= 0.U)
+    vma := vtypei(7)
+    vta := vtypei(6)
+    vsew := vtypei(5,3)
+    vlmul := vtypei(2,0)
+  }
 }
 
 class VecCtrlUnitReq(implicit params: HajimeCoreParams) extends Bundle {
@@ -42,11 +47,11 @@ class VecCtrlUnit(implicit params: HajimeCoreParams) extends Module with VectorO
 
   val avl = Mux(io.req.bits.vDecode.avl_sel === AVL_SEL.RS1.asUInt, io.req.bits.rs1_value, io.req.bits.uimm)
   val vtypeBits = Wire(new VtypeBundle())
-  vtypeBits.bits := MuxLookup(io.req.bits.vDecode.vtype_sel, 0.U)(Seq(
+  vtypeBits.setBits(MuxLookup(io.req.bits.vDecode.vtype_sel, 0.U)(Seq(
     VTYPE_SEL.ZIMM10.asUInt -> Cat(false.B, io.req.bits.zimm(10,0)),
     VTYPE_SEL.ZIMM9.asUInt -> Cat(false.B, io.req.bits.zimm(9,0)),
     VTYPE_SEL.RS2.asUInt -> io.req.bits.rs2_value
-  ))
+  )))
   // val usedVectorBits = MuxLookup(vtypeBits.vsew, 0.U)(
   //   (0 until 4).map(i => i.U(3.W) -> (avl << (3+i).U).asUInt)
   // )
@@ -57,11 +62,7 @@ class VecCtrlUnit(implicit params: HajimeCoreParams) extends Module with VectorO
   )
 
   when(io.req.valid) {
-    // non zero LMUL is not supported here
-    io.resp.bits.vtype.bits := Mux(vtypeBits.vill || vtypeBits.reserved || vtypeBits.vlmul =/= 0.U || vtypeBits.vsew(2),
-      Cat(true.B, 0.U((params.xprlen-1).W)),
-      vtypeBits.bits
-    )
+    io.resp.bits.vtype := vtypeBits
     // if avl >= maxVl, then vl = maxVl, else vl = avl
     io.resp.bits.vl := Mux(avl >= maxVl, maxVl, avl)
     io.resp.valid := true.B

@@ -105,7 +105,7 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   ) ++ (if(params.useVector) {
     Seq(
       CSRs.vl -> io.vectorCsrPorts.get.vl,
-      CSRs.vtype -> io.vectorCsrPorts.get.vtype.bits,
+      CSRs.vtype -> io.vectorCsrPorts.get.vtype.getBits,
       CSRs.vlenb -> vlenb.get,
     )
   } else Nil)
