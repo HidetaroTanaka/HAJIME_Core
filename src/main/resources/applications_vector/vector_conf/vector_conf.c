@@ -55,7 +55,7 @@ char string[19];
 int main(int argc, char** argv) {
   int i;
   char string[19];
-  long vl=1, avl = 32, vtype;
+  long vl=1, avl = 29, vtype;
   for(i=0; avl != 0; i++) {
     asm volatile ("vsetvli %0, %1, e32, m1, ta, ma"
     : "=r"(vl)
@@ -74,5 +74,54 @@ int main(int argc, char** argv) {
     printstr("\n");
     avl -= vl;
   }
+  // illegal vtypei test
+  printstr("ILLEGAL VTYPEI TEST:\n");
+  asm volatile ("vsetvli zero, %0, e32, m2, ta, ma"
+  :
+  : "r"(41));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printVtypeInfo(vtype);
+  asm volatile ("vsetvli zero, %0, e32, mf4, ta, ma"
+  :
+  : "r"(41));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printVtypeInfo(vtype);
+  printstr("\n");
+
+  // vsetivli test
+  printstr("VSETIVLI TEST:\n");
+  asm volatile ("vsetivli %0, 28, e16, m1, tu, ma"
+  : "=r"(vl));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printstr("vl: ");
+  int64ToHex(vl, string);
+  printstr(string);
+  printstr("\n");
+  printVtypeInfo(vtype);
+  printstr("\n");
+
+  // vsetvl test
+  printstr("VSETVL TEST:\n");
+  asm volatile ("vsetvl zero, %0, %1"
+  :
+  : "r"(19), "r"(0x98));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printVtypeInfo(vtype);
+  asm volatile ("vsetvl zero, %0, %1"
+  :
+  : "r"(19), "r"(0x0100000000000000L));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printVtypeInfo(vtype);
+  asm volatile ("vsetvl zero, %0, %1"
+  :
+  : "r"(19), "r"(0x5));
+  asm volatile ("csrr %0, vtype"
+  : "=r"(vtype));
+  printVtypeInfo(vtype);
   return 0;
 }
