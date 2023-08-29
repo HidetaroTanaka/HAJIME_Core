@@ -24,35 +24,60 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Flipped(ValidIO(new VecRegFileReq()))
 }
 
+// TODO: make it compatible with actual Mask Register Layout (required for LMUL > 1), retaining 8 masks should be possible
 class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new VecRegFileIO())
 
-  val vrf = Mem(32, Vec(params.vlen, Bool()))
+  // vlen[bit]のベクタレジスタ32本
+  val vrf = Mem(32, Vec(params.vlen/8, UInt(8.W)))
 
+  // マスク書き込み用レジスタ
+  // 11.8章 Vector Integer Compare Instructionsを考えると，1サイクル毎の1bitの結果を保持する必要あり
+  // 15章 Vector Mask Instructionsはマスク無しでの全ベクタレジスタでのe64での演算とみなせば良い
+  val maskWriteReg = RegInit(VecInit((0 until 8).map(_ => false.B)))
+
+  val vs1ReadVecReg = vrf.read(io.vs1)
+  val vs2ReadVecReg = vrf.read(io.vs2)
   io.vs1Out := MuxLookup(io.sew, 0.U)(
     (0 until 4).map(
-      i => i.U -> Cat((0 until (8 << i)).reverse.map(j => vrf.read(io.vs1)((io.readIndex << (i + 3)).asUInt + j.U)))
+      // vs1ReadVecReg = vrf.read(io.vs1)
+      // 0.U -> vs1ReadVecReg(io.readIndex)
+      // 1.U -> Cat(vs1ReadVecReg(io.readIndex << 1 + 1), vs1ReadVecReg(io.readIndex << 1))
+      // 2.U -> Cat(vs1ReadVecReg(io.readIndex << 2 + 3), ..., vs1ReadVecReg(io.readIndex << 2))
+      // 3.U -> Cat(vs1ReadVecReg(io.readIndex << 3 + 7), ..., vs1ReadVecReg(io.readIndex << 3))
+      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vs1ReadVecReg((io.readIndex << i).asUInt + j.U)))
     )
   )
   io.vs2Out := MuxLookup(io.sew, 0.U)(
     (0 until 4).map(
-      i => i.U -> Cat((0 until (8 << i)).reverse.map(j => vrf.read(io.vs2)((io.readIndex << (i + 3)).asUInt + j.U)))
+      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vs2ReadVecReg((io.readIndex << i).asUInt + j.U)))
     )
   )
 
+  io.vm := vrf.read(0.U)(io.readIndex.head(io.readIndex.getWidth-3))(io.readIndex(2,0))
+
   when(io.req.valid) {
-    val internalWriteData = VecInit((0 until params.vlen).map(_ => false.B))
-    val internalWriteMask = VecInit((0 until params.vlen).map(_ => false.B))
-    when(io.req.bits.vm) {
-      internalWriteData(io.req.bits.index) := io.req.bits.data(0)
+    maskWriteReg(io.req.bits.index(2,0)) := io.req.bits.data(0)
+    val internalWriteData = VecInit((0 until params.vlen/8).map(_ => 0.U(8.W)))
+    val internalWriteMask = VecInit((0 until params.vlen/8).map(_ => false.B))
+    when(io.req.bits.vm && (io.req.bits.index(2,0) === 7.U)) {
+      internalWriteData(io.req.bits.index) := Cat(
+        (0 until 8).reverse.map {
+          case 7 => io.req.bits.data(0)
+          case i => maskWriteReg(i)
+        }
+      )
       internalWriteMask(io.req.bits.index) := true.B
     } .otherwise {
       for(i <- 0 until 4) {
         switch(io.req.bits.sew) {
           is(i.U) {
-            for(j <- 0 until (8 << i)) {
-              internalWriteData((io.req.bits.index << (i+3)).asUInt + j.U) := io.req.bits.data(j)
-              internalWriteMask((io.req.bits.index << (i+3)).asUInt + j.U) := true.B
+            for(j <- 0 until (1 << i)) {
+              // i=0 (e8) => internalWriteData(io.req.bits.index) := io.req.bits.data(7,0)
+              // i=1 (e16) => internalWriteData(io.req.bits.index*2) := io.req.bits.data(7,0)
+              //              internalWriteData(io.req.bits.index*2+1) := io.req.bits.data(15,8)
+              internalWriteData((io.req.bits.index << i).asUInt + j.U) := io.req.bits.data(j*8+7, j*8)
+              internalWriteMask((io.req.bits.index << i).asUInt + j.U) := true.B
             }
           }
         }
@@ -60,11 +85,9 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
     }
     vrf.write(io.req.bits.vd, internalWriteData, internalWriteMask)
   }
-
-  io.vm := vrf.read(0.U)(io.readIndex)
 }
 
 object VecRegFile extends App {
   def apply(implicit params: HajimeCoreParams): VecRegFile = new VecRegFile()
-  (new chisel3.stage.ChiselStage).emitVerilog(apply(HajimeCoreParams()), args = COMPILE_CONSTANTS.CHISELSTAGE_ARGS)
+  ChiselStage.emitSystemVerilogFile(VecRegFile(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
