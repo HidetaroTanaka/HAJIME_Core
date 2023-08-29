@@ -24,7 +24,7 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Flipped(ValidIO(new VecRegFileReq()))
 }
 
-// TODO: make it compatible with actual Mask Register Layout (required for LMUL > 1), retaining 8 masks should be possible
+// TODO: make it compatible with LMUL > 1 (bigger number of index)
 class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new VecRegFileIO())
 
@@ -61,13 +61,13 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
     val internalWriteData = VecInit((0 until params.vlen/8).map(_ => 0.U(8.W)))
     val internalWriteMask = VecInit((0 until params.vlen/8).map(_ => false.B))
     when(io.req.bits.vm && (io.req.bits.index(2,0) === 7.U)) {
-      internalWriteData(io.req.bits.index) := Cat(
+      internalWriteData(io.req.bits.index.head(io.req.bits.index.getWidth-3)) := Cat(
         (0 until 8).reverse.map {
           case 7 => io.req.bits.data(0)
           case i => maskWriteReg(i)
         }
       )
-      internalWriteMask(io.req.bits.index) := true.B
+      internalWriteMask(io.req.bits.index.head(io.req.bits.index.getWidth-3)) := true.B
     } .otherwise {
       for(i <- 0 until 4) {
         switch(io.req.bits.sew) {

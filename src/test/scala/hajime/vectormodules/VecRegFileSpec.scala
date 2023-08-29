@@ -18,6 +18,7 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.req.valid.poke(true.B)
     dut.io.req.bits.vd.poke(3.U)
     dut.io.req.bits.sew.poke(sew.U)
+    dut.io.req.bits.vm.poke(false.B)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Write Index: $i")
       // e8 -> 256, e16 -> 65536, e32 -> 2^32, e64 -> 2^64
@@ -45,6 +46,41 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     val params = HajimeCoreParams()
     test(VecRegFile(params)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       for(sew <- 0 until 4) readWriteTest(dut, sew, params.vlen)
+      // vm test
+      println("vm test:")
+      var vmArray: IndexedSeq[Boolean] = Nil.toIndexedSeq
+      dut.io.req.valid.poke(true.B)
+      dut.io.req.bits.vd.poke(0.U)
+      dut.io.req.bits.sew.poke(0.U)
+      dut.io.req.bits.vm.poke(true.B)
+      for (i <- 0 until params.vlen / 8) {
+        println(s"Mask Write Index: $i")
+        val input = Random.nextBoolean()
+        println(s"Mask Write Data: $input")
+        dut.io.req.bits.data.poke(input.B)
+        vmArray :+= input
+        dut.io.req.bits.index.poke(i.U)
+        dut.clock.step()
+      }
+      dut.io.req.valid.poke(false.B)
+      for(i <- 0 until params.vlen / 8) {
+        println(s"Mask Read Index: $i")
+        dut.io.readIndex.poke(i.U)
+        println(s"Mask Read Data: ${dut.io.vm.peekBoolean()}")
+        dut.io.vm.expect(vmArray(i).B)
+        dut.clock.step()
+      }
+      // check whether vm follows 4.5. Mask Register Layout
+      dut.io.vs1.poke(0.U)
+      dut.io.sew.poke(0.U)
+      for(i <- 0 until params.vlen / 64) {
+        println(s"Read Index: $i")
+        dut.io.readIndex.poke(i.U)
+        println(s"Read Data: ${dut.io.vs1Out.peekInt().toString(16)}")
+        val expectedValueFromVs1 = vmArray.slice(i*8, (i+1)*8).map(if(_) "1" else "0").reverse.reduce(_ + _)
+        dut.io.vs1Out.expect(s"b$expectedValueFromVs1".U)
+        dut.clock.step()
+      }
     }
   }
 }
