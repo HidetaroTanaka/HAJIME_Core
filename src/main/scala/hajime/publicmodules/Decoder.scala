@@ -151,7 +151,9 @@ object RvvDecode extends DecodeConstants {
     // Probably use Vector Specified Decoder outside?
     VSETVLI  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
     VSETIVLI -> List(Y, Branch.NONE,  Value1.UIMM19_15, Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,   ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+    VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,   ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    // VLE8     -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    // VLE16    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
   )
 }
 
