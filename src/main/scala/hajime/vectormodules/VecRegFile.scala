@@ -36,8 +36,8 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   // 15章 Vector Mask Instructionsはマスク無しでの全ベクタレジスタでのe64での演算とみなせば良い
   val maskWriteReg = RegInit(VecInit((0 until 8).map(_ => false.B)))
 
-  val vs1ReadVecReg = vrf.read(io.vs1)
-  val vs2ReadVecReg = vrf.read(io.vs2)
+  val vs1ReadVecReg: Vec[UInt] = vrf.read(io.vs1)
+  val vs2ReadVecReg: Vec[UInt] = vrf.read(io.vs2)
   io.vs1Out := MuxLookup(io.sew, 0.U)(
     (0 until 4).map(
       // vs1ReadVecReg = vrf.read(io.vs1)
