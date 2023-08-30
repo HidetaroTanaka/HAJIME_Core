@@ -10,13 +10,22 @@ import hajime.publicmodules._
 object VDecode extends DecodeConstants with VectorOpConstants {
   import ContentValid._
   val table: Array[(BitPat, List[EnumType])] = Array(
-    //               Is configuration-setting?
-    //               |  AVL selector
-    //               |  |             vtype selector
-    //               |  |             |
-    VSETVLI -> List(Y, AVL_SEL.RS1, VTYPE_SEL.ZIMM10),
-    VSETIVLI -> List(Y, AVL_SEL.UIMM, VTYPE_SEL.ZIMM9),
-    VSETVL -> List(Y, AVL_SEL.RS1, VTYPE_SEL.RS2),
+    //               Is configuration-setting?          vector addressing modes
+    //               |  AVL selector                    |                unit-stride vector addressing modes
+    //               |  |             vtype selector    |                |            write back to VRF?
+    //               |  |             |                 |                |            |
+    VSETVLI  -> List(Y, AVL_SEL.RS1,  VTYPE_SEL.ZIMM10, MOP.NONE,        UMOP.NONE,   N),
+    VSETIVLI -> List(Y, AVL_SEL.UIMM, VTYPE_SEL.ZIMM9,  MOP.NONE,        UMOP.NONE,   N),
+    VSETVL   -> List(Y, AVL_SEL.RS1,  VTYPE_SEL.RS2,    MOP.NONE,        UMOP.NONE,   N),
+    // use i_imm for vm
+    VLE8     -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, Y),
+    VLE16    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, Y),
+    VLE32    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, Y),
+    VLE64    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, Y),
+    VSE8     -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, N),
+    VSE16    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, N),
+    VSE32    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, N),
+    VSE64    -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE,   MOP.UNIT_STRIDE, UMOP.NORMAL, N),
   )
 }
 
@@ -28,8 +37,10 @@ class VectorDecoderResp extends Bundle with ScalarOpConstants with VectorOpConst
   val isConfsetInst = Bool()
   val avl_sel = UInt(AVL_SEL.getWidth.W)
   val vtype_sel = UInt(VTYPE_SEL.getWidth.W)
+  val mop = UInt(MOP.getWidth.W)
+  val umop = UInt(UMOP.getWidth.W)
 
-  def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel)
+  def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop)
 }
 
 class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -47,7 +58,7 @@ class VectorDecoder(implicit params: HajimeCoreParams) extends Module with Decod
 
   import ContentValid._
   val csignals = ListLookup(io.inst.bits,
-    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE).map(_.asUInt),
+    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL).map(_.asUInt),
     mapping = tableForListLookup
   )
 

@@ -4,7 +4,7 @@ import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
-import hajime.common._
+import hajime.common.{ScalarOpConstants, _}
 import hajime.publicmodules._
 import hajime.vectormodules._
 
@@ -116,7 +116,7 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
-class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
+class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
   val io = IO(new CPUIO())
   io := DontCare
 
@@ -254,6 +254,14 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   }
 
   // START OF EX STAGE
+  val idxReg = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlen/8).W))) else None
+  val vecValid = if(params.useVector) Some(RegInit(false.B)) else None
+  if (params.useVector) {
+    // vsetvl系でないベクタ命令が次のクロックサイクルでEXステージへ入力されるならばリセット，そうでなければインクリメント
+    idxReg.get := Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
+    vecValid := Mux(ID_EX_REG.valid && ID_EX_REG.)
+  }
+
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
     Value1.RS1.asUInt -> ID_EX_REG.bits.dataSignals.rs1,
     Value1.U_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
@@ -264,6 +272,17 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     Value2.S_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
     Value2.PC.asUInt -> ID_EX_REG.bits.dataSignals.pc.addr,
   ))
+
+  if (params.useVector) {
+    when(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt) {
+      alu.io.in2 := idxReg.get << MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.memory_length, 0.U)(Seq(
+        MEM_LEN.B.asUInt -> 0.U,
+        MEM_LEN.H.asUInt -> 1.U,
+        MEM_LEN.W.asUInt -> 2.U,
+        MEM_LEN.D.asUInt -> 3.U,
+      ))
+    }
+  }
   alu.io.funct := ID_EX_REG.bits.ctrlSignals.decode
 
   branch_evaluator.io.req.bits.ALU_Result := alu.io.out
@@ -354,11 +373,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
+  // または最終要素でないベクタ要素の命令が実行中
   EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
-    (ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid)
-  } else {
-    false.B
-  }))
+    ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
+  } else false.B) || (if(params.useVector) {
+    idxReg.get < EX_WB_REG.bits.vectorCsrPorts.get.vl-1.U
+  } else false.B))
 
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG

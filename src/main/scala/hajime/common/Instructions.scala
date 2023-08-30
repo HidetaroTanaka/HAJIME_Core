@@ -2,6 +2,7 @@ package hajime.common
 
 import chisel3._
 import chisel3.util._
+import hajime.publicmodules.DecodeConstants
 import hajime.vectormodules.VectorOpConstants
 
 import scala.annotation.unused
@@ -125,12 +126,12 @@ object Instructions {
   def RDINSTRETH         = BitPat("b11001000001000000010?????1110011")
 }
 
-object VectorInstructions extends VectorOpConstants {
+object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VSETVLI            = BitPat("b0????????????????111?????1010111")
   def VSETIVLI           = BitPat("b11???????????????111?????1010111")
   def VSETVL             = BitPat("b1000000??????????111?????1010111")
 
-  def generateBitPatForVecLDST(mop: MOP.Type, umop: UMOP.Type, width: WIDTH.Type, load: Boolean): BitPat = {
+  def generateBitPatForVecLDST(mop: MOP.Type, umop: UMOP.Type, width: MEM_LEN.Type, load: Boolean): BitPat = {
     val nf = "000" // don't have to care nf as LMUL is always 1
     val mew = "0" // mew with 1 is reserved
     val _mop = mop match {
@@ -138,6 +139,7 @@ object VectorInstructions extends VectorOpConstants {
       case MOP.IDX_UNORDERED => "01"
       case MOP.STRIDED => "10"
       case MOP.IDX_ORDERED => "11"
+      case _ => throw new Exception()
     }
     val vm = "?"
     val _umop = if(mop == MOP.UNIT_STRIDE) umop match {
@@ -145,28 +147,27 @@ object VectorInstructions extends VectorOpConstants {
       case UMOP.WHOLE_REGISTER => "01000"
       case UMOP.MASK_E8 => "01011"
       case UMOP.FAULT_ONLY_FIRST => "10000"
-    } else {
-      "?????"
-    }
+      case _ => throw new Exception()
+    } else "?????"
     val _width = width match {
-      case WIDTH.E8 => "000"
-      case WIDTH.E16 => "101"
-      case WIDTH.E32 => "110"
-      case WIDTH.E64 => "111"
+      case MEM_LEN.B => "000"
+      case MEM_LEN.H => "101"
+      case MEM_LEN.W => "110"
+      case MEM_LEN.D => "111"
     }
     val opcode = if(load) "0000111" else "0100111"
     BitPat("b" + nf + mew + _mop + vm + _umop + "?????" + _width + "?????" + opcode)
   }
-  def VLE8               = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E8, load = true)
-  def VLE16              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E16, load = true)
-  def VLE32              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E32, load = true)
-  def VLE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E64, load = true)
-  def VSE8               = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E8, load = false)
-  def VSE16              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E16, load = false)
-  def VSE32              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E32, load = false)
-  def VSE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, WIDTH.E64, load = false)
-  def VLM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, WIDTH.E8, load = true)
-  def VSM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, WIDTH.E8, load = false)
+  def VLE8               = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.B, load = true)
+  def VLE16              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.H, load = true)
+  def VLE32              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.W, load = true)
+  def VLE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.D, load = true)
+  def VSE8               = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.B, load = false)
+  def VSE16              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.H, load = false)
+  def VSE32              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.W, load = false)
+  def VSE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.D, load = false)
+  def VLM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = true)
+  def VSM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = false)
 }
 object Amogus extends App {
   import VectorInstructions._
