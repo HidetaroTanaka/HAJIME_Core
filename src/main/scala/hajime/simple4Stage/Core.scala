@@ -360,10 +360,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   val EX_vector_result = if(params.useVector) Some(vecCtrlUnit.get.io.resp.bits.vl) else None
 
-  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid && !EX_flush && (if(params.useVector) {
+  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && !EX_flush && (ID_EX_REG.bits.ctrlSignals.decode.memValid || (if(params.useVector) {
     // マスク無しまたは要素が有効な場合にのみtrue
     ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm
-  } else true.B)
+  } else true.B))
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
   ldstUnit.io.cpu.req.bits.data := (if(params.useVector) Mux(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.vdOut, ID_EX_REG.bits.dataSignals.rs2) else ID_EX_REG.bits.dataSignals.rs2)
   ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
@@ -419,7 +419,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
     ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
   } else false.B) || (if(params.useVector) {
-    idxReg.get < EX_WB_REG.bits.vectorCsrPorts.get.vl-1.U
+    ID_EX_REG.bits.ctrlSignals.decode.vector.get && !ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst && (idxReg.get < EX_WB_REG.bits.vectorCsrPorts.get.vl-1.U)
   } else false.B))
 
   when(WB_stall) {

@@ -17,7 +17,7 @@ class ALUIO(implicit params: HajimeCoreParams) extends Bundle {
 class ALU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
   import params._
   val io = IO(new ALUIO())
-  require(xprlen == XLEN || xprlen == 32)
+  require(xprlen == 64 || xprlen == 32)
 
   val in1_record = if(xprlen == 64) Mux(io.funct.op32, Mux(io.funct.arithmetic_funct === ARITHMETIC_FCN.SR.asUInt && !io.funct.alu_flag, Cat(0.U(32.W), io.in1(31,0)), Functions.sign_ext(io.in1(31,0), xprlen)), io.in1) else io.in1
   val in2_record = if(xprlen == 64) Mux(io.funct.op32, Functions.sign_ext(io.in2(31,0), xprlen), io.in2) else io.in2
