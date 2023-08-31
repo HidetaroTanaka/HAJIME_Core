@@ -280,8 +280,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   if (params.useVector) {
     // ベクタ命令がベクタレジスタに書き込み，かつinst.vmが1またはv0.mask[i]=1ならば書き込み
     val vecWriteBack = ID_EX_REG.bits.vectorCtrlSignals.get.vrfWrite && (ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm)
-    // vsetvl系でないベクタ命令が次のクロックサイクルでEXステージへ入力されるならばリセット，そうでなければインクリメント
-    idxReg.get := Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
+    // vsetvli系でないベクタ命令が実行され，かつ最終要素でないならばインクリメント，それ以外ならばリセット
+    idxReg.get := MuxCase(0.U, Seq(
+      (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && !ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst &&
+        (idxReg.get < (EX_WB_REG.bits.vectorCsrPorts.get.vl-1.U))) -> (idxReg.get + 1.U)
+    ))
+      Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
     vecValid.get := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && vecWriteBack
 
     // vecRegFileへの入力
