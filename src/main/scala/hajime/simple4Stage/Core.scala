@@ -100,10 +100,21 @@ class Debug_Info(implicit params: HajimeCoreParams) extends Bundle {
   val pc = new ProgramCounter()
 }
 
+class VectorDataSignals(implicit params: HajimeCoreParams) extends Bundle {
+  /**
+   * vector masking is encoded in inst[25]
+   */
+  val mask = Bool()
+  val vs1 = UInt(5.W)
+  val vs2 = UInt(5.W)
+  val vd = UInt(5.W)
+}
+
 class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
+  val vectorDataSignals = if(params.useVector) Some(new VectorDataSignals()) else None
   val vectorCtrlSignals = if(params.useVector) Some(new VectorDecoderResp()) else None
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
@@ -142,6 +153,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val multiplier = if(params.useMulDiv) Some(Module(new NonPipelinedMultiplierWrap())) else None
   val vectorDecoder = if(params.useVector) Some(Module(new VectorDecoder())) else None
   val vecCtrlUnit = if(params.useVector) Some(Module(new VecCtrlUnit())) else None
+  val vecRegFile = if(params.useVector) Some(Module(new VecRegFile())) else None
   if(params.useMulDiv) multiplier.get.io := DontCare
 
   ldstUnit.io.dcache_axi4lite <> io.dcache_axi4lite
@@ -162,6 +174,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val rs2_required_but_not_valid = WireInit(false.B)
 
   // START OF ID STAGE
+  // TODO: 可読性向上のため，validのみのブロックとvalid && readyのブロックに分ける．EX，WBも同様
 
   val decoded_inst = Wire(new InstBundle())
   decoded_inst := io.frontend.resp.bits.inst
@@ -236,6 +249,13 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
       ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.get.io.out
     }
+    // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
+    // 1 -> マスクなし，全て書き込む
+    // （マスクを使わないベクタ命令は全てvm=1か？）
+    ID_EX_REG.bits.vectorDataSignals.get.mask := decoded_inst.bits(25)
+    ID_EX_REG.bits.vectorDataSignals.get.vs1 := decoded_inst.rs1
+    ID_EX_REG.bits.vectorDataSignals.get.vs2 := decoded_inst.rs2
+    ID_EX_REG.bits.vectorDataSignals.get.vd := decoded_inst.rd
   }
 
   if(params.debug) {
@@ -256,10 +276,27 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // START OF EX STAGE
   val idxReg = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlen/8).W))) else None
   val vecValid = if(params.useVector) Some(RegInit(false.B)) else None
+  val vecDataReg = if(params.useVector) Some(RegNext(ID_EX_REG.bits.vectorDataSignals.get)) else None
   if (params.useVector) {
+    // ベクタ命令がベクタレジスタに書き込み，かつinst.vmが1またはv0.mask[i]=1ならば書き込み
+    val vecWriteBack = ID_EX_REG.bits.vectorCtrlSignals.get.vrfWrite && (ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm)
     // vsetvl系でないベクタ命令が次のクロックサイクルでEXステージへ入力されるならばリセット，そうでなければインクリメント
     idxReg.get := Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
-    vecValid := Mux(ID_EX_REG.valid && ID_EX_REG.)
+    vecValid.get := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && vecWriteBack
+
+    // vecRegFileへの入力
+    vecRegFile.get.io.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
+    vecRegFile.get.io.readIndex := idxReg.get
+    vecRegFile.get.io.vs1 := ID_EX_REG.bits.vectorDataSignals.get.vs1
+    vecRegFile.get.io.vs2 := ID_EX_REG.bits.vectorDataSignals.get.vs2
+    vecRegFile.get.io.vd := ID_EX_REG.bits.vectorDataSignals.get.vd
+
+    vecRegFile.get.io.req.valid := vecValid.get
+    vecRegFile.get.io.req.bits.vd := vecDataReg.get.vd
+    vecRegFile.get.io.req.bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
+    vecRegFile.get.io.req.bits.index := idxReg.get
+    vecRegFile.get.io.req.bits.data := ldstUnit.io.cpu.resp.bits.data
+    vecRegFile.get.io.req.bits.vm := false.B
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
@@ -274,7 +311,9 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   ))
 
   if (params.useVector) {
-    when(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt) {
+    // ベクタメモリアクセス命令が有効ならaluへの入力を上書き
+    // UNIT_STRIDEならrs1+index*elen
+    when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt) {
       alu.io.in2 := idxReg.get << MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.memory_length, 0.U)(Seq(
         MEM_LEN.B.asUInt -> 0.U,
         MEM_LEN.H.asUInt -> 1.U,
@@ -321,9 +360,12 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   val EX_vector_result = if(params.useVector) Some(vecCtrlUnit.get.io.resp.bits.vl) else None
 
-  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid && !EX_flush
+  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.memValid && !EX_flush && (if(params.useVector) {
+    // マスク無しまたは要素が有効な場合にのみtrue
+    ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm
+  } else true.B)
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
-  ldstUnit.io.cpu.req.bits.data := ID_EX_REG.bits.dataSignals.rs2
+  ldstUnit.io.cpu.req.bits.data := (if(params.useVector) Mux(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.vdOut, ID_EX_REG.bits.dataSignals.rs2) else ID_EX_REG.bits.dataSignals.rs2)
   ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index

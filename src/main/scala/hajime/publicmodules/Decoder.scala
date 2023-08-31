@@ -149,17 +149,17 @@ object RvvDecode extends DecodeConstants {
   import VectorInstructions._
   val table: Array[(BitPat, List[EnumType])] = Array(
     // Probably use Vector Specified Decoder outside?
-    VSETVLI  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VSETIVLI -> List(Y, Branch.NONE,  Value1.UIMM19_15, Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,   ARITHMETIC_FCN.NONE,    N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VLE8     -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VLE16    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_RD, MEM_LEN.H, N, CSR_FCN.N, N, Y),
-    VLE32    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_RD, MEM_LEN.W, N, CSR_FCN.N, N, Y),
-    VLE64    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_RD, MEM_LEN.D, N, CSR_FCN.N, N, Y),
-    VSE8     -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_WR, MEM_LEN.B, N, CSR_FCN.N, N, Y),
-    VSE16    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, Y),
-    VSE32    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, Y),
-    VSE64    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,  MEM_FCN.M_WR, MEM_LEN.D, N, CSR_FCN.N, N, Y),
+    VSETVLI  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.NONE,      N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSETIVLI -> List(Y, Branch.NONE,  Value1.UIMM19_15, Value2.ZERO,  ARITHMETIC_FCN.NONE,  N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSETVL   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,    ARITHMETIC_FCN.NONE,      N, N, WB_SEL.VECTOR,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VLE8     -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VLE16    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.H, N, CSR_FCN.N, N, Y),
+    VLE32    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.W, N, CSR_FCN.N, N, Y),
+    VLE64    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.D, N, CSR_FCN.N, N, Y),
+    VSE8     -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSE16    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N, Y),
+    VSE32    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N, Y),
+    VSE64    -> List(Y, Branch.NONE,  Value1.RS1,  Value2.I_IMM,  ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N, Y),
   )
 }
 

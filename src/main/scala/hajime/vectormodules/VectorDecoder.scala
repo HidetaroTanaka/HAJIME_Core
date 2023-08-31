@@ -39,8 +39,9 @@ class VectorDecoderResp extends Bundle with ScalarOpConstants with VectorOpConst
   val vtype_sel = UInt(VTYPE_SEL.getWidth.W)
   val mop = UInt(MOP.getWidth.W)
   val umop = UInt(UMOP.getWidth.W)
+  val vrfWrite = Bool()
 
-  def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop)
+  def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop, vrfWrite)
 }
 
 class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -58,7 +59,7 @@ class VectorDecoder(implicit params: HajimeCoreParams) extends Module with Decod
 
   import ContentValid._
   val csignals = ListLookup(io.inst.bits,
-    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL).map(_.asUInt),
+    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL, N).map(_.asUInt),
     mapping = tableForListLookup
   )
 

@@ -20,6 +20,9 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val vs1Out = Output(UInt(params.xprlen.W))
   val vs2 = Input(UInt(5.W))
   val vs2Out = Output(UInt(params.xprlen.W))
+  // for vector store and multiply-add instructions
+  val vd = Input(UInt(5.W))
+  val vdOut = Output(UInt(params.xprlen.W))
   val vm = Output(Bool())
   val req = Flipped(ValidIO(new VecRegFileReq()))
 }
@@ -30,6 +33,8 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
 
   // vlen[bit]のベクタレジスタ32本
   val vrf = Mem(32, Vec(params.vlen/8, UInt(8.W)))
+  // TODO: vdレジスタに書き込む命令が入った時に該当インデックスをfalseに，該当インデックスの0要素目が書き込まれた時にtrueにする
+  val vrfReadyTable = RegInit(VecInit((0 until 32).map(_ => true.B)))
 
   // マスク書き込み用レジスタ
   // 11.8章 Vector Integer Compare Instructionsを考えると，1サイクル毎の1bitの結果を保持する必要あり
@@ -38,6 +43,7 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
 
   val vs1ReadVecReg: Vec[UInt] = vrf.read(io.vs1)
   val vs2ReadVecReg: Vec[UInt] = vrf.read(io.vs2)
+  val vdReadVecReg: Vec[UInt] = vrf.read(io.vd)
   io.vs1Out := MuxLookup(io.sew, 0.U)(
     (0 until 4).map(
       // vs1ReadVecReg = vrf.read(io.vs1)
@@ -51,6 +57,11 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   io.vs2Out := MuxLookup(io.sew, 0.U)(
     (0 until 4).map(
       i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vs2ReadVecReg((io.readIndex << i).asUInt + j.U)))
+    )
+  )
+  io.vdOut := MuxLookup(io.sew, 0.U)(
+    (0 until 4).map(
+      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vdReadVecReg((io.readIndex << i).asUInt + j.U)))
     )
   )
 
