@@ -120,8 +120,8 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
       stageRegisters(i) := stageRegisters(i)
     } .otherwise {
       stageRegisters(i) := stageRegisters(i - 1)
-      stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << (i * 8).U) + stageRegisters(i - 1).bits.result
-      stageRegisters(i).bits.multiplier := stageRegisters(i - 1).bits.multiplier >> 8.U
+      stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << (i * 8)).asUInt + stageRegisters(i - 1).bits.result
+      stageRegisters(i).bits.multiplier := stageRegisters(i - 1).bits.multiplier >> 8
     }
     if(params.debug) io.debug.get(i) := stageRegisters(i)
   }
@@ -129,7 +129,7 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
   // STAGE 7
   multipliers_64x8(7).io.multiplicand := stageRegisters(6).bits.multiplicand
   multipliers_64x8(7).io.multiplier := stageRegisters(6).bits.multiplier(7,0)
-  io.resp.bits.result := (multipliers_64x8(7).io.out << 56.U) + stageRegisters(6).bits.result
+  io.resp.bits.result := (multipliers_64x8(7).io.out << 56).asUInt + stageRegisters(6).bits.result
   io.resp.bits.tag := stageRegisters(6).bits.tag
   io.resp.valid := stageRegisters(6).valid
 }
