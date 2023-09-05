@@ -34,7 +34,7 @@ class VecCtrlUnitReq(implicit params: HajimeCoreParams) extends Bundle {
 
 class VecCtrlUnitResp(implicit params: HajimeCoreParams) extends Bundle {
   val vtype = new VtypeBundle()
-  val vl = UInt(log2Up(params.vlenb).W)
+  val vl = UInt((log2Up(params.vlenb)+1).W)
 }
 
 class VecCtrlUnitIO(implicit params: HajimeCoreParams) extends Bundle {
