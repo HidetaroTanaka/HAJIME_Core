@@ -275,6 +275,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   // START OF EX STAGE
   val idxReg = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlen/8).W))) else None
+  val EX_WB_idxReg = if(params.useVector) Some(RegNext(idxReg.get)) else None
   val vecValid = if(params.useVector) Some(RegInit(false.B)) else None
   val vecDataReg = if(params.useVector) Some(RegNext(ID_EX_REG.bits.vectorDataSignals.get)) else None
   if (params.useVector) {
@@ -298,7 +299,8 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     vecRegFile.get.io.req.valid := vecValid.get
     vecRegFile.get.io.req.bits.vd := vecDataReg.get.vd
     vecRegFile.get.io.req.bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
-    vecRegFile.get.io.req.bits.index := idxReg.get
+    // TODO: multiple write port for different vecUnits
+    vecRegFile.get.io.req.bits.index := EX_WB_idxReg.get
     vecRegFile.get.io.req.bits.data := ldstUnit.io.cpu.resp.bits.data
     vecRegFile.get.io.req.bits.vm := false.B
   }
@@ -390,7 +392,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   // メモリアクセス命令であればldstUnitがreadyである必要があり，
   // 乗算命令であればmultiplier.respがvalidである必要がある
-  EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) && (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B)
+  // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある(idxReg == vl)
+  EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) &&
+    (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B) &&
+    (if(params.useVector) !ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || ((idxReg.get + 1.U) === EX_WB_REG.bits.vectorCsrPorts.get.vl) else true.B)
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
@@ -439,7 +444,6 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // START OF WB STAGE
   // メモリアクセス命令かつ，ldstUnitのrespがvalidでなければストール
   WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.resp.valid)
-  // TODO: add memory misaligned exception (load misaligned: 0x4, store misaligned: 0x6), and memory access fault exception (load fault: 0x5, store fault: 0x7)
   val dmemoryAccessException = (EX_WB_REG.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
   WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException)
   when(WB_pc_redirect) {
