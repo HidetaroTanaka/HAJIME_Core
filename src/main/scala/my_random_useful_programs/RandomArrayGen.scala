@@ -18,3 +18,8 @@ object RandomIntTupleGen extends App {
   println(randomTuple.map(_._1).mkString("{", ", ", "}"))
   println(randomTuple.map(_._2).mkString("{", ", ", "}"))
 }
+
+object RandomArrayWithElenGen extends App {
+  val randomArray = (0 until 12).map(_ => Random.nextInt()).map("0x" + _.toHexString.toUpperCase)
+  println(randomArray.mkString("{", ", ", "}"))
+}
