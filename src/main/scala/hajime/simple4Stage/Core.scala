@@ -395,7 +395,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある(idxReg == vl)
   EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) &&
     (if(params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B) &&
-    (if(params.useVector) !ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || ((idxReg.get + 1.U) === EX_WB_REG.bits.vectorCsrPorts.get.vl) else true.B)
+    (if(params.useVector) !ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || ((idxReg.get + 1.U((idxReg.get.getWidth+1).W)) === EX_WB_REG.bits.vectorCsrPorts.get.vl) else true.B)
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
