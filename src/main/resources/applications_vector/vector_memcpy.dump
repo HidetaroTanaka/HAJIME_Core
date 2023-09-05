@@ -846,7 +846,7 @@ Disassembly of section .text.startup:
  c60:	54450513          	add	a0,a0,1348 # 41a0 <longArray+0x110>
  c64:	875ff0ef          	jal	4d8 <printstr>
  c68:	00000413          	li	s0,0
- c6c:	0e0a9863          	bnez	s5,d5c <main+0x200>
+ c6c:	0e0a9a63          	bnez	s5,d60 <main+0x204>
  c70:	00003617          	auipc	a2,0x3
  c74:	73060613          	add	a2,a2,1840 # 43a0 <targetArray>
  c78:	00003697          	auipc	a3,0x3
@@ -862,7 +862,7 @@ Disassembly of section .text.startup:
  ca0:	00003517          	auipc	a0,0x3
  ca4:	52050513          	add	a0,a0,1312 # 41c0 <longArray+0x130>
  ca8:	831ff0ef          	jal	4d8 <printstr>
- cac:	10041a63          	bnez	s0,dc0 <main+0x264>
+ cac:	10041c63          	bnez	s0,dc4 <main+0x268>
  cb0:	00003617          	auipc	a2,0x3
  cb4:	6f060613          	add	a2,a2,1776 # 43a0 <targetArray>
  cb8:	00003697          	auipc	a3,0x3
@@ -878,69 +878,70 @@ Disassembly of section .text.startup:
  ce0:	00003517          	auipc	a0,0x3
  ce4:	50050513          	add	a0,a0,1280 # 41e0 <longArray+0x150>
  ce8:	ff0ff0ef          	jal	4d8 <printstr>
- cec:	0a041a63          	bnez	s0,da0 <main+0x244>
+ cec:	0a041c63          	bnez	s0,da4 <main+0x248>
  cf0:	00003517          	auipc	a0,0x3
  cf4:	51050513          	add	a0,a0,1296 # 4200 <longArray+0x170>
  cf8:	fe0ff0ef          	jal	4d8 <printstr>
- cfc:	00003617          	auipc	a2,0x3
- d00:	33460613          	add	a2,a2,820 # 4030 <shortArray>
- d04:	00003697          	auipc	a3,0x3
- d08:	69c68693          	add	a3,a3,1692 # 43a0 <targetArray>
+ cfc:	00003697          	auipc	a3,0x3
+ d00:	33468693          	add	a3,a3,820 # 4030 <shortArray>
+ d04:	00003717          	auipc	a4,0x3
+ d08:	69c70713          	add	a4,a4,1692 # 43a0 <targetArray>
  d0c:	01800793          	li	a5,24
- d10:	0c87f757          	vsetvli	a4,a5,e16,m1,ta,ma
- d14:	02065007          	vle16.v	v0,(a2)
- d18:	0206d027          	vse16.v	v0,(a3)
- d1c:	40e787b3          	sub	a5,a5,a4
- d20:	00e686b3          	add	a3,a3,a4
- d24:	00e60633          	add	a2,a2,a4
- d28:	fe0794e3          	bnez	a5,d10 <main+0x1b4>
- d2c:	00100513          	li	a0,1
- d30:	04041663          	bnez	s0,d7c <main+0x220>
- d34:	05813083          	ld	ra,88(sp)
- d38:	05013403          	ld	s0,80(sp)
- d3c:	04813483          	ld	s1,72(sp)
- d40:	04013903          	ld	s2,64(sp)
- d44:	03813983          	ld	s3,56(sp)
- d48:	03013a03          	ld	s4,48(sp)
- d4c:	02813a83          	ld	s5,40(sp)
- d50:	02013b03          	ld	s6,32(sp)
- d54:	06010113          	add	sp,sp,96
- d58:	00008067          	ret
- d5c:	01800613          	li	a2,24
- d60:	00003597          	auipc	a1,0x3
- d64:	64058593          	add	a1,a1,1600 # 43a0 <targetArray>
- d68:	00003517          	auipc	a0,0x3
- d6c:	2c850513          	add	a0,a0,712 # 4030 <shortArray>
- d70:	c90ff0ef          	jal	200 <verify_shortArray>
- d74:	0005041b          	sext.w	s0,a0
- d78:	ef9ff06f          	j	c70 <main+0x114>
- d7c:	01800613          	li	a2,24
- d80:	00003597          	auipc	a1,0x3
- d84:	62058593          	add	a1,a1,1568 # 43a0 <targetArray>
- d88:	00003517          	auipc	a0,0x3
- d8c:	2a850513          	add	a0,a0,680 # 4030 <shortArray>
- d90:	c70ff0ef          	jal	200 <verify_shortArray>
- d94:	00154513          	xor	a0,a0,1
- d98:	0ff57513          	zext.b	a0,a0
- d9c:	f99ff06f          	j	d34 <main+0x1d8>
- da0:	00600613          	li	a2,6
- da4:	00003597          	auipc	a1,0x3
- da8:	5fc58593          	add	a1,a1,1532 # 43a0 <targetArray>
- dac:	00003517          	auipc	a0,0x3
- db0:	2e450513          	add	a0,a0,740 # 4090 <longArray>
- db4:	dd0ff0ef          	jal	384 <verify_longArray>
- db8:	0005041b          	sext.w	s0,a0
- dbc:	f35ff06f          	j	cf0 <main+0x194>
- dc0:	00c00613          	li	a2,12
- dc4:	00003597          	auipc	a1,0x3
- dc8:	5dc58593          	add	a1,a1,1500 # 43a0 <targetArray>
- dcc:	00003517          	auipc	a0,0x3
- dd0:	29450513          	add	a0,a0,660 # 4060 <intArray>
- dd4:	cf0ff0ef          	jal	2c4 <verify_intArray>
- dd8:	0005041b          	sext.w	s0,a0
- ddc:	ed5ff06f          	j	cb0 <main+0x154>
- de0:	fff00513          	li	a0,-1
- de4:	00008067          	ret
+ d10:	0c87f5d7          	vsetvli	a1,a5,e16,m1,ta,ma
+ d14:	0206d007          	vle16.v	v0,(a3)
+ d18:	02075027          	vse16.v	v0,(a4)
+ d1c:	00159613          	sll	a2,a1,0x1
+ d20:	40b787b3          	sub	a5,a5,a1
+ d24:	00c70733          	add	a4,a4,a2
+ d28:	00c686b3          	add	a3,a3,a2
+ d2c:	fe0792e3          	bnez	a5,d10 <main+0x1b4>
+ d30:	00100513          	li	a0,1
+ d34:	04041663          	bnez	s0,d80 <main+0x224>
+ d38:	05813083          	ld	ra,88(sp)
+ d3c:	05013403          	ld	s0,80(sp)
+ d40:	04813483          	ld	s1,72(sp)
+ d44:	04013903          	ld	s2,64(sp)
+ d48:	03813983          	ld	s3,56(sp)
+ d4c:	03013a03          	ld	s4,48(sp)
+ d50:	02813a83          	ld	s5,40(sp)
+ d54:	02013b03          	ld	s6,32(sp)
+ d58:	06010113          	add	sp,sp,96
+ d5c:	00008067          	ret
+ d60:	01800613          	li	a2,24
+ d64:	00003597          	auipc	a1,0x3
+ d68:	63c58593          	add	a1,a1,1596 # 43a0 <targetArray>
+ d6c:	00003517          	auipc	a0,0x3
+ d70:	2c450513          	add	a0,a0,708 # 4030 <shortArray>
+ d74:	c8cff0ef          	jal	200 <verify_shortArray>
+ d78:	0005041b          	sext.w	s0,a0
+ d7c:	ef5ff06f          	j	c70 <main+0x114>
+ d80:	01800613          	li	a2,24
+ d84:	00003597          	auipc	a1,0x3
+ d88:	61c58593          	add	a1,a1,1564 # 43a0 <targetArray>
+ d8c:	00003517          	auipc	a0,0x3
+ d90:	2a450513          	add	a0,a0,676 # 4030 <shortArray>
+ d94:	c6cff0ef          	jal	200 <verify_shortArray>
+ d98:	00154513          	xor	a0,a0,1
+ d9c:	0ff57513          	zext.b	a0,a0
+ da0:	f99ff06f          	j	d38 <main+0x1dc>
+ da4:	00600613          	li	a2,6
+ da8:	00003597          	auipc	a1,0x3
+ dac:	5f858593          	add	a1,a1,1528 # 43a0 <targetArray>
+ db0:	00003517          	auipc	a0,0x3
+ db4:	2e050513          	add	a0,a0,736 # 4090 <longArray>
+ db8:	dccff0ef          	jal	384 <verify_longArray>
+ dbc:	0005041b          	sext.w	s0,a0
+ dc0:	f31ff06f          	j	cf0 <main+0x194>
+ dc4:	00c00613          	li	a2,12
+ dc8:	00003597          	auipc	a1,0x3
+ dcc:	5d858593          	add	a1,a1,1496 # 43a0 <targetArray>
+ dd0:	00003517          	auipc	a0,0x3
+ dd4:	29050513          	add	a0,a0,656 # 4060 <intArray>
+ dd8:	cecff0ef          	jal	2c4 <verify_intArray>
+ ddc:	0005041b          	sext.w	s0,a0
+ de0:	ed1ff06f          	j	cb0 <main+0x154>
+ de4:	fff00513          	li	a0,-1
+ de8:	00008067          	ret
 
 Disassembly of section .data:
 

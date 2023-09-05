@@ -129,8 +129,8 @@ int main(int argc, char** argv) {
     asm volatile ("vse16.v v0, (%0)"
     :
     : "r"(dest));
-    dest += vl;
-    src += vl;
+    dest += (vl << 1);
+    src += (vl << 1);
     len -= vl;
   }
   correct = correct && verify_shortArray(shortArray, (short*)targetArray, 24);
