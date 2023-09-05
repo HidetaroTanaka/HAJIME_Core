@@ -6,7 +6,7 @@ import org.scalatest.flatspec._
 
 class VectorTest extends AnyFlatSpec with ChiselScalatestTester {
   val vectorTestList = Seq(
-    "vector_conf"
+    "vector_conf", "vector_ldst"
   )
   for(e <- vectorTestList) {
     it should s"execute $e" in {
