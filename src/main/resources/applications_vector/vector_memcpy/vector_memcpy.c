@@ -135,5 +135,45 @@ int main(int argc, char** argv) {
   }
   correct = correct && verify_shortArray(shortArray, (short*)targetArray, 24);
 
+  printstr("Verify int memcpy with e32:\n");
+  len = 12;
+  dest = targetArray;
+  src = intArray;
+  while(len != 0) {
+    asm volatile ("vsetvli %0, %1, e32, m1, ta, ma"
+    : "=r"(vl)
+    : "r"(len));
+    asm volatile ("vle32.v v0, (%0)"
+    :
+    : "r"(src));
+    asm volatile ("vse32.v v0, (%0)"
+    :
+    : "r"(dest));
+    dest += (vl << 2);
+    src += (vl << 2);
+    len -= vl;
+  }
+  correct = correct && verify_intArray(intArray, (int*)targetArray, 12);
+
+  printstr("Verify long memcpy with e64:\n");
+  len = 6;
+  dest = targetArray;
+  src = longArray;
+  while(len != 0) {
+    asm volatile ("vsetvli %0, %1, e64, m1, ta, ma"
+    : "=r"(vl)
+    : "r"(len));
+    asm volatile ("vle64.v v0, (%0)"
+    :
+    : "r"(src));
+    asm volatile ("vse64.v v0, (%0)"
+    :
+    : "r"(dest));
+    dest += (vl << 3);
+    src += (vl << 3);
+    len -= vl;
+  }
+  correct = correct && verify_longArray(longArray, (long*)targetArray, 6);
+
   return !correct;
 }
