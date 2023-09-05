@@ -61,6 +61,8 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   when(io.fromCPU.inst_retire) {
     instret := instret + 1.U(xprlen.W)
   }
+  // TODO: add operation counter at mhpmcounter3
+  val hpmcounter3 = zeroInit_Register()
   val mvendorid = "h426F79734C6F7665".U(xprlen.W)
   val marchid = "h53686F7461636F6E".U(xprlen.W)
   val mimpid = "h0001145141919810".U(xprlen.W)
@@ -84,9 +86,9 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   /*
   // TODO: Vector Trap and Fixed-Point
   val vstart = if(params.useVector) Some(zeroInit_Register()) else None
-  val vxsat = if(params.useVector) Some(zeroInit_Register()) else None
-  val vxrm = if(params.useVector) Some(zeroInit_Register()) else None
-  val vcsr = if(params.useVector) Some(zeroInit_Register()) else None
+  val vcsr = if(params.useVector) Some(MixedVec(UInt(2.W), Bool())) else None
+  val vxsat = if(params.useVector) Some(vcsr(1)) else None
+  val vxrm = if(params.useVector) Some(vcsr(0)) else None
    */
   // vl and vtype can be read from EX_WB register
   // val vl = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlenb).W))) else None
