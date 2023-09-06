@@ -10,7 +10,7 @@ import scala.util.Random
 class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
   def readWriteTest(dut: VecRegFile, sew: Int, vlen: Int): Unit = {
     var input_array: IndexedSeq[String] = Nil.toIndexedSeq
-    println(s"sew=$sew (e${1 << sew}) test:")
+    println(s"sew=$sew (e${8 << sew}) test:")
     dut.io.sew.poke(sew.U(3.W))
     dut.io.vs1.poke(0.U)
     dut.io.readIndex.poke(0.U)

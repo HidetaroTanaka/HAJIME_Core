@@ -66,7 +66,8 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
         }
       )
       internalWriteMask(req.index.head(req.index.getWidth-3)) := true.B
-    } otherwise {
+      vrf.write(req.vd, internalWriteData, internalWriteMask)
+    } .elsewhen(!req.vm) {
       writeToVRF(vrf, req)
     }
   }
