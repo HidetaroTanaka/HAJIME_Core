@@ -39,8 +39,7 @@ _Bool verify_shortArray(const short* ptr0, const short* ptr1, size_t len) {
   _Bool correct = 1;
   char string[19];
   for(i=0; i<len; i++) {
-    _Bool correct_iteration = (ptr0[i] == ptr1[i]);
-    if(!correct_iteration) {
+    if(ptr0[i] != ptr1[i]) {
       printstr("SHORT ARRAY NOT MATCH IN INDEX: ");
       int32ToHex(i, string);
       printstr(string);
@@ -56,8 +55,7 @@ _Bool verify_intArray(const int* ptr0, const int* ptr1, size_t len) {
   _Bool correct = 1;
   char string[19];
   for(i=0; i<len; i++) {
-    _Bool correct_iteration = (ptr0[i] == ptr1[i]);
-    if(!correct_iteration) {
+    if(ptr0[i] != ptr1[i]) {
       printstr("INT ARRAY NOT MATCH IN INDEX: ");
       int32ToHex(i, string);
       printstr(string);
@@ -73,8 +71,7 @@ _Bool verify_longArray(const long* ptr0, const long* ptr1, size_t len) {
   _Bool correct = 1;
   char string[19];
   for(i=0; i<len; i++) {
-    _Bool correct_iteration = (ptr0[i] == ptr1[i]);
-    if(!correct_iteration) {
+    if(ptr0[i] != ptr1[i]) {
       printstr("LONG ARRAY NOT MATCH IN INDEX: ");
       int32ToHex(i, string);
       printstr(string);
@@ -90,11 +87,9 @@ int main(int argc, char** argv) {
   char string[19];
   vector_memcpy(targetArray, charArray, 48);
   _Bool correct = 1;
-  _Bool correct_iteration = 1;
   printstr("Verify array of char memcpy:\n");
   for(i=0; i<48; i++) {
-    correct_iteration = (charArray[i] == ((char*)targetArray)[i]);
-    if(!correct_iteration) {
+    if(charArray[i] != ((char*)targetArray)[i]) {
       printstr("CHAR ARRAY NOT MATCH IN INDEX: ");
       int32ToHex(i, string);
       printstr(string);
