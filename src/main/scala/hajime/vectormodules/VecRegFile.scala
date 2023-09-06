@@ -24,11 +24,53 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val vd = Input(UInt(5.W))
   val vdOut = Output(UInt(params.xprlen.W))
   val vm = Output(Bool())
-  val req = Flipped(ValidIO(new VecRegFileReq()))
+  val reqEx = Flipped(ValidIO(new VecRegFileReq()))
+  val reqMem = Flipped(ValidIO(new VecRegFileReq()))
 }
 
 // TODO: make it compatible with LMUL > 1 (bigger number of index)
 class VecRegFile(implicit params: HajimeCoreParams) extends Module {
+  /**
+   * vrfへの書き込み（1bitマスク書き込み無し）
+   * @param vrf ベクタレジスタファイル
+   * @param req 書き込み要求
+   */
+  def writeToVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReq): Unit = {
+    val internalWriteData = VecInit((0 until params.vlen / 8).map(_ => 0.U(8.W)))
+    val internalWriteMask = VecInit((0 until params.vlen / 8).map(_ => false.B))
+    for (i <- 0 until 4) {
+      switch(req.sew) {
+        is(i.U) {
+          for (j <- 0 until (1 << i)) {
+            // i=0 (e8) => internalWriteData(io.reqMem.bits.index) := io.reqMem.bits.data(7,0)
+            // i=1 (e16) => internalWriteData(io.reqMem.bits.index*2) := io.reqMem.bits.data(7,0)
+            //              internalWriteData(io.reqMem.bits.index*2+1) := io.reqMem.bits.data(15,8)
+            internalWriteData((req.index << i).asUInt + j.U) := req.data(j * 8 + 7, j * 8)
+            internalWriteMask((req.index << i).asUInt + j.U) := true.B
+          }
+        }
+      }
+    }
+    vrf.write(req.vd, internalWriteData, internalWriteMask)
+  }
+
+  def writeToVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReq, maskWriteReg: Vec[Bool]): Unit = {
+    maskWriteReg(req.index(2,0)) := req.data(0)
+    val internalWriteData = VecInit((0 until params.vlen / 8).map(_ => 0.U(8.W)))
+    val internalWriteMask = VecInit((0 until params.vlen / 8).map(_ => false.B))
+    when(req.vm && (req.index(2,0) === 7.U)) {
+      internalWriteData(req.index.head(req.index.getWidth-3)) := Cat(
+        (0 until 8).reverse.map {
+          case 7 => req.data(0)
+          case i => maskWriteReg(i)
+        }
+      )
+      internalWriteMask(req.index.head(req.index.getWidth-3)) := true.B
+    } otherwise {
+      writeToVRF(vrf, req)
+    }
+  }
+
   val io = IO(new VecRegFileIO())
 
   // vlen[bit]のベクタレジスタ32本
@@ -67,34 +109,11 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
 
   io.vm := vrf.read(0.U)(io.readIndex.head(io.readIndex.getWidth-3))(io.readIndex(2,0))
 
-  when(io.req.valid) {
-    maskWriteReg(io.req.bits.index(2,0)) := io.req.bits.data(0)
-    val internalWriteData = VecInit((0 until params.vlen/8).map(_ => 0.U(8.W)))
-    val internalWriteMask = VecInit((0 until params.vlen/8).map(_ => false.B))
-    when(io.req.bits.vm && (io.req.bits.index(2,0) === 7.U)) {
-      internalWriteData(io.req.bits.index.head(io.req.bits.index.getWidth-3)) := Cat(
-        (0 until 8).reverse.map {
-          case 7 => io.req.bits.data(0)
-          case i => maskWriteReg(i)
-        }
-      )
-      internalWriteMask(io.req.bits.index.head(io.req.bits.index.getWidth-3)) := true.B
-    } .otherwise {
-      for(i <- 0 until 4) {
-        switch(io.req.bits.sew) {
-          is(i.U) {
-            for(j <- 0 until (1 << i)) {
-              // i=0 (e8) => internalWriteData(io.req.bits.index) := io.req.bits.data(7,0)
-              // i=1 (e16) => internalWriteData(io.req.bits.index*2) := io.req.bits.data(7,0)
-              //              internalWriteData(io.req.bits.index*2+1) := io.req.bits.data(15,8)
-              internalWriteData((io.req.bits.index << i).asUInt + j.U) := io.req.bits.data(j*8+7, j*8)
-              internalWriteMask((io.req.bits.index << i).asUInt + j.U) := true.B
-            }
-          }
-        }
-      }
-    }
-    vrf.write(io.req.bits.vd, internalWriteData, internalWriteMask)
+  when(io.reqEx.valid) {
+    writeToVRF(vrf, io.reqEx.bits, maskWriteReg)
+  }
+  when(io.reqMem.valid) {
+    writeToVRF(vrf, io.reqMem.bits)
   }
 }
 

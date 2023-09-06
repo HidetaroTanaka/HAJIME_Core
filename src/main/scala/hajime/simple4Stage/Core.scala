@@ -290,19 +290,20 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     vecValid.get := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && vecWriteBack
 
     // vecRegFileへの入力
+    vecRegFile.get.io.reqEx := DontCare
     vecRegFile.get.io.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
     vecRegFile.get.io.readIndex := idxReg.get
     vecRegFile.get.io.vs1 := ID_EX_REG.bits.vectorDataSignals.get.vs1
     vecRegFile.get.io.vs2 := ID_EX_REG.bits.vectorDataSignals.get.vs2
     vecRegFile.get.io.vd := ID_EX_REG.bits.vectorDataSignals.get.vd
 
-    vecRegFile.get.io.req.valid := vecValid.get
-    vecRegFile.get.io.req.bits.vd := vecDataReg.get.vd
-    vecRegFile.get.io.req.bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
+    vecRegFile.get.io.reqMem.valid := vecValid.get
+    vecRegFile.get.io.reqMem.bits.vd := vecDataReg.get.vd
+    vecRegFile.get.io.reqMem.bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
     // TODO: multiple write port for different vecUnits
-    vecRegFile.get.io.req.bits.index := EX_WB_idxReg.get
-    vecRegFile.get.io.req.bits.data := ldstUnit.io.cpu.resp.bits.data
-    vecRegFile.get.io.req.bits.vm := false.B
+    vecRegFile.get.io.reqMem.bits.index := EX_WB_idxReg.get
+    vecRegFile.get.io.reqMem.bits.data := ldstUnit.io.cpu.resp.bits.data
+    vecRegFile.get.io.reqMem.bits.vm := false.B
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(

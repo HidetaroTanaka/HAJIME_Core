@@ -15,23 +15,23 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.vs1.poke(0.U)
     dut.io.readIndex.poke(0.U)
     dut.io.vs2.poke(0.U)
-    dut.io.req.valid.poke(true.B)
-    dut.io.req.bits.vd.poke(3.U)
-    dut.io.req.bits.sew.poke(sew.U)
-    dut.io.req.bits.vm.poke(false.B)
+    dut.io.reqEx.valid.poke(true.B)
+    dut.io.reqEx.bits.vd.poke(3.U)
+    dut.io.reqEx.bits.sew.poke(sew.U)
+    dut.io.reqEx.bits.vm.poke(false.B)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Write Index: $i")
       // e8 -> 256, e16 -> 65536, e32 -> 2^32, e64 -> 2^64
       // 0 -> 2, 1 -> 4, 2 -> 8, 3 -> 16
       val input = (0 until (2 << sew)).map(_ => Random.nextInt(16).toHexString).reduce(_ + _)
       println(s"Write Data: $input")
-      dut.io.req.bits.data.poke(s"h$input".U)
+      dut.io.reqEx.bits.data.poke(s"h$input".U)
       input_array :+= input
-      dut.io.req.bits.index.poke(i.U)
+      dut.io.reqEx.bits.index.poke(i.U)
       dut.clock.step()
     }
     dut.io.vs1.poke(3.U)
-    dut.io.req.valid.poke(false.B)
+    dut.io.reqEx.valid.poke(false.B)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Read Index: $i")
       dut.io.readIndex.poke(i.U)
@@ -49,20 +49,20 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
       // vm test
       println("vm test:")
       var vmArray: IndexedSeq[Boolean] = Nil.toIndexedSeq
-      dut.io.req.valid.poke(true.B)
-      dut.io.req.bits.vd.poke(0.U)
-      dut.io.req.bits.sew.poke(0.U)
-      dut.io.req.bits.vm.poke(true.B)
+      dut.io.reqEx.valid.poke(true.B)
+      dut.io.reqEx.bits.vd.poke(0.U)
+      dut.io.reqEx.bits.sew.poke(0.U)
+      dut.io.reqEx.bits.vm.poke(true.B)
       for (i <- 0 until params.vlen / 8) {
         println(s"Mask Write Index: $i")
         val input = Random.nextBoolean()
         println(s"Mask Write Data: $input")
-        dut.io.req.bits.data.poke(input.B)
+        dut.io.reqEx.bits.data.poke(input.B)
         vmArray :+= input
-        dut.io.req.bits.index.poke(i.U)
+        dut.io.reqEx.bits.index.poke(i.U)
         dut.clock.step()
       }
-      dut.io.req.valid.poke(false.B)
+      dut.io.reqEx.valid.poke(false.B)
       for(i <- 0 until params.vlen / 8) {
         println(s"Mask Read Index: $i")
         dut.io.readIndex.poke(i.U)
