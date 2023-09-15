@@ -424,7 +424,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
-  // または最終要素でないベクタ要素の命令が実行中
+  // またはベクタ命令実行完了前にスカラ命令がID_EXレジスタにある，またはチェイニング不可能なベクタ命令（構造ハザード・0要素目の値が用意できていないなど）
   EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
     ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
   } else false.B) || (if(params.useVector) {
