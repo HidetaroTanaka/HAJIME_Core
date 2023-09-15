@@ -18,7 +18,6 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.reqEx.valid.poke(true.B)
     dut.io.reqEx.bits.vd.poke(3.U)
     dut.io.reqEx.bits.sew.poke(sew.U)
-    dut.io.reqEx.bits.vm.poke(false.B)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Write Index: $i")
       // e8 -> 256, e16 -> 65536, e32 -> 2^32, e64 -> 2^64
@@ -47,6 +46,7 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(VecRegFile(params)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       for(sew <- 0 until 4) readWriteTest(dut, sew, params.vlen)
       // vm test
+      /*
       println("vm test:")
       var vmArray: IndexedSeq[Boolean] = Nil.toIndexedSeq
       dut.io.reqEx.valid.poke(true.B)
@@ -81,6 +81,7 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.vs1Out.expect(s"b$expectedValueFromVs1".U)
         dut.clock.step()
       }
+       */
     }
   }
 }

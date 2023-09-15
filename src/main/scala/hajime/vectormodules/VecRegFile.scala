@@ -5,12 +5,12 @@ import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
 
+// TODO: vmsltのような命令では1bitずつ書き込むが，8bitを読み出して1bitを変えて書き戻せばvmは不要でありVRFが単純化できる
 class VecRegFileReq(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
   val sew = UInt(3.W)
   val index = UInt(log2Up(params.vlen/8).W)
   val data = UInt(params.xprlen.W)
-  val vm = Bool()
 }
 
 class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -20,7 +20,7 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val vs1Out = Output(UInt(params.xprlen.W))
   val vs2 = Input(UInt(5.W))
   val vs2Out = Output(UInt(params.xprlen.W))
-  // for vector store and multiply-add instructions
+  // for vector store, multiply-add instructions, and vector mask
   val vd = Input(UInt(5.W))
   val vdOut = Output(UInt(params.xprlen.W))
   val vm = Output(Bool())
@@ -54,24 +54,6 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
     vrf.write(req.vd, internalWriteData, internalWriteMask)
   }
 
-  def writeToVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReq, maskWriteReg: Vec[Bool]): Unit = {
-    maskWriteReg(req.index(2,0)) := req.data(0)
-    val internalWriteData = VecInit((0 until params.vlen / 8).map(_ => 0.U(8.W)))
-    val internalWriteMask = VecInit((0 until params.vlen / 8).map(_ => false.B))
-    when(req.vm && (req.index(2,0) === 7.U)) {
-      internalWriteData(req.index.head(req.index.getWidth-3)) := Cat(
-        (0 until 8).reverse.map {
-          case 7 => req.data(0)
-          case i => maskWriteReg(i)
-        }
-      )
-      internalWriteMask(req.index.head(req.index.getWidth-3)) := true.B
-      vrf.write(req.vd, internalWriteData, internalWriteMask)
-    } .elsewhen(!req.vm) {
-      writeToVRF(vrf, req)
-    }
-  }
-
   val io = IO(new VecRegFileIO())
 
   // vlen[bit]のベクタレジスタ32本
@@ -82,7 +64,7 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   // マスク書き込み用レジスタ
   // 11.8章 Vector Integer Compare Instructionsを考えると，1サイクル毎の1bitの結果を保持する必要あり
   // 15章 Vector Mask Instructionsはマスク無しでの全ベクタレジスタでのe64での演算とみなせば良い
-  val maskWriteReg = RegInit(VecInit((0 until 8).map(_ => false.B)))
+  // val maskWriteReg = RegInit(VecInit((0 until 8).map(_ => false.B)))
 
   val vs1ReadVecReg: Vec[UInt] = vrf.read(io.vs1)
   val vs2ReadVecReg: Vec[UInt] = vrf.read(io.vs2)
@@ -111,7 +93,7 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
   io.vm := vrf.read(0.U)(io.readIndex.head(io.readIndex.getWidth-3))(io.readIndex(2,0))
 
   when(io.reqEx.valid) {
-    writeToVRF(vrf, io.reqEx.bits, maskWriteReg)
+    writeToVRF(vrf, io.reqEx.bits)
   }
   when(io.reqMem.valid) {
     writeToVRF(vrf, io.reqMem.bits)

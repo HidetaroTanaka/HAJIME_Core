@@ -303,7 +303,6 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     // TODO: multiple write port for different vecUnits
     vecRegFile.get.io.reqMem.bits.index := EX_WB_idxReg.get
     vecRegFile.get.io.reqMem.bits.data := ldstUnit.io.cpu.resp.bits.data
-    vecRegFile.get.io.reqMem.bits.vm := false.B
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
