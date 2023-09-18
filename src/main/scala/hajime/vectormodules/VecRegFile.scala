@@ -5,15 +5,19 @@ import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
 
+class VecRegFileReadReq(implicit params: HajimeCoreParams) extends Bundle {
+
+}
+
 // TODO: vmsltのような命令では1bitずつ書き込むが，8bitを読み出して1bitを変えて書き戻せばvmは不要でありVRFが単純化できる
-class VecRegFileReq(implicit params: HajimeCoreParams) extends Bundle {
+class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
   val sew = UInt(3.W)
   val index = UInt(log2Up(params.vlen/8).W)
   val data = UInt(params.xprlen.W)
 }
 
-class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
+class VecRegFileIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Bundle {
   val sew = Input(UInt(3.W))
   val readIndex = Input(UInt(log2Up(params.vlen/8).W))
   val vs1 = Input(UInt(5.W))
@@ -24,18 +28,17 @@ class VecRegFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val vd = Input(UInt(5.W))
   val vdOut = Output(UInt(params.xprlen.W))
   val vm = Output(Bool())
-  val reqEx = Flipped(ValidIO(new VecRegFileReq()))
-  val reqMem = Flipped(ValidIO(new VecRegFileReq()))
+  val req = Vec(vrfPortNum, Flipped(ValidIO(new VecRegFileWriteReq())))
 }
 
 // TODO: make it compatible with LMUL > 1 (bigger number of index)
-class VecRegFile(implicit params: HajimeCoreParams) extends Module {
+class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Module {
   /**
    * vrfへの書き込み（1bitマスク書き込み無し）
    * @param vrf ベクタレジスタファイル
    * @param req 書き込み要求
    */
-  def writeToVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReq): Unit = {
+  def writeToVRF(vrf: Mem[Vec[UInt]], req: VecRegFileWriteReq): Unit = {
     val internalWriteData = VecInit((0 until params.vlen / 8).map(_ => 0.U(8.W)))
     val internalWriteMask = VecInit((0 until params.vlen / 8).map(_ => false.B))
     for (i <- 0 until 4) {
@@ -54,7 +57,7 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
     vrf.write(req.vd, internalWriteData, internalWriteMask)
   }
 
-  val io = IO(new VecRegFileIO())
+  val io = IO(new VecRegFileIO(vrfPortNum))
 
   // vlen[bit]のベクタレジスタ32本
   val vrf = Mem(32, Vec(params.vlen/8, UInt(8.W)))
@@ -92,15 +95,15 @@ class VecRegFile(implicit params: HajimeCoreParams) extends Module {
 
   io.vm := vrf.read(0.U)(io.readIndex.head(io.readIndex.getWidth-3))(io.readIndex(2,0))
 
-  when(io.reqEx.valid) {
-    writeToVRF(vrf, io.reqEx.bits)
-  }
-  when(io.reqMem.valid) {
-    writeToVRF(vrf, io.reqMem.bits)
+  for(req <- io.req) {
+    when(req.valid) {
+      writeToVRF(vrf, req.bits)
+    }
   }
 }
 
 object VecRegFile extends App {
-  def apply(implicit params: HajimeCoreParams): VecRegFile = new VecRegFile()
-  ChiselStage.emitSystemVerilogFile(VecRegFile(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  implicit val params = HajimeCoreParams()
+  def apply(vrfPortNum: Int)(implicit params: HajimeCoreParams): VecRegFile = new VecRegFile(vrfPortNum)
+  ChiselStage.emitSystemVerilogFile(VecRegFile(2), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
