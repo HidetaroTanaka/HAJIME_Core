@@ -93,8 +93,6 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
 
   // vlen[bit]のベクタレジスタ32本
   val vrf = Mem(32, Vec(params.vlen/8, UInt(8.W)))
-  // TODO: vdレジスタに書き込む命令が入った時に該当インデックスをfalseに，該当インデックスの0要素目が書き込まれた時にtrueにする
-  val vrfReadyTable = RegInit(VecInit((0 until 32).map(_ => true.B)))
 
   for(readIO <- io.readReq) {
     readIO.resp := readVRF(vrf, readIO.req)

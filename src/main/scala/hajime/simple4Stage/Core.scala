@@ -16,6 +16,7 @@ class debugIO(implicit params: HajimeCoreParams) extends Bundle {
     val pc = new ProgramCounter()
   })
   val debug_abi_map = new debug_map_physical_to_abi()
+  val vrfMap = Vec(32, UInt(params.vlen.W))
   // val ID_EX_Reg = Valid(new ID_EX_IO())
 }
 
@@ -304,6 +305,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     // TODO: multiple write port for different vecUnits
     vecRegFile.get.io.writeReq(0).bits.index := EX_WB_idxReg.get
     vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
+
+    if(params.debug) {
+      io.debug_io.get.vrfMap := vecRegFile.get.io.debug.get
+    }
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
