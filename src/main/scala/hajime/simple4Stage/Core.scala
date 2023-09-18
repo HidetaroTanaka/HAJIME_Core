@@ -280,29 +280,30 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val vecDataReg = if(params.useVector) Some(RegNext(ID_EX_REG.bits.vectorDataSignals.get)) else None
   if (params.useVector) {
     // ベクタ命令がベクタレジスタに書き込み，かつinst.vmが1またはv0.mask[i]=1ならば書き込み
-    val vecWriteBack = ID_EX_REG.bits.vectorCtrlSignals.get.vrfWrite && (ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm)
+    val vecWriteBack = ID_EX_REG.bits.vectorCtrlSignals.get.vrfWrite && (ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm)
     // vsetvli系でないベクタ命令が実行され，かつ最終要素でないならばインクリメント，それ以外ならばリセット
     idxReg.get := MuxCase(0.U, Seq(
       (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && !ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst &&
         ((idxReg.get + 1.U) < EX_WB_REG.bits.vectorCsrPorts.get.vl)) -> (idxReg.get + 1.U)
     ))
-      Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
+    // Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
     vecValid.get := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && vecWriteBack
 
     // vecRegFileへの入力
-    vecRegFile.get.io.req(1) := DontCare
-    vecRegFile.get.io.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
-    vecRegFile.get.io.readIndex := idxReg.get
-    vecRegFile.get.io.vs1 := ID_EX_REG.bits.vectorDataSignals.get.vs1
-    vecRegFile.get.io.vs2 := ID_EX_REG.bits.vectorDataSignals.get.vs2
-    vecRegFile.get.io.vd := ID_EX_REG.bits.vectorDataSignals.get.vd
+    vecRegFile.get.io.readReq(1) := DontCare
+    vecRegFile.get.io.writeReq(1) := DontCare
+    vecRegFile.get.io.readReq(0).req.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
+    vecRegFile.get.io.readReq(0).req.idx := idxReg.get
+    vecRegFile.get.io.readReq(0).req.vs1 := ID_EX_REG.bits.vectorDataSignals.get.vs1
+    vecRegFile.get.io.readReq(0).req.vs2 := ID_EX_REG.bits.vectorDataSignals.get.vs2
+    vecRegFile.get.io.readReq(0).req.vd := ID_EX_REG.bits.vectorDataSignals.get.vd
 
-    vecRegFile.get.io.req(0).valid := vecValid.get
-    vecRegFile.get.io.req(0).bits.vd := vecDataReg.get.vd
-    vecRegFile.get.io.req(0).bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
+    vecRegFile.get.io.writeReq(0).valid := vecValid.get
+    vecRegFile.get.io.writeReq(0).bits.vd := vecDataReg.get.vd
+    vecRegFile.get.io.writeReq(0).bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
     // TODO: multiple write port for different vecUnits
-    vecRegFile.get.io.req(0).bits.index := EX_WB_idxReg.get
-    vecRegFile.get.io.req(0).bits.data := ldstUnit.io.cpu.resp.bits.data
+    vecRegFile.get.io.writeReq(0).bits.index := EX_WB_idxReg.get
+    vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
@@ -368,10 +369,10 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
   ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && !EX_flush && (ID_EX_REG.bits.ctrlSignals.decode.memValid || (if(params.useVector) {
     // マスク無しまたは要素が有効な場合にのみtrue
-    ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.vm
+    ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm
   } else true.B))
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
-  ldstUnit.io.cpu.req.bits.data := (if(params.useVector) Mux(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.vdOut, ID_EX_REG.bits.dataSignals.rs2) else ID_EX_REG.bits.dataSignals.rs2)
+  ldstUnit.io.cpu.req.bits.data := (if(params.useVector) Mux(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.readReq(0).resp.vdOut, ID_EX_REG.bits.dataSignals.rs2) else ID_EX_REG.bits.dataSignals.rs2)
   ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index

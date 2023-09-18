@@ -6,10 +6,25 @@ import chisel3.util._
 import hajime.common._
 
 class VecRegFileReadReq(implicit params: HajimeCoreParams) extends Bundle {
-
+  val sew = UInt(3.W)
+  val idx = UInt(log2Up(params.vlen/8).W)
+  val vs1 = Input(UInt(5.W))
+  val vs2 = Input(UInt(5.W))
+  val vd = Input(UInt(5.W))
 }
 
-// TODO: vmsltのような命令では1bitずつ書き込むが，8bitを読み出して1bitを変えて書き戻せばvmは不要でありVRFが単純化できる
+class VecRegFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
+  val vs1Out = UInt(params.xprlen.W)
+  val vs2Out = UInt(params.xprlen.W)
+  val vdOut = UInt(params.xprlen.W)
+  val vm = Bool()
+}
+
+class VecRegFileReadIO(implicit params: HajimeCoreParams) extends Bundle {
+  val req = Input(new VecRegFileReadReq())
+  val resp = Output(new VecRegFileReadResp())
+}
+
 class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
   val sew = UInt(3.W)
@@ -18,21 +33,38 @@ class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
 }
 
 class VecRegFileIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Bundle {
-  val sew = Input(UInt(3.W))
-  val readIndex = Input(UInt(log2Up(params.vlen/8).W))
-  val vs1 = Input(UInt(5.W))
-  val vs1Out = Output(UInt(params.xprlen.W))
-  val vs2 = Input(UInt(5.W))
-  val vs2Out = Output(UInt(params.xprlen.W))
-  // for vector store, multiply-add instructions, and vector mask
-  val vd = Input(UInt(5.W))
-  val vdOut = Output(UInt(params.xprlen.W))
-  val vm = Output(Bool())
-  val req = Vec(vrfPortNum, Flipped(ValidIO(new VecRegFileWriteReq())))
+  val readReq = Vec(vrfPortNum, new VecRegFileReadIO())
+  val writeReq = Vec(vrfPortNum, Flipped(ValidIO(new VecRegFileWriteReq())))
+  val debug = if(params.debug) Some(Output(Vec(32, UInt(params.vlen.W)))) else None
 }
 
 // TODO: make it compatible with LMUL > 1 (bigger number of index)
 class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Module {
+  def readVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReadReq): VecRegFileReadResp = {
+    def vecRegToData(vecReg: Vec[UInt], req: VecRegFileReadReq): UInt = {
+      MuxLookup(req.sew, 0.U)(
+        (0 until 4).map(
+          // 0.U -> vs1ReadVecReg(req.idx)
+          // 1.U -> Cat(vs1ReadVecReg(req.idx << 1 + 1), vs1ReadVecReg(req.idx << 1))
+          // 2.U -> Cat(vs1ReadVecReg(req.idx << 2 + 3), ..., vs1ReadVecReg(req.idx << 2))
+          // 3.U -> Cat(vs1ReadVecReg(req.idx << 3 + 7), ..., vs1ReadVecReg(req.idx << 3))
+          i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vecReg((req.idx << i).asUInt + j.U)))
+        )
+      )
+    }
+    val res = Wire(new VecRegFileReadResp())
+
+    val vs1ReadVecReg: Vec[UInt] = vrf.read(req.vs1)
+    val vs2ReadVecReg: Vec[UInt] = vrf.read(req.vs2)
+    val vdReadVecReg: Vec[UInt] = vrf.read(req.vd)
+
+    res.vs1Out := vecRegToData(vs1ReadVecReg, req)
+    res.vs2Out := vecRegToData(vs2ReadVecReg, req)
+    res.vdOut := vecRegToData(vdReadVecReg, req)
+    res.vm := vrf.read(0.U)(req.idx.head(req.idx.getWidth-3))(req.idx(2,0))
+
+    res
+  }
   /**
    * vrfへの書き込み（1bitマスク書き込み無し）
    * @param vrf ベクタレジスタファイル
@@ -64,40 +96,19 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
   // TODO: vdレジスタに書き込む命令が入った時に該当インデックスをfalseに，該当インデックスの0要素目が書き込まれた時にtrueにする
   val vrfReadyTable = RegInit(VecInit((0 until 32).map(_ => true.B)))
 
-  // マスク書き込み用レジスタ
-  // 11.8章 Vector Integer Compare Instructionsを考えると，1サイクル毎の1bitの結果を保持する必要あり
-  // 15章 Vector Mask Instructionsはマスク無しでの全ベクタレジスタでのe64での演算とみなせば良い
-  // val maskWriteReg = RegInit(VecInit((0 until 8).map(_ => false.B)))
+  for(readIO <- io.readReq) {
+    readIO.resp := readVRF(vrf, readIO.req)
+  }
 
-  val vs1ReadVecReg: Vec[UInt] = vrf.read(io.vs1)
-  val vs2ReadVecReg: Vec[UInt] = vrf.read(io.vs2)
-  val vdReadVecReg: Vec[UInt] = vrf.read(io.vd)
-  io.vs1Out := MuxLookup(io.sew, 0.U)(
-    (0 until 4).map(
-      // vs1ReadVecReg = vrf.read(io.vs1)
-      // 0.U -> vs1ReadVecReg(io.readIndex)
-      // 1.U -> Cat(vs1ReadVecReg(io.readIndex << 1 + 1), vs1ReadVecReg(io.readIndex << 1))
-      // 2.U -> Cat(vs1ReadVecReg(io.readIndex << 2 + 3), ..., vs1ReadVecReg(io.readIndex << 2))
-      // 3.U -> Cat(vs1ReadVecReg(io.readIndex << 3 + 7), ..., vs1ReadVecReg(io.readIndex << 3))
-      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vs1ReadVecReg((io.readIndex << i).asUInt + j.U)))
-    )
-  )
-  io.vs2Out := MuxLookup(io.sew, 0.U)(
-    (0 until 4).map(
-      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vs2ReadVecReg((io.readIndex << i).asUInt + j.U)))
-    )
-  )
-  io.vdOut := MuxLookup(io.sew, 0.U)(
-    (0 until 4).map(
-      i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vdReadVecReg((io.readIndex << i).asUInt + j.U)))
-    )
-  )
-
-  io.vm := vrf.read(0.U)(io.readIndex.head(io.readIndex.getWidth-3))(io.readIndex(2,0))
-
-  for(req <- io.req) {
+  for(req <- io.writeReq) {
     when(req.valid) {
       writeToVRF(vrf, req.bits)
+    }
+  }
+
+  if(params.debug) {
+    for((d, i) <- io.debug.get.zipWithIndex) {
+      d := Cat(vrf.read(i.U).reverse)
     }
   }
 }
