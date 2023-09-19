@@ -25,11 +25,14 @@ class VecRegFileReadIO(implicit params: HajimeCoreParams) extends Bundle {
   val resp = Output(new VecRegFileReadResp())
 }
 
+// ベクタ実行ユニットからVrfReadyTableへの入力と共用
 class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
-  val sew = UInt(3.W)
+  val vtype = new VtypeBundle()
   val index = UInt(log2Up(params.vlen/8).W)
   val data = UInt(params.xprlen.W)
+  val vm = Bool()
+  val writeReq = Bool()
 }
 
 class VecRegFileIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Bundle {
@@ -74,7 +77,7 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
     val internalWriteData = VecInit((0 until params.vlen / 8).map(_ => 0.U(8.W)))
     val internalWriteMask = VecInit((0 until params.vlen / 8).map(_ => false.B))
     for (i <- 0 until 4) {
-      switch(req.sew) {
+      switch(req.vtype.vsew) {
         is(i.U) {
           for (j <- 0 until (1 << i)) {
             // i=0 (e8) => internalWriteData(io.reqMem.bits.index) := io.reqMem.bits.data(7,0)
@@ -99,7 +102,7 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
   }
 
   for(req <- io.writeReq) {
-    when(req.valid) {
+    when(req.valid && req.bits.writeReq) {
       writeToVRF(vrf, req.bits)
     }
   }

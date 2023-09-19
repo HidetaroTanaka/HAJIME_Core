@@ -16,8 +16,9 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.readReq(1).req.vs1.poke(0.U)
     dut.io.readReq(1).req.vs2.poke(0.U)
     dut.io.writeReq(1).valid.poke(true.B)
+    dut.io.writeReq(1).bits.writeReq.poke(true.B)
     dut.io.writeReq(1).bits.vd.poke(3.U)
-    dut.io.writeReq(1).bits.sew.poke(sew.U)
+    dut.io.writeReq(1).bits.vtype.vsew.poke(sew.U)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Write Index: $i")
       // e8 -> 256, e16 -> 65536, e32 -> 2^32, e64 -> 2^64
@@ -31,6 +32,7 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
     }
     dut.io.readReq(1).req.vs1.poke(3.U)
     dut.io.writeReq(1).valid.poke(false.B)
+    dut.io.writeReq(1).bits.writeReq.poke(false.B)
     for (i <- 0 until vlen / (8 << sew)) {
       println(s"Read Index: $i")
       dut.io.readReq(1).req.idx.poke(i.U)

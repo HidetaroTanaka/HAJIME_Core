@@ -277,6 +277,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   // START OF EX STAGE
   val idxReg = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlen/8).W))) else None
   val EX_WB_idxReg = if(params.useVector) Some(RegNext(idxReg.get)) else None
+  // TODO: ロードストアユニット内に入れる，他のベクタ実行ユニットも同様
   val vecValid = if(params.useVector) Some(RegInit(false.B)) else None
   val vecDataReg = if(params.useVector) Some(RegNext(ID_EX_REG.bits.vectorDataSignals.get)) else None
   if (params.useVector) {
@@ -301,10 +302,11 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
 
     vecRegFile.get.io.writeReq(0).valid := vecValid.get
     vecRegFile.get.io.writeReq(0).bits.vd := vecDataReg.get.vd
-    vecRegFile.get.io.writeReq(0).bits.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
-    // TODO: multiple write port for different vecUnits
+    vecRegFile.get.io.writeReq(0).bits.vtype := EX_WB_REG.bits.vectorCsrPorts.get.vtype
     vecRegFile.get.io.writeReq(0).bits.index := EX_WB_idxReg.get
     vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
+    vecRegFile.get.io.writeReq(0).bits.vm := false.B
+    vecRegFile.get.io.writeReq(0).bits.writeReq := vecValid.get
 
     if(params.debug) {
       io.debug_io.get.vrfMap := vecRegFile.get.io.debug.get
