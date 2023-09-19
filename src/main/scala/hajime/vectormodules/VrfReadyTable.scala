@@ -68,13 +68,16 @@ class VrfReadyTable(implicit params: HajimeCoreParams) extends Module {
       // であれば，v5へのe8書き込みに対し，e16での読み出しが必要なためvaddの全ての書き込みが完了するまでストール
       // vadd.vv v5, v6, v7 (e8)
       // vse16.v v4, v3, v2
-      // であれば，依存が無いため発行可能（vlがVLEN/2以下であることが必要）
+      // であれば，依存が無いため発行可能（vlがVLEN/2以下であることが必要，vtypeのvsewと一致しなければillegalにするのもあり）
       // vle8.v v5, v3, v2
       // vadd.vv v5, v6, v7 (e8)
       // であれば，vle8.vがv5.e8(0)に書き込んでいる時にvadd.vvを発行可能
       // vle16.v v5, v3, v2
       // vadd.vv v5, v6, v7 (e8)
-      // であれば，
+      // であれば，v5.e16(0)へ先に書き込まれるため発行可能
+      // vse8.v v5, (a0)
+      // vadd.vv v5, v6, v7 (e16)
+      // であれば，vaddがvseより先にv5へ書き込みWAWハザードのためストール
     }
   }
 
