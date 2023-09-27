@@ -304,6 +304,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     vecRegFile.get.io.writeReq(0).bits.vd := vecDataReg.get.vd
     vecRegFile.get.io.writeReq(0).bits.vtype := EX_WB_REG.bits.vectorCsrPorts.get.vtype
     vecRegFile.get.io.writeReq(0).bits.index := EX_WB_idxReg.get
+    vecRegFile.get.io.writeReq(0).bits.last := (EX_WB_idxReg.get-1.U) === EX_WB_REG.bits.vectorCsrPorts.get.vl
     vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
     vecRegFile.get.io.writeReq(0).bits.vm := false.B
     vecRegFile.get.io.writeReq(0).bits.writeReq := vecValid.get

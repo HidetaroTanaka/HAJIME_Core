@@ -30,6 +30,7 @@ class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
   val vtype = new VtypeBundle()
   val index = UInt(log2Up(params.vlen/8).W)
+  val last = Bool()
   val data = UInt(params.xprlen.W)
   val vm = Bool()
   val writeReq = Bool()
