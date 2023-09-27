@@ -39,9 +39,9 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val dataOut = Output(new VectorExecUnitDataOut())
 }
 
-abstract class VectorExecUnit(val op: (UInt, UInt, UInt, Bool) => UInt)(implicit params: HajimeCoreParams) extends Module {
+abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module {
   // 演算内容をここに書けばop関数はいらない？
-  def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp): UInt
+  def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): UInt
 
   val io = new VectorExecUnitIO()
 
@@ -55,11 +55,9 @@ abstract class VectorExecUnit(val op: (UInt, UInt, UInt, Bool) => UInt)(implicit
 
 
   io.signalToVRF.readIndex := io.signalIn.bits
-  io.dataOut.toVRF.bits.data := op(io.dataIn.value1, io.dataIn.value2, io.dataIn.value3, io.dataIn.vm)
+  io.dataOut.toVRF.bits.data := exec(io.signalIn.bits.scalarDecode, io.signalIn.bits.vectorDecode, io.dataIn)
 }
 
-class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit(
-  (vs1, vs2, vs3, vm) => Mux(vm, vs1+vs2, vs3)
-) {
-  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp): UInt = ???
+class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
+  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): UInt = ???
 }
