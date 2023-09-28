@@ -168,6 +168,10 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VSE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.D, load = false)
   def VLM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = true)
   def VSM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = false)
+
+  def VADD_VV            = BitPat("b000000???????????000?????1010111")
+  def VADD_VX            = BitPat("b000000???????????100?????1010111")
+  def VADD_VI            = BitPat("b000000???????????011?????1010111")
 }
 object Amogus extends App {
   import VectorInstructions._

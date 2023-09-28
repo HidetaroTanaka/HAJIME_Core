@@ -5,6 +5,7 @@ import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
 import hajime.publicmodules._
+import chisel3.experimental.BundleLiterals._
 
 class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vs1 = UInt(5.W)
@@ -39,9 +40,9 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val dataOut = Output(new VectorExecUnitDataOut())
 }
 
-abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module {
+abstract class VectorExecUnit(instNum: Int)(implicit params: HajimeCoreParams) extends Module {
   // 演算内容をここに書けばop関数はいらない？
-  def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): UInt
+  def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt]
 
   val io = new VectorExecUnitIO()
 
@@ -51,13 +52,29 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   } .otherwise {
     idx := idx + 1.U
   }
+
+  val instInfoReg = RegInit(Valid(new VectorExecUnitSignalIn()))
+  instInfoReg.valid := false.B
+
+  when(io.signalIn.valid && io.signalIn.ready) {
+    instInfoReg.valid := true.B
+    instInfoReg.bits := io.signalIn.bits
+  }
+
   io.dataOut.toVRF.bits.last := (idx-1.U === io.signalIn.bits.vecConf.vl)
 
+  io.dataOut.toVRF.bits.data := MuxLookup(io.signalIn.bits.vectorDecode.veuFun, 0.U) (
+    (0 until instNum).map(i => i.U -> exec(io.signalIn.bits.scalarDecode, io.signalIn.bits.vectorDecode, io.dataIn)(i))
+  )
 
   io.signalToVRF.readIndex := io.signalIn.bits
-  io.dataOut.toVRF.bits.data := exec(io.signalIn.bits.scalarDecode, io.signalIn.bits.vectorDecode, io.dataIn)
 }
 
-class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): UInt = ???
+class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit(instNum = 3) {
+  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = {
+    import values._
+    // vadd, vsub, vrsub
+    // TODO: optimise
+    value2 + value1 :: value2 - value1 :: value1 - value2 :: Nil
+  }
 }
