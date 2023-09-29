@@ -18,6 +18,20 @@ trait VectorOpConstants {
 
   object VEU_FUN extends ChiselEnum {
     val NONE, ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR = Value
+    val compMaskList = SEQ :: SNE :: SLTU :: SLT :: SLEU :: SLE :: SGTU :: SGT :: Nil
+    val carryMaskList = MADC :: MSBC :: Nil
+
+    implicit class masks(signal: UInt) {
+      def isCompMask: Bool = {
+        compMaskList.map(x => signal === x.asUInt).reduce(_ || _)
+      }
+      def isCarryMask: Bool = {
+        carryMaskList.map(x => signal === x.asUInt).reduce(_ || _)
+      }
+      def isMask: Bool = {
+        signal.isCompMask || signal.isCarryMask
+      }
+    }
   }
 
   object VSOURCE extends ChiselEnum {
