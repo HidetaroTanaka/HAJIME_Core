@@ -44,6 +44,7 @@ class VectorDecoderResp extends Bundle with ScalarOpConstants with VectorOpConst
   val vrfWrite = Bool()
   val veuFun = UInt(VEU_FUN.getWidth.W)
   val vSource = UInt(VSOURCE.getWidth.W)
+  val vm = Bool()
 
   def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop, vrfWrite, veuFun, vSource)
 }
@@ -70,4 +71,5 @@ class VectorDecoder(implicit params: HajimeCoreParams) extends Module with Decod
   for((out, sig) <- io.out.toList zip csignals) {
     out := sig
   }
+  io.out.vm := io.inst.bits(25)
 }

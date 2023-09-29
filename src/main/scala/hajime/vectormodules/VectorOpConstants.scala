@@ -20,6 +20,7 @@ trait VectorOpConstants {
     val NONE, ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR = Value
     val compMaskList = SEQ :: SNE :: SLTU :: SLT :: SLEU :: SLE :: SGTU :: SGT :: Nil
     val carryMaskList = MADC :: MSBC :: Nil
+    val ignoreMaskList = ADC :: MADC :: SBC :: MSBC :: Nil
 
     implicit class masks(signal: UInt) {
       def isCompMask: Bool = {
@@ -30,6 +31,9 @@ trait VectorOpConstants {
       }
       def isMask: Bool = {
         signal.isCompMask || signal.isCarryMask
+      }
+      def ignoreMask: Bool = {
+        ignoreMaskList.map(x => signal === x.asUInt).reduce(_ || _)
       }
     }
   }

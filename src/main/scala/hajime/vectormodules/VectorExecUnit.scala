@@ -164,6 +164,12 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
     )
   ), rawResult)
   io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.isMask
+  // if inst[25] is 1, unmasked. if 0, write only v0.mask[i] = 1. vadc, vmadc, vsbc, vmsbc always writes to vd regardless of v0.mask
+  io.dataOut.toVRF.bits.writeReq := instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask
+}
+
+class LogicalVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
+  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = ???
 }
 
 object ArithmeticVectorExecUnit extends App {
