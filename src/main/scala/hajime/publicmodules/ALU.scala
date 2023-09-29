@@ -5,6 +5,7 @@ import chisel3._
 import chisel3.util._
 import hajime.common.RISCV_Consts._
 import hajime.common._
+import Functions._
 
 class ALUIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -19,8 +20,8 @@ class ALU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val io = IO(new ALUIO())
   require(xprlen == 64 || xprlen == 32)
 
-  val in1_record = if(xprlen == 64) Mux(io.funct.op32, Mux(io.funct.arithmetic_funct === ARITHMETIC_FCN.SR.asUInt && !io.funct.alu_flag, Cat(0.U(32.W), io.in1(31,0)), Functions.sign_ext(io.in1(31,0), xprlen)), io.in1) else io.in1
-  val in2_record = if(xprlen == 64) Mux(io.funct.op32, Functions.sign_ext(io.in2(31,0), xprlen), io.in2) else io.in2
+  val in1_record = if(xprlen == 64) Mux(io.funct.op32, Mux(io.funct.arithmetic_funct === ARITHMETIC_FCN.SR.asUInt && !io.funct.alu_flag, Cat(0.U(32.W), io.in1(31,0)), io.in1(31,0).ext(xprlen)), io.in1) else io.in1
+  val in2_record = if(xprlen == 64) Mux(io.funct.op32, io.in2(31,0).ext(xprlen), io.in2) else io.in2
 
   val shin = Mux(io.funct.arithmetic_funct === ARITHMETIC_FCN.SR.asUInt, in1_record, Reverse(in1_record))
   val right_barrel_shifter = Module(new BarrelShifter())
@@ -32,12 +33,12 @@ class ALU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
   val addsub_record = Mux(io.funct.alu_flag, in1_record - in2_record, in1_record + in2_record)
   io.out := MuxLookup(io.funct.arithmetic_funct, 0.U(xprlen.W))(
     Seq(
-      ARITHMETIC_FCN.ADDSUB -> Mux(io.funct.op32, Functions.sign_ext(addsub_record(31,0), xprlen), addsub_record),
-      ARITHMETIC_FCN.SLL -> Mux(io.funct.op32, Functions.sign_ext(shout_l(31,0), xprlen), shout_l),
+      ARITHMETIC_FCN.ADDSUB -> Mux(io.funct.op32, addsub_record(31,0).ext(xprlen), addsub_record),
+      ARITHMETIC_FCN.SLL -> Mux(io.funct.op32, shout_l(31,0).ext(xprlen), shout_l),
       ARITHMETIC_FCN.SLT -> (io.in1.asSInt < io.in2.asSInt).asUInt,
       ARITHMETIC_FCN.SLTU -> (io.in1 < io.in2),
       ARITHMETIC_FCN.XOR -> (io.in1 ^ io.in2),
-      ARITHMETIC_FCN.SR -> Mux(io.funct.op32, Functions.sign_ext(shout_r(31,0), xprlen), shout_r),
+      ARITHMETIC_FCN.SR -> Mux(io.funct.op32, shout_r(31,0).ext(xprlen), shout_r),
       ARITHMETIC_FCN.OR -> (io.in1 | io.in2),
       ARITHMETIC_FCN.AND -> (io.in1 & io.in2),
     ).map{

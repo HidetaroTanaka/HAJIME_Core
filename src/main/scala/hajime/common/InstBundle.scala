@@ -2,6 +2,7 @@ package hajime.common
 
 import chisel3._
 import chisel3.util._
+import Functions._
 
 class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -14,11 +15,11 @@ class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
   def rd: UInt        = bits(11,7)
   def opcode: UInt    = bits(6,0)
   // TODO: refactor to better looking name
-  def i_imm: UInt     = Functions.sign_ext(bits(31,20), xprlen)
-  def s_imm: UInt     = Functions.sign_ext(Cat(this.funct7, this.rd), xprlen)
-  def b_imm: UInt     = Functions.sign_ext(Cat(bits(31), bits(7), bits(30, 25), bits(11,8), 0.U(1.W)), xprlen)
-  def u_imm: UInt     = Functions.sign_ext(Cat(bits(31,12), 0.U(12.W)), xprlen)
-  def j_imm: UInt     = Functions.sign_ext(Cat(bits(31), bits(19,12), bits(20), bits(30,21), 0.U(1.W)), xprlen)
+  def i_imm: UInt     = bits(31,20).ext(xprlen)
+  def s_imm: UInt     = Cat(this.funct7, this.rd).ext(xprlen)
+  def b_imm: UInt     = Cat(bits(31), bits(7), bits(30, 25), bits(11,8), 0.U(1.W)).ext(xprlen)
+  def u_imm: UInt     = Cat(bits(31,12), 0.U(12.W)).ext(xprlen)
+  def j_imm: UInt     = Cat(bits(31), bits(19,12), bits(20), bits(30,21), 0.U(1.W)).ext(xprlen)
   def zimm: UInt      = bits(31,20)
   def uimm: UInt      = Cat(false.B, this.rs1)
 }

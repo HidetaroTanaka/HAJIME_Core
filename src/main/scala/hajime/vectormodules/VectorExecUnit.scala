@@ -13,7 +13,6 @@ class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
   val vm = Bool()
   val scalarVal = UInt(params.xprlen.W)
-  val scalarDecode = new ID_output()
   val vectorDecode = new VectorDecoderResp()
   val vecConf = new VecCtrlUnitResp()
 }
@@ -42,7 +41,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
  */
 abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
   // 演算内容をここに書けばop関数はいらない？
-  def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt]
+  def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt]
 
   val io = IO(new VectorExecUnitIO())
 
@@ -89,7 +88,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 
   io.signalIn.ready := !instInfoReg.valid || io.dataOut.toVRF.bits.last
 
-  val execResult = exec(instInfoReg.bits.scalarDecode, instInfoReg.bits.vectorDecode, valueToExec)
+  val execResult = exec(instInfoReg.bits.vectorDecode, valueToExec)
 
   /*
   io.dataOut.toVRF.bits.data := MuxLookup(io.signalIn.bits.vectorDecode.veuFun, 0.U) (
@@ -99,7 +98,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 }
 
 class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = {
+  override def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = {
     import values._
     // vadd, vsub, vrsub, (vadc, vmadc), (vsbc, vmsbc),
     // seq, sne,
@@ -169,7 +168,7 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
 }
 
 class LogicalVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = ???
+  override def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = ???
 }
 
 object ArithmeticVectorExecUnit extends App {

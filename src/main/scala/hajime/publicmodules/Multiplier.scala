@@ -4,6 +4,7 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import chisel3.experimental.BundleLiterals._
+import hajime.common.Functions._
 import hajime.common._
 import hajime.publicmodules
 
@@ -276,7 +277,7 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   nonPipelinedMultiplier.io.resp.ready := io.resp.ready
   val result128 = Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
   io.resp.bits := MuxCase(result128(127,64), Seq(
-    nonPipelinedMultiplier.io.resp.bits.decode.op32 -> Functions.sign_ext(result128(31,0), 64),
+    nonPipelinedMultiplier.io.resp.bits.decode.op32 -> result128(31,0).ext(64),
     (nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt) -> result128(63,0),
   ))
 }
