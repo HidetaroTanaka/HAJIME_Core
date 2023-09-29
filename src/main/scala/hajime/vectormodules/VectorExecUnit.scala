@@ -12,14 +12,10 @@ class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vs2 = UInt(5.W)
   val vd = UInt(5.W)
   val vm = Bool()
+  val scalarVal = UInt(params.xprlen.W)
   val scalarDecode = new ID_output()
   val vectorDecode = new VectorDecoderResp()
   val vecConf = new VecCtrlUnitResp()
-}
-
-class VectorExecUnitSignalToVRF(implicit params: HajimeCoreParams) extends Bundle {
-  val readIndex = UInt(log2Up(params.vlen/8).W)
-  val sew = UInt(3.W)
 }
 
 class VectorExecUnitDataIn(implicit params: HajimeCoreParams) extends Bundle {
@@ -35,12 +31,16 @@ class VectorExecUnitDataOut(implicit params: HajimeCoreParams) extends Bundle {
 
 class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new VectorExecUnitSignalIn()))
-  val signalToVRF = Output(new VectorExecUnitSignalToVRF())
+  val readVrf = Flipped(new VecRegFileReadIO())
   val dataIn = Input(new VectorExecUnitDataIn())
   val dataOut = Output(new VectorExecUnitDataOut())
 }
 
-abstract class VectorExecUnit(instNum: Int)(implicit params: HajimeCoreParams) extends Module {
+/**
+ * combinational execution unit (arithmetic/logical)
+ * @param params
+ */
+abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
   // 演算内容をここに書けばop関数はいらない？
   def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt]
 
@@ -59,22 +59,69 @@ abstract class VectorExecUnit(instNum: Int)(implicit params: HajimeCoreParams) e
   when(io.signalIn.valid && io.signalIn.ready) {
     instInfoReg.valid := true.B
     instInfoReg.bits := io.signalIn.bits
+  } .elsewhen(io.dataOut.toVRF.bits.last) {
+    instInfoReg.valid := false.B
   }
 
-  io.dataOut.toVRF.bits.last := (idx-1.U === io.signalIn.bits.vecConf.vl)
+  io.readVrf.req.idx := idx
+  io.readVrf.req.sew := instInfoReg.bits.vecConf.vtype.vsew
+  io.readVrf.req.vs1 := instInfoReg.bits.vs1
+  io.readVrf.req.vs2 := instInfoReg.bits.vs2
+  io.readVrf.req.vd := instInfoReg.bits.vd
 
+  val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
+  val execValue2 = io.readVrf.resp.vs2Out
+  val execValue3 = io.readVrf.resp.vdOut
+  val execValueVM = io.readVrf.resp.vm
+
+  val valueToExec = Wire(new VectorExecUnitDataIn())
+  valueToExec.value1 := execValue1
+  valueToExec.value2 := execValue2
+  valueToExec.value3 := execValue3
+  valueToExec.vm := execValueVM
+
+  io.dataOut.toVRF.bits.last := (idx-1.U === instInfoReg.bits.vecConf.vl)
+  io.dataOut.toVRF.valid := instInfoReg.valid
+  io.dataOut.toVRF.bits.vtype := instInfoReg.bits.vecConf.vtype
+  io.dataOut.toVRF.bits.vd := instInfoReg.bits.vd
+  io.dataOut.toVRF.bits.writeReq := instInfoReg.valid
+
+  val execResult = exec(instInfoReg.bits.scalarDecode, instInfoReg.bits.vectorDecode, valueToExec)
+
+  /*
   io.dataOut.toVRF.bits.data := MuxLookup(io.signalIn.bits.vectorDecode.veuFun, 0.U) (
     (0 until instNum).map(i => i.U -> exec(io.signalIn.bits.scalarDecode, io.signalIn.bits.vectorDecode, io.dataIn)(i))
   )
-
-  io.signalToVRF.readIndex := io.signalIn.bits
+   */
 }
 
-class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit(instNum = 3) {
+class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
   override def exec(scalarDec: ID_output, vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = {
     import values._
-    // vadd, vsub, vrsub
-    // TODO: optimise
-    value2 + value1 :: value2 - value1 :: value1 - value2 :: Nil
+    // vadd, vsub, vrsub, (vadc, vmadc), (vsbc, vmsbc),
+    // seq, sne,
+    // sltu, slt, sleu, sle,
+    // sgtu, sgt,
+    // minu, min,
+    // maxu, max,
+    // merge, mv
+    // TODO: optimise (64bit加減算器1つで再現できる）
+    value2 + value1 :: value2 - value1 :: value1 - value2 :: (value2 +& value1) + vm :: (value2 -& value1) - vm ::
+      (value2 === value1) :: (value2 =/= value1) ::
+      (value2 < value1) :: (value2.asSInt < value1.asSInt) :: (value2 <= value1) :: (value2.asSInt <= value1.asSInt) ::
+      (value2 > value1) :: (value2.asSInt > value2.asSInt) ::
+      Mux(value2 < value1, value2, value1) :: Mux(value2.asSInt < value1.asSInt, value2, value1) ::
+      Mux(value2 > value1, value2, value2) :: Mux(value2.asSInt > value1.asSInt, value2, value1) ::
+      Mux(vm, value1, value2) :: value1 :: Nil
   }
+
+  val result = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(Seq(
+    VEU_FUN.ADD -> 0,
+    VEU_FUN.SUB -> 1,
+    VEU_FUN.RSUB -> 2,
+  ).map(x => x._1.asUInt -> execResult(x._2)))
+
+  // 書き込み先がマスクならばidxとうまい具合に組み合わせてなんとかする
+  // seq, ..., sgtならば最下位bitがvm
+  // vmadc, vmsbcならば，SEW=8 -> 8bit目，..., SEW=64 -> 64bit目がvm
 }

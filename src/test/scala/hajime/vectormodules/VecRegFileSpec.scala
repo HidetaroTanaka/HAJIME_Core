@@ -37,7 +37,17 @@ class VecRegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
       println(s"Read Index: $i")
       dut.io.readReq(1).req.idx.poke(i.U)
       println(s"Read Data: ${dut.io.readReq(1).resp.vs1Out.peekInt().toString(16)}")
-      dut.io.readReq(1).resp.vs1Out.expect(s"h${input_array(i)}".U)
+      dut.io.readReq(1).resp.vs1Out.expect(s"h${
+        val signExt = !((input_array(i)(0) >= '0') && (input_array(i)(0) <= '7'))
+        val head = if(signExt) "F" else "0"
+        val extString = sew match {
+          case 0 => head * 14
+          case 1 => head * 12
+          case 2 => head * 8
+          case 3 => ""
+        }
+        extString + input_array(i)
+      }".U)
       dut.clock.step()
     }
     println()

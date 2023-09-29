@@ -4,6 +4,7 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
+import hajime.common.Functions._
 
 class VecRegFileReadReq(implicit params: HajimeCoreParams) extends Bundle {
   val sew = UInt(3.W)
@@ -52,7 +53,7 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
           // 1.U -> Cat(vs1ReadVecReg(req.idx << 1 + 1), vs1ReadVecReg(req.idx << 1))
           // 2.U -> Cat(vs1ReadVecReg(req.idx << 2 + 3), ..., vs1ReadVecReg(req.idx << 2))
           // 3.U -> Cat(vs1ReadVecReg(req.idx << 3 + 7), ..., vs1ReadVecReg(req.idx << 3))
-          i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vecReg((req.idx << i).asUInt + j.U)))
+          i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vecReg((req.idx << i).asUInt + j.U))).ext(targetWidth = 64)
         )
       )
     }
