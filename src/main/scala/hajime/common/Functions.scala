@@ -14,4 +14,9 @@ object Functions {
       }
     }
   }
+  implicit class seqHasElementEquivalentToUInt(ls: List[UInt]) {
+    def has(elem: UInt): Bool = {
+      ls.map(x => x === elem).reduce(_ || _)
+    }
+  }
 }

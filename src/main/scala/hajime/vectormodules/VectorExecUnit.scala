@@ -17,13 +17,6 @@ class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vecConf = new VecCtrlUnitResp()
 }
 
-class VectorExecUnitDataIn(implicit params: HajimeCoreParams) extends Bundle {
-  val value1 = UInt(params.xprlen.W)
-  val value2 = UInt(params.xprlen.W)
-  val value3 = UInt(params.xprlen.W)
-  val vm = Bool()
-}
-
 class VectorExecUnitDataOut(implicit params: HajimeCoreParams) extends Bundle {
   val toVRF = ValidIO(new VecRegFileWriteReq())
 }
@@ -31,7 +24,6 @@ class VectorExecUnitDataOut(implicit params: HajimeCoreParams) extends Bundle {
 class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new VectorExecUnitSignalIn()))
   val readVrf = Flipped(new VecRegFileReadIO())
-  val dataIn = Input(new VectorExecUnitDataIn())
   val dataOut = Output(new VectorExecUnitDataOut())
 }
 
@@ -41,7 +33,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
  */
 abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
   // 演算内容をここに書けばop関数はいらない？
-  def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt]
+  def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt]
 
   val io = IO(new VectorExecUnitIO())
 
@@ -52,14 +44,17 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
     idx := idx + 1.U
   }
 
-  val instInfoReg = Reg(Valid(new VectorExecUnitSignalIn()))
-  instInfoReg.valid := false.B
+  val instInfoReg = RegInit(Valid(new VectorExecUnitSignalIn()).Lit(
+    _.valid -> false.B,
+  ))
 
   when(io.signalIn.valid && io.signalIn.ready) {
     instInfoReg.valid := true.B
     instInfoReg.bits := io.signalIn.bits
   } .elsewhen(io.dataOut.toVRF.bits.last) {
     instInfoReg.valid := false.B
+  } .otherwise {
+    instInfoReg := instInfoReg
   }
 
   io.readVrf.req.idx := idx
@@ -73,10 +68,10 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   val execValue3 = io.readVrf.resp.vdOut
   val execValueVM = io.readVrf.resp.vm
 
-  val valueToExec = Wire(new VectorExecUnitDataIn())
-  valueToExec.value1 := execValue1
-  valueToExec.value2 := execValue2
-  valueToExec.value3 := execValue3
+  val valueToExec = Wire(new VecRegFileReadResp())
+  valueToExec.vs1Out := execValue1
+  valueToExec.vs2Out := execValue2
+  valueToExec.vdOut := execValue3
   valueToExec.vm := execValueVM
 
   io.dataOut.toVRF.bits.last := (idx-1.U === instInfoReg.bits.vecConf.vl)
@@ -98,8 +93,10 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 }
 
 class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = {
+  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = {
     import values._
+    val value1 = vs1Out
+    val value2 = vs2Out
     // vadd, vsub, vrsub, (vadc, vmadc), (vsbc, vmsbc),
     // seq, sne,
     // sltu, slt, sleu, sle,
@@ -108,6 +105,7 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
     // maxu, max,
     // merge, mv
     // TODO: optimise (64bit加減算器1つで再現できる）
+    // is firtool doing enough optimisations?
     value2 + value1 :: value2 - value1 :: value1 - value2 :: (value2 +& value1) + vm :: (value2 -& value1) - vm ::
       (value2 === value1) :: !(value2 === value1) ::
       (value2 < value1) :: (value2.asSInt < value1.asSInt) :: !(value2 > value1) :: !(value2.asSInt > value2.asSInt) ::
@@ -168,7 +166,7 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
 }
 
 class LogicalVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(vectorDec: VectorDecoderResp, values: VectorExecUnitDataIn): Seq[UInt] = ???
+  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = ???
 }
 
 object ArithmeticVectorExecUnit extends App {

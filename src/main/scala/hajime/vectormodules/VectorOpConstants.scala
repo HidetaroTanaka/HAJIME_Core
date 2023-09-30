@@ -1,6 +1,7 @@
 package hajime.vectormodules
 
 import chisel3._
+import hajime.common.Functions._
 
 trait VectorOpConstants {
   object AVL_SEL extends ChiselEnum {
@@ -9,9 +10,16 @@ trait VectorOpConstants {
   object VTYPE_SEL extends ChiselEnum {
     val NONE, ZIMM10, ZIMM9, RS2 = Value
   }
+  /**
+   * Vector Memory Op
+   */
   object MOP extends ChiselEnum {
     val NONE, UNIT_STRIDE, IDX_UNORDERED, STRIDED, IDX_ORDERED = Value
   }
+
+  /**
+   * Vector Unit-stride Memory Op
+   */
   object UMOP extends ChiselEnum {
     val NONE, NORMAL, WHOLE_REGISTER, MASK_E8, FAULT_ONLY_FIRST = Value
   }
@@ -24,16 +32,16 @@ trait VectorOpConstants {
 
     implicit class masks(signal: UInt) {
       def isCompMask: Bool = {
-        compMaskList.map(x => signal === x.asUInt).reduce(_ || _)
+        compMaskList.map(_.asUInt).has(signal)
       }
       def isCarryMask: Bool = {
-        carryMaskList.map(x => signal === x.asUInt).reduce(_ || _)
+        carryMaskList.map(_.asUInt).has(signal)
       }
       def isMask: Bool = {
         signal.isCompMask || signal.isCarryMask
       }
       def ignoreMask: Bool = {
-        ignoreMaskList.map(x => signal === x.asUInt).reduce(_ || _)
+        ignoreMaskList.map(_.asUInt).has(signal)
       }
     }
   }
