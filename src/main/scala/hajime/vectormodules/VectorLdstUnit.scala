@@ -15,7 +15,7 @@ class ScalarLdstSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val scalarDecode = new ID_output()
 }
 
-class VectorLdstUnitIO(implicit params: HajimeCoreParams) {
+class VectorLdstUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new Bundle {
     val scalar = new ScalarLdstSignalIn()
     val vector = new VectorExecUnitSignalIn()
