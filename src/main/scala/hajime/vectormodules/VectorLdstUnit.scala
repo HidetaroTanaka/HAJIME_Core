@@ -4,7 +4,7 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO._
-import hajime.common.{COMPILE_CONSTANTS, HajimeCoreParams, ScalarOpConstants}
+import hajime.common._
 import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
 
@@ -157,5 +157,5 @@ object VectorLdstUnit extends App {
     require(params.useVector, "Vector Extension Required in VectorLdstUnit")
     new VectorLdstUnit()
   }
-  ChiselStage.emitSystemVerilogFile(VectorLdstUnit(params), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  ChiselStage.emitSystemVerilogFile(new VectorLdstUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
