@@ -33,7 +33,15 @@ class VecRegFileWriteReq(implicit params: HajimeCoreParams) extends Bundle {
   val index = UInt(log2Up(params.vlen/8).W)
   val last = Bool()
   val data = UInt(params.xprlen.W)
+  /**
+   * 書き込み時にマスクとして書き込むか否か
+   * （vmsltやvmaddなどの書き込みはe8で行う）
+   */
   val vm = Bool()
+  /**
+   * 書き込みを行うか否か
+   * 信号線自体のvalidはVEUから書き込む命令があるか否かを示す
+   */
   val writeReq = Bool()
 }
 

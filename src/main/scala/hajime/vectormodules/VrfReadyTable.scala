@@ -119,7 +119,7 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   // IDステージへのバイパス
   // 該当するベクトルレジスタの0要素目がreadyであり，かつ読み込む幅が書き込む幅以下，または
   val vs1SameWriteList = io.fromVecExecUnit.map(sig => sig.valid && sig.bits.writeReq && (sig.bits.vd === io.vs1Check.bits.idx))
-  // ベクトルレジスタへ書き込むベクトルユニットが1つのみ存在し，かつその書き込みの幅が読み込む幅以下，
+  // ベクトルレジスタへ書き込むベクトルユニットが1つのみ存在し，かつその読み込み幅が書き込み幅以下，
   val vs1SameWriteAndSewOKList = for((d, i) <- vs1SameWriteList.zipWithIndex) yield {
     d && (io.vs1Check.bits.vm || (!io.fromVecExecUnit(i).bits.vm && io.vs1Check.bits.vtype.vsew <= io.fromVecExecUnit(i).bits.vtype.vsew))
   }

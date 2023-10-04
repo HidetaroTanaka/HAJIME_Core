@@ -4,7 +4,7 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.axiIO._
-import hajime.common.{HajimeCoreParams, ScalarOpConstants}
+import hajime.common.{COMPILE_CONSTANTS, HajimeCoreParams, ScalarOpConstants}
 import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
 
@@ -131,12 +131,31 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.readVrf.req.vs2 := vectorReqReg.bits.vs2
   io.readVrf.req.vd := vectorReqReg.bits.vd
 
-  // resp
+  // scalar resp
   io.scalarResp.bits.data := io.dcache.r.bits.data
   io.scalarResp.valid := MuxCase(false.B, Seq(
-    scalarReqReg.bits.scalarDecode.memRead -> io.dcache.ar.ready,
-    scalarReqReg.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready)
+    scalarReqRegNext.bits.scalarDecode.memRead -> io.dcache.ar.ready,
+    scalarReqRegNext.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready)
   ))
   io.scalarResp.bits.exceptionSignals.valid := false.B
   io.scalarResp.bits.exceptionSignals.bits := 0.U
+
+  // vector resp
+  io.vectorResp.toVRF.valid := scalarReqRegNext.valid && vectorReqRegNext.valid
+  io.vectorResp.toVRF.bits.vd := vectorReqRegNext.bits.vd
+  io.vectorResp.toVRF.bits.vtype := vectorReqRegNext.bits.vecConf.vtype
+  io.vectorResp.toVRF.bits.index := vecIdxToVrfWrite
+  io.vectorResp.toVRF.bits.last := RegNext(vecMemAccessLast)
+  io.vectorResp.toVRF.bits.data := io.dcache.r.bits.data
+  io.vectorResp.toVRF.bits.vm := false.B
+  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vm || io.readVrf.resp.vm)
+}
+
+object VectorLdstUnit extends App {
+  implicit val params: HajimeCoreParams = HajimeCoreParams(useVector = true)
+  def apply(implicit params: HajimeCoreParams): VectorLdstUnit = {
+    require(params.useVector, "Vector Extension Required in VectorLdstUnit")
+    new VectorLdstUnit()
+  }
+  ChiselStage.emitSystemVerilogFile(VectorLdstUnit(params), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
