@@ -9,7 +9,8 @@ import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
 
 class ScalarLdstSignalIn(implicit params: HajimeCoreParams) extends Bundle {
-  val rs1Value = UInt(params.xprlen.W)
+  // rs1はvectorReqのscalarValで良い
+  // val rs1Value = UInt(params.xprlen.W)
   val rs2Value = UInt(params.xprlen.W)
   val immediate = UInt(params.xprlen.W)
   val scalarDecode = new ID_output()
@@ -89,7 +90,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     scalarReqReg.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
   )) && (!vectorReqReg.valid || vecMemAccessLast))
 
-  val addr = scalarReqReg.bits.rs1Value + MuxLookup(vectorReqReg.bits.vectorDecode.mop, scalarReqReg.bits.rs1Value)(Seq(
+  val addr = vectorReqReg.bits.scalarVal + MuxLookup(vectorReqReg.bits.vectorDecode.mop, vectorReqReg.bits.scalarVal)(Seq(
     MOP.NONE -> scalarReqReg.bits.immediate,
     MOP.UNIT_STRIDE -> accumulator,
     MOP.IDX_UNORDERED -> io.readVrf.resp.vs2Out,
@@ -136,7 +137,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.scalarResp.valid := MuxCase(false.B, Seq(
     scalarReqRegNext.bits.scalarDecode.memRead -> io.dcache.ar.ready,
     scalarReqRegNext.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready)
-  ))
+  )) && scalarReqRegNext.valid && (!vectorReqRegNext.valid || RegNext(vecMemAccessLast))
   io.scalarResp.bits.exceptionSignals.valid := false.B
   io.scalarResp.bits.exceptionSignals.bits := 0.U
 
