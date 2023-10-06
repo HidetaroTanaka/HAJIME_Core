@@ -116,7 +116,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.dcache.r.ready := true.B
 
   // AXI4Lite Write Data Request Channel
-  io.dcache.w.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite && (vectorReqReg.bits.vm || io.readVrf.resp.vm)
+  io.dcache.w.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite && (vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
   io.dcache.w.bits.data := data
   io.dcache.w.bits.strb := MuxLookup(scalarReqReg.bits.scalarDecode.memory_length, 0.U(strb_width.W))(Seq(
     MEM_LEN.B.asUInt -> "h01".U(strb_width.W),
@@ -149,7 +149,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.vectorResp.toVRF.bits.last := RegNext(vecMemAccessLast)
   io.vectorResp.toVRF.bits.data := io.dcache.r.bits.data
   io.vectorResp.toVRF.bits.vm := false.B
-  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vm || io.readVrf.resp.vm)
+  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
 }
 
 object VectorLdstUnit extends App {

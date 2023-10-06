@@ -11,7 +11,8 @@ class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vs1 = UInt(5.W)
   val vs2 = UInt(5.W)
   val vd = UInt(5.W)
-  val vm = Bool()
+  // vectorDecode内のvmを使う
+  // val vm = Bool()
   val scalarVal = UInt(params.xprlen.W)
   val vectorDecode = new VectorDecoderResp()
   val vecConf = new VecCtrlUnitResp()

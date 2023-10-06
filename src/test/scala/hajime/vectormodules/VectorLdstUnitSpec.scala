@@ -65,21 +65,21 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
   }
   def inputScalarDecode(inst: String, rs1Value: Int, rs2Value: Int, immediate: Int, dut: VectorLdstUnit)(implicit params: HajimeCoreParams): Unit = {
     val scalarDecode = instScalarDecode(inst)
-    dut.io.signalIn.valid.poke(scalarDecode(0).U.asBool)
+    dut.io.signalIn.valid.poke(scalarDecode(0).B)
     dut.io.signalIn.bits.scalar.scalarDecode.poke(new ID_output().Lit(
       _.branch -> scalarDecode(1).U,
       _.value1 -> scalarDecode(2).U,
       _.value2 -> scalarDecode(3).U,
       _.arithmetic_funct -> scalarDecode(4).U,
-      _.alu_flag -> scalarDecode(5).U.asBool,
+      _.alu_flag -> scalarDecode(5).B,
       _.op32 -> scalarDecode(6).U.asBool,
       _.writeback_selector -> scalarDecode(7).U,
       _.memory_function -> scalarDecode(8).U,
       _.memory_length -> scalarDecode(9).U,
-      _.mem_sext -> scalarDecode(10).U.asBool,
+      _.mem_sext -> scalarDecode(10).B,
       _.csr_funct -> scalarDecode(11).U,
       _.fence -> scalarDecode(12).U,
-      _.vector.get -> scalarDecode(13).U.asBool
+      _.vector.get -> scalarDecode(13).B
     ))
     dut.io.signalIn.bits.vector.scalarVal.poke(rs1Value.U)
     dut.io.signalIn.bits.scalar.rs2Value.poke(rs2Value.U)
@@ -98,8 +98,27 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case _ => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, N, VEU_FUN.ADD, VSOURCE.VV)
     }).map(_.litValue.toInt)
   }
-  def inputVectorDecode(inst: String, vs1: Int, vs2: Int, vd: Int, vm: Boolean, vsew: Int, vl: Int, dut: VectorLdstUnit)(implicit params: HajimeCoreParams): Unit = {
-
+  def inputVectorDecode(inst: String, vm: Boolean, vs1: Int, vs2: Int, vd: Int, vsew: Int, vl: Int, dut: VectorLdstUnit)(implicit params: HajimeCoreParams): Unit = {
+    val vectorDecode = instVectorDecode(inst)
+    /*
+    dut.io.signalIn.bits.vector.vectorDecode.poke(new VectorDecoderResp().Lit(
+      _.isConfsetInst -> vectorDecode(0).B,
+      _.avl_sel -> vectorDecode(1).U,
+      _.vtype_sel -> vectorDecode(2).U,
+      _.mop -> vectorDecode(3).U,
+      _.umop -> vectorDecode(4).U,
+      _.vrfWrite -> vectorDecode(5).B,
+      _.veuFun -> vectorDecode(6).U,
+      _.vSource -> vectorDecode(7).U,
+    ))
+     */
+    // 上のやつはこれでおｋ？
+    for((d, i) <- dut.io.signalIn.bits.vector.vectorDecode.toList zip (0 until 9)) {
+      d.poke(if(i < 8) vectorDecode(i).U else vm.B)
+    }
+    dut.io.signalIn.bits.vector.vs1.poke(vs1.U)
+    dut.io.signalIn.bits.vector.vs2.poke(vs2.U)
+    dut.io.signalIn.bits.vector.vd.poke(vd.U)
   }
   it should "vector memory access correctly" in {
     implicit val params: HajimeCoreParams = HajimeCoreParams()
