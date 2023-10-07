@@ -52,6 +52,10 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case "lbu" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.MEM, MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, N)
       case "lwu" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.MEM, MEM_FCN.M_RD, MEM_LEN.W, N, CSR_FCN.N, N, N)
       case "lhu" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.MEM, MEM_FCN.M_RD, MEM_LEN.H, N, CSR_FCN.N, N, N)
+      case "sb" => List(Y, Branch.NONE, Value1.RS1, Value2.S_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.B, N, CSR_FCN.N, N, N)
+      case "sh" => List (Y, Branch.NONE, Value1.RS1, Value2.S_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, N)
+      case "sw" => List (Y, Branch.NONE, Value1.RS1, Value2.S_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, N)
+      case "sd" => List(Y, Branch.NONE,  Value1.RS1,   Value2.S_IMM, ARITHMETIC_FCN.ADDSUB,  N, N, WB_SEL.NONE,  MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N, N)
       case "vle8.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, Y)
       case "vle16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.H, N, CSR_FCN.N, N, Y)
       case "vle32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.W, N, CSR_FCN.N, N, Y)
@@ -63,7 +67,7 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case _ => List (N, Branch.NONE, Value1.ZERO, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, N)
     }).map(_.litValue.toInt)
   }
-  def inputScalarDecode(inst: String, rs1Value: Int, rs2Value: Int, immediate: Int, dut: VectorLdstUnitWithDcache): Unit = {
+  def inputScalarDecode(inst: String, rs1Value: UInt, rs2Value: UInt, immediate: UInt, dut: VectorLdstUnitWithDcache): Unit = {
     val scalarDecode = instScalarDecode(inst)
     dut.io.signalIn.valid.poke(scalarDecode(0).B)
     /*
@@ -86,9 +90,9 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
     for((d,i) <- dut.io.signalIn.bits.scalar.scalarDecode.toList zip (1 until 14)) {
       d.poke(scalarDecode(i).U)
     }
-    dut.io.signalIn.bits.vector.scalarVal.poke(rs1Value.U)
-    dut.io.signalIn.bits.scalar.rs2Value.poke(rs2Value.U)
-    dut.io.signalIn.bits.scalar.immediate.poke(immediate.U)
+    dut.io.signalIn.bits.vector.scalarVal.poke(rs1Value)
+    dut.io.signalIn.bits.scalar.rs2Value.poke(rs2Value)
+    dut.io.signalIn.bits.scalar.immediate.poke(immediate)
   }
   def instVectorDecode(inst: String): List[Int] = {
     (inst match {
@@ -130,12 +134,20 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
     test(new VectorLdstUnitWithDcache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       MemInitializer.initialiseMemWithAxi("src/main/resources/applications_rv64i/median_data.hex", dut.dCacheInitialiseIO.bits, dut.dCacheInitialiseIO.valid, dut.clock, 0x4000)
       // ID: lb
-      inputScalarDecode(inst = "lb", rs1Value = 0x4000, rs2Value = 0, immediate = 0x10, dut = dut)
+      inputScalarDecode(inst = "lb", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0x10.U, dut = dut)
       dut.clock.step()
-      // EX:
+      // ID: sh, EX: lb
+      inputScalarDecode(inst = "sh", rs1Value = 0x4060.U, rs2Value = 0x1919.U, immediate = "hFFFFFFFFFFFFFFA0".U, dut = dut)
+      dut.clock.step()
+      // EX: sh, WB: lb
       dut.io.signalIn.valid.poke(false.B)
+      dut.io.scalarResp.valid.expect(true.B)
+      dut.io.scalarResp.bits.data.expect("h0000000100000234".U)
       dut.clock.step()
-      // WB:
+      // WB: sh
+      dut.clock.step()
+      // no
+      dut.io.scalarResp.valid.expect(false.B)
       dut.clock.step()
     }
   }

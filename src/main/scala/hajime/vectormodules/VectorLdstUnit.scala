@@ -73,7 +73,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   when((io.signalIn.valid && io.signalIn.ready) || vecMemAccessLast) {
     vecIdx := 0.U
     accumulator := 0.U
-  } .otherwise {
+  } .elsewhen(vectorReqReg.valid) {
     vecIdx := vecIdx + 1.U
     // unit-stride
     // sew=0 -> accumulator += 1
@@ -91,6 +91,9 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     ), MuxLookup(vectorReqReg.bits.vecConf.vtype.vsew, scalarReqReg.bits.rs2Value)(
       (0 until 4).map(i => i.U -> (scalarReqReg.bits.rs2Value << i).asUInt)
     ))
+  } .otherwise {
+    vecIdx := 0.U
+    accumulator := 0.U
   }
 
   // scalarReqRegがvalidでない（メモリアクセスが存在しない）または，axiのreqがreadyであり次のサイクルで命令を受け取れるかつベクトルならば最終要素
