@@ -172,7 +172,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.vectorResp.toVRF.bits.last := RegNext(vecMemAccessLast)
   io.vectorResp.toVRF.bits.data := io.dcache.r.bits.data
   io.vectorResp.toVRF.bits.vm := false.B
-  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
+  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm) && scalarReqRegNext.bits.scalarDecode.memRead
 }
 
 object VectorLdstUnit extends App {
