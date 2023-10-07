@@ -44,14 +44,6 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   ))
   val vectorReqRegNext = RegNext(vectorReqReg)
 
-  when(io.signalIn.valid && io.signalIn.ready) {
-    scalarReqReg.valid := true.B
-    scalarReqReg.bits := io.signalIn.bits.scalar
-    vectorReqReg.valid := io.signalIn.bits.vector.vectorDecode.mop =/= MOP.NONE.asUInt
-    vectorReqReg.bits := io.signalIn.bits.vector
-  }
-  assert(scalarReqReg.valid || !vectorReqReg.valid, "scalarReq false and vectorReq true")
-
   val vecIdx = RegInit(0.U(log2Up(params.vlen/8).W))
   val vecIdxToVrfWrite = RegNext(vecIdx)
 
@@ -61,6 +53,23 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   // データメモリへのリクエストが命令の最終要素であれば次のIDステージの命令を得られる
   val vecMemAccessLast = vecMemAccessValid && (vecIdx === vectorReqReg.bits.vecConf.vl-1.U)
   //
+
+  when(io.signalIn.valid && io.signalIn.ready) {
+    scalarReqReg.valid := true.B
+    scalarReqReg.bits := io.signalIn.bits.scalar
+    vectorReqReg.valid := io.signalIn.bits.vector.vectorDecode.mop =/= MOP.NONE.asUInt
+    vectorReqReg.bits := io.signalIn.bits.vector
+  }.elsewhen(scalarReqReg.valid && (!vectorReqReg.valid || vecMemAccessLast)) {
+    scalarReqReg.valid := false.B
+    when(vectorReqReg.valid) {
+      vectorReqReg.valid := false.B
+    }
+  }.otherwise {
+    scalarReqReg := scalarReqReg
+    vectorReqReg := vectorReqReg
+  }
+  assert(scalarReqReg.valid || !vectorReqReg.valid, "scalarReq false and vectorReq true")
+
   when((io.signalIn.valid && io.signalIn.ready) || vecMemAccessLast) {
     vecIdx := 0.U
     accumulator := 0.U

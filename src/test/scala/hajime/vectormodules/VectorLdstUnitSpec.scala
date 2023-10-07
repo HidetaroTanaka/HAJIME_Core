@@ -63,9 +63,10 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case _ => List (N, Branch.NONE, Value1.ZERO, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, N)
     }).map(_.litValue.toInt)
   }
-  def inputScalarDecode(inst: String, rs1Value: Int, rs2Value: Int, immediate: Int, dut: VectorLdstUnit)(implicit params: HajimeCoreParams): Unit = {
+  def inputScalarDecode(inst: String, rs1Value: Int, rs2Value: Int, immediate: Int, dut: VectorLdstUnitWithDcache): Unit = {
     val scalarDecode = instScalarDecode(inst)
     dut.io.signalIn.valid.poke(scalarDecode(0).B)
+    /*
     dut.io.signalIn.bits.scalar.scalarDecode.poke(new ID_output().Lit(
       _.branch -> scalarDecode(1).U,
       _.value1 -> scalarDecode(2).U,
@@ -81,6 +82,10 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       _.fence -> scalarDecode(12).U,
       _.vector.get -> scalarDecode(13).B
     ))
+     */
+    for((d,i) <- dut.io.signalIn.bits.scalar.scalarDecode.toList zip (1 until 14)) {
+      d.poke(scalarDecode(i).U)
+    }
     dut.io.signalIn.bits.vector.scalarVal.poke(rs1Value.U)
     dut.io.signalIn.bits.scalar.rs2Value.poke(rs2Value.U)
     dut.io.signalIn.bits.scalar.immediate.poke(immediate.U)
@@ -98,7 +103,7 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case _ => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, N, VEU_FUN.ADD, VSOURCE.VV)
     }).map(_.litValue.toInt)
   }
-  def inputVectorDecode(inst: String, vm: Boolean, vs1: Int, vs2: Int, vd: Int, vsew: Int, vl: Int, dut: VectorLdstUnit)(implicit params: HajimeCoreParams): Unit = {
+  def inputVectorDecode(inst: String, vm: Boolean, vs1: Int, vs2: Int, vd: Int, vsew: Int, vl: Int, dut: VectorLdstUnitWithDcache): Unit = {
     val vectorDecode = instVectorDecode(inst)
     /*
     dut.io.signalIn.bits.vector.vectorDecode.poke(new VectorDecoderResp().Lit(
@@ -113,7 +118,7 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
     ))
      */
     // 上のやつはこれでおｋ？
-    for((d, i) <- dut.io.signalIn.bits.vector.vectorDecode.toList zip (0 until 9)) {
+    for((d, i) <- dut.io.signalIn.bits.vector.vectorDecode.toList.zipWithIndex) {
       d.poke(if(i < 8) vectorDecode(i).U else vm.B)
     }
     dut.io.signalIn.bits.vector.vs1.poke(vs1.U)
@@ -124,7 +129,14 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
     implicit val params: HajimeCoreParams = HajimeCoreParams()
     test(new VectorLdstUnitWithDcache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       MemInitializer.initialiseMemWithAxi("src/main/resources/applications_rv64i/median_data.hex", dut.dCacheInitialiseIO.bits, dut.dCacheInitialiseIO.valid, dut.clock, 0x4000)
-
+      // ID: lb
+      inputScalarDecode(inst = "lb", rs1Value = 0x4000, rs2Value = 0, immediate = 0x10, dut = dut)
+      dut.clock.step()
+      // EX:
+      dut.io.signalIn.valid.poke(false.B)
+      dut.clock.step()
+      // WB:
+      dut.clock.step()
     }
   }
 }
