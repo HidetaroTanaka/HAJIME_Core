@@ -7,6 +7,7 @@ import hajime.axiIO._
 import hajime.common._
 import hajime.publicmodules._
 import chisel3.experimental.BundleLiterals._
+import hajime.common.Functions.signExtend
 
 class ScalarLdstSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   // rs1はvectorReqのscalarValで良い
@@ -117,7 +118,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.dcache.ar.bits.prot := 0.U(3.W)
 
   // AXI4Lite Write Address Request Channel
-  io.dcache.aw.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite
+  io.dcache.aw.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite && (!vectorReqReg.valid || vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
   io.dcache.aw.bits.addr := addr
   io.dcache.aw.bits.prot := 0.U(3.W)
 
@@ -128,7 +129,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.dcache.r.ready := true.B
 
   // AXI4Lite Write Data Request Channel
-  io.dcache.w.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite && (vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
+  io.dcache.w.valid := scalarReqReg.valid && scalarReqReg.bits.scalarDecode.memWrite && (!vectorReqReg.valid || vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
   io.dcache.w.bits.data := data
   io.dcache.w.bits.strb := MuxLookup(scalarReqReg.bits.scalarDecode.memory_length, 0.U(strb_width.W))(Seq(
     MEM_LEN.B.asUInt -> "h01".U(strb_width.W),
@@ -146,6 +147,16 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
 
   // scalar resp
   io.scalarResp.bits.data := io.dcache.r.bits.data
+  io.scalarResp.bits.data := MuxLookup(scalarReqRegNext.bits.scalarDecode.memory_length, io.dcache.r.bits.data)(
+    Seq(
+      MEM_LEN.B -> 8,
+      MEM_LEN.H -> 16,
+      MEM_LEN.W -> 32,
+      MEM_LEN.D -> 64,
+    ).map {
+      case (memLen: EnumType, width: Int) => memLen.asUInt -> Mux(scalarReqRegNext.bits.scalarDecode.mem_sext, io.dcache.r.bits.data(width - 1, 0).ext(params.xprlen), io.dcache.r.bits.data.zext.asUInt)
+    }
+  )
   io.scalarResp.valid := MuxCase(false.B, Seq(
     scalarReqRegNext.bits.scalarDecode.memRead -> io.dcache.ar.ready,
     scalarReqRegNext.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready)

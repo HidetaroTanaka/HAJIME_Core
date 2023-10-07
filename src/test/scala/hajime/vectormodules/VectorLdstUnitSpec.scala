@@ -139,16 +139,23 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       // ID: sh, EX: lb
       inputScalarDecode(inst = "sh", rs1Value = 0x4060.U, rs2Value = 0x1919.U, immediate = "hFFFFFFFFFFFFFFA0".U, dut = dut)
       dut.clock.step()
-      // EX: sh, WB: lb
-      dut.io.signalIn.valid.poke(false.B)
+      // ID: lw, EX: sh, WB: lb
+      inputScalarDecode(inst = "lw", rs1Value = 0x3FE0.U, rs2Value = 0.U, immediate = 0x20.U, dut = dut)
       dut.io.scalarResp.valid.expect(true.B)
-      dut.io.scalarResp.bits.data.expect("h0000000100000234".U)
+      dut.io.scalarResp.bits.data.expect("h0000000000000034".U)
       dut.clock.step()
-      // WB: sh
+      // EX: lw, WB: sh
+      dut.io.signalIn.valid.poke(false.B)
+      dut.clock.step()
+      // WB: lw
+      dut.io.scalarResp.valid.expect(true.B)
+      dut.io.scalarResp.bits.data.expect("h00001919".U)
       dut.clock.step()
       // no
       dut.io.scalarResp.valid.expect(false.B)
       dut.clock.step()
+      // ID: vse8.v (vl = 32)
+      // inputScalarDecode(inst = "vse8.v", rs1Value = 0x3FE0.U, rs2Value = 0.U, immediate = 0x20.U, dut = dut)
     }
   }
 }
