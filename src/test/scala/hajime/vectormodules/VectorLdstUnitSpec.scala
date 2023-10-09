@@ -264,10 +264,12 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       dut.io.readVrf.resp.vdOut.poke(0xFF.U)
       dut.clock.step()
       dut.io.signalIn.valid.poke(false.B)
-      // EX: vle64.v, idx = 0-3, WB: vsse8.v
-      for(_ <- 0 until 4) dut.clock.step()
-      // WB: vle64.v
-      dut.clock.step()
+      // EX: vle64.v, idx = 0-3, WB: vsse8.v, vle64.v
+      for(i <- 0 until 5) {
+        val expectList = List("h07FF0504FF0201FF".U, "hFF0E0DFF0B0AFF08".U, "h1716FF1413FF1110".U, "h1F1E1D1CFF1A19FF".U)
+        dut.clock.step()
+        if(i != 4) dut.io.vectorResp.toVRF.bits.data.expect(expectList(i))
+      }
       // ID: vsse16.v (vl = 6, stride = -3, no mask)
       // 0x4000: FF020000
       // 0x4004: 00000504
@@ -290,11 +292,13 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       inputScalarDecode(inst = "vle64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
       inputVectorDecode(inst = "vle64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 11.U, vsew = 3.U, vl = 4.U, dut = dut)
       dut.clock.step()
-      // EX: vle64.v, idx=0-3
+      // EX: vle64.v, idx=0-3, WB: vle64.v
       dut.io.signalIn.valid.poke(false.B)
-      for(_ <- 0 until 4) dut.clock.step()
-      // WB: vle64.v
-      dut.clock.step()
+      for(i <- 0 until 5) {
+        val expectList = List("h00000504FF020000".U, "hFF0E00000B0AFF08".U, "h1716FF1400001110".U, "h00001D1CFF1A0000".U)
+        dut.clock.step()
+        if(i != 4) dut.io.vectorResp.toVRF.bits.data.expect(expectList(i))
+      }
     }
   }
 }
