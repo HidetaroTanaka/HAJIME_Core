@@ -168,10 +168,35 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VSE64              = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.NORMAL, MEM_LEN.D, load = false)
   def VLM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = true)
   def VSM                = generateBitPatForVecLDST(MOP.UNIT_STRIDE, UMOP.MASK_E8, MEM_LEN.B, load = false)
+  def VLSE8              = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.B, load = true)
+  def VLSE16             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.H, load = true)
+  def VLSE32             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.W, load = true)
+  def VLSE64             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.D, load = true)
+  def VSSE8              = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.B, load = false)
+  def VSSE16             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.H, load = false)
+  def VSSE32             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.W, load = false)
+  def VSSE64             = generateBitPatForVecLDST(MOP.STRIDED,     UMOP.NORMAL,  MEM_LEN.D, load = false)
+  def VLOXEI8            = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.B, load = true)
+  def VLOXEI16           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.H, load = true)
+  def VLOXEI32           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.W, load = true)
+  def VLOXEI64           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.D, load = true)
+  def VSOXEI8            = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.B, load = false)
+  def VSOXEI16           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.H, load = false)
+  def VSOXEI32           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.W, load = false)
+  def VSOXEI64           = generateBitPatForVecLDST(MOP.IDX_ORDERED, UMOP.NORMAL,  MEM_LEN.D, load = false)
 
-  def VADD_VV            = BitPat("b000000???????????000?????1010111")
-  def VADD_VX            = BitPat("b000000???????????100?????1010111")
-  def VADD_VI            = BitPat("b000000???????????011?????1010111")
+  def vsourceGen(vsource: VSOURCE.Type): String = {
+    vsource match {
+      case VSOURCE.VV => "000"
+      case VSOURCE.VX => "100"
+      case VSOURCE.VI => "011"
+      case _ => throw new Exception("amogus")
+    }
+  }
+  def vaddFunct6: String = "000000"
+  def VADD_VV            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VV) + "?????1010111")
+  def VADD_VX            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VX) + "?????1010111")
+  def VADD_VI            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VI) + "?????1010111")
 }
 object Amogus extends App {
   import VectorInstructions._

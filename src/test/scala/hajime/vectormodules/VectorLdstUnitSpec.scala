@@ -176,6 +176,33 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       }
       // WB: vle8.v
       dut.clock.step()
+      // ID: vle8.v (vl = 32, masked)
+      inputScalarDecode(inst = "vle8.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vle8.v", vm = false.B, vs1 = 0.U, vs2 = 0.U, vd = 16.U, vsew = 0.U, vl = 32.U, dut = dut)
+      dut.clock.step()
+      // EX: vle8.v idx=0-31, mask=(0 until 32).map(i => (i%7 != 0).B)
+      dut.io.signalIn.valid.poke(false.B)
+      for(i <- 0 until 32) {
+        // write only when index is not 7*n
+        dut.io.readVrf.resp.vm.poke((i%7 != 0).B)
+        dut.clock.step()
+      }
+      // WB: vle8.v
+      dut.clock.step()
+      // ID: vse64.v (vl = 4, no mask)
+      inputScalarDecode(inst = "vse64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vse64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 13.U, vsew = 3.U, vl = 4.U, dut = dut)
+      dut.clock.step()
+      // EX: vse64.v idx=0-3
+      dut.io.signalIn.valid.poke(false.B)
+      val base = 0x0706050403020100L
+      val acc = 0x0808080808080808L
+      for(i <- 0 until 4) {
+        dut.io.readVrf.resp.vdOut.poke((base + acc*i).U)
+        dut.clock.step()
+      }
+      // WB: vse64.v
+      dut.clock.step()
     }
   }
 }

@@ -171,7 +171,16 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.vectorResp.toVRF.bits.vtype := vectorReqRegNext.bits.vecConf.vtype
   io.vectorResp.toVRF.bits.index := vecIdxToVrfWrite
   io.vectorResp.toVRF.bits.last := RegNext(vecMemAccessLast)
-  io.vectorResp.toVRF.bits.data := io.dcache.r.bits.data
+  io.vectorResp.toVRF.bits.data := MuxLookup(scalarReqRegNext.bits.scalarDecode.memory_length, io.dcache.r.bits.data)(
+    Seq(
+      MEM_LEN.B -> 8,
+      MEM_LEN.H -> 16,
+      MEM_LEN.W -> 32,
+      MEM_LEN.D -> 64,
+    ).map {
+      case (memLen: EnumType, width: Int) => memLen.asUInt -> io.dcache.r.bits.data(width-1,0)
+    }
+  )
   io.vectorResp.toVRF.bits.vm := false.B
   io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm) && scalarReqRegNext.bits.scalarDecode.memRead
 }
