@@ -171,6 +171,14 @@ object RvvDecode extends DecodeConstants {
     VSSE16   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,    ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N, Y),
     VSSE32   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,    ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N, Y),
     VSSE64   -> List(Y, Branch.NONE,  Value1.RS1,  Value2.RS2,    ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N, Y),
+    VLOXEI8  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VLOXEI16 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.H, N, CSR_FCN.N, N, Y),
+    VLOXEI32 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.W, N, CSR_FCN.N, N, Y),
+    VLOXEI64 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_RD,   MEM_LEN.D, N, CSR_FCN.N, N, Y),
+    VSOXEI8  -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.B, N, CSR_FCN.N, N, Y),
+    VSOXEI16 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.H, N, CSR_FCN.N, N, Y),
+    VSOXEI32 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.W, N, CSR_FCN.N, N, Y),
+    VSOXEI64 -> List(Y, Branch.NONE,  Value1.RS1,  Value2.ZERO,   ARITHMETIC_FCN.ADDSUB,    N, N, WB_SEL.NONE,    MEM_FCN.M_WR,   MEM_LEN.D, N, CSR_FCN.N, N, Y),
 
     VADD_VV  -> List(Y, Branch.NONE,  Value1.ZERO, Value2.ZERO,   ARITHMETIC_FCN.NONE,      N, N, WB_SEL.NONE,    MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, Y),
   )

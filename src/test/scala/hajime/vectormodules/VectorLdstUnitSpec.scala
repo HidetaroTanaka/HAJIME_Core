@@ -74,6 +74,14 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case "vsse16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, Y)
       case "vsse32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, Y)
       case "vsse64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.D, N, CSR_FCN.N, N, Y)
+      case "vloxei8.v" => List(Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vloxei16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.H, N, CSR_FCN.N, N, Y)
+      case "vloxei32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.W, N, CSR_FCN.N, N, Y)
+      case "vloxei64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.D, N, CSR_FCN.N, N, Y)
+      case "vsoxei8.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vsoxei16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, Y)
+      case "vsoxei32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, Y)
+      case "vsoxei64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.D, N, CSR_FCN.N, N, Y)
 
       case _ => List (N, Branch.NONE, Value1.ZERO, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, N)
     }).map(_.litValue.toInt)
@@ -108,6 +116,14 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case "vsse16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case "vsse32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case "vsse64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vloxei8.v" => List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vloxei16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vloxei32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vloxei64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsoxei8.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsoxei16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsoxei32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsoxei64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.IDX_ORDERED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case _ => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, N, VEU_FUN.ADD, VSOURCE.VV)
     }).map(_.litValue.toInt)
   }
@@ -299,6 +315,15 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
         dut.clock.step()
         if(i != 4) dut.io.vectorResp.toVRF.bits.data.expect(expectList(i))
       }
+      // ID: vsse16.v (vl = 6, stride = -3, no mask)
+      // 0x4000: FF020000
+      // 0x4004: 00000504
+      // 0x4008: 0B0AFF08
+      // 0x400C: FF0E0000
+      // 0x4010: 00001110
+      // 0x4014: 1716FF14
+      // 0x4018: FF1A0000
+      // 0x401C: 00001D1C
     }
   }
 }
