@@ -263,10 +263,36 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       inputVectorDecode(inst = "vle64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 9.U, vsew = 3.U, vl = 4.U, dut = dut)
       dut.io.readVrf.resp.vdOut.poke(0xFF.U)
       dut.clock.step()
-      // EX: vle64.v, idx = 0-4, WB: vsse8.v
-      for(_ <- 0 until 4) {
+      dut.io.signalIn.valid.poke(false.B)
+      // EX: vle64.v, idx = 0-3, WB: vsse8.v
+      for(_ <- 0 until 4) dut.clock.step()
+      // WB: vle64.v
+      dut.clock.step()
+      // ID: vsse16.v (vl = 6, stride = -3, no mask)
+      // 0x4000: FF020000
+      // 0x4004: 00000504
+      // 0x4008: 0B0AFF08
+      // 0x400C: FF0E0000
+      // 0x4010: 00001110
+      // 0x4014: 1716FF14
+      // 0x4018: FF1A0000
+      // 0x401C: 00001D1C
+      inputScalarDecode(inst = "vsse16.v", rs1Value = 0x401E.U, rs2Value = "hFFFFFFFFFFFFFFFD".U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vsse16.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 15.U, vsew = 1.U, vl = 6.U, dut = dut)
+      dut.clock.step()
+      dut.io.signalIn.valid.poke(false.B)
+      // EX: vsse16.v, idx=0-4
+      for(_ <- 0 until 5) {
+        dut.io.readVrf.resp.vdOut.poke(0x0000.U)
         dut.clock.step()
       }
+      // ID: vle64.v (vl=4, no mask), EX: vsse16.v, idx=5
+      inputScalarDecode(inst = "vle64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vle64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 11.U, vsew = 3.U, vl = 4.U, dut = dut)
+      dut.clock.step()
+      // EX: vle64.v, idx=0-3
+      dut.io.signalIn.valid.poke(false.B)
+      for(_ <- 0 until 4) dut.clock.step()
       // WB: vle64.v
       dut.clock.step()
     }
