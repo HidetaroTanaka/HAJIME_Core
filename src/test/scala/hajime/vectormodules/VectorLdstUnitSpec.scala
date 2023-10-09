@@ -315,15 +315,40 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
         dut.clock.step()
         if(i != 4) dut.io.vectorResp.toVRF.bits.data.expect(expectList(i))
       }
-      // ID: vsse16.v (vl = 6, stride = -3, no mask)
-      // 0x4000: FF020000
-      // 0x4004: 00000504
-      // 0x4008: 0B0AFF08
-      // 0x400C: FF0E0000
+      // ID: vsoxei8.v (vl = 10, no mask)
+      // vs2: {28, 1, 31, 20, 23, 11, 13, 25, 24, 4}
+      // vs3: {00, 01, 02, 03, 04, 05, 06, 07, 08, 09}
+      // 0x4000: FF020100
+      // 0x4004: 00000509
+      // 0x4008: 050AFF08
+      // 0x400C: FF0E0600
       // 0x4010: 00001110
-      // 0x4014: 1716FF14
-      // 0x4018: FF1A0000
-      // 0x401C: 00001D1C
+      // 0x4014: 0416FF03
+      // 0x4018: FF1A0708
+      // 0x401C: 02001D00
+      inputScalarDecode(inst = "vsoxei8.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vsoxei8.v", vm = true.B, vs1 = 1.U, vs2 = 2.U, vd = 11.U, vsew = 0.U, vl = 10.U, dut = dut)
+      dut.clock.step()
+      // EX: vs0xei8.v idx=0-9
+      dut.io.signalIn.valid.poke(false.B)
+      for(i <- 0 until 10) {
+        val vs2Array = List(28, 1, 31, 20, 23, 11, 13, 25, 24, 4).map(_.U)
+        val vs3Array = (0 until 10).map(_.U)
+        dut.io.readVrf.resp.vs2Out.poke(vs2Array(i))
+        dut.io.readVrf.resp.vdOut.poke(vs3Array(i))
+        dut.clock.step()
+      }
+      // ID: vle64.v (vl=4, no mask)
+      inputScalarDecode(inst = "vle64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vle64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 11.U, vsew = 3.U, vl = 4.U, dut = dut)
+      dut.clock.step()
+      // EX: vle64.v, idx=0-3, WB: vle64.v
+      dut.io.signalIn.valid.poke(false.B)
+      for (i <- 0 until 5) {
+        val expectList = List("h00000509FF020100".U, "hFF0E0600050AFF08".U, "h0416FF0300001110".U, "h02001D00FF1A0708".U)
+        dut.clock.step()
+        if (i != 4) dut.io.vectorResp.toVRF.bits.data.expect(expectList(i))
+      }
     }
   }
 }

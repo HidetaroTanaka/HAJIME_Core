@@ -104,12 +104,20 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     scalarReqReg.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
   )) && (!vectorReqReg.valid || vecMemAccessLast))
 
+  val idxOffset = MuxLookup(scalarReqReg.bits.scalarDecode.memory_length, io.readVrf.resp.vs2Out)(Seq(
+    MEM_LEN.B -> 0,
+    MEM_LEN.H -> 1,
+    MEM_LEN.W -> 2,
+    MEM_LEN.D -> 3,
+  ).map{
+    case (memLength, shiftVal) => memLength.asUInt -> (io.readVrf.resp.vs2Out << shiftVal).asUInt
+  })
   val addr = vectorReqReg.bits.scalarVal + MuxLookup(vectorReqReg.bits.vectorDecode.mop, vectorReqReg.bits.scalarVal)(Seq(
     MOP.NONE -> scalarReqReg.bits.immediate,
     MOP.UNIT_STRIDE -> accumulator,
-    MOP.IDX_UNORDERED -> io.readVrf.resp.vs2Out,
+    MOP.IDX_UNORDERED -> idxOffset,
     MOP.STRIDED -> accumulator,
-    MOP.IDX_ORDERED -> io.readVrf.resp.vs2Out,
+    MOP.IDX_ORDERED -> idxOffset,
   ).map(x => (x._1.asUInt, x._2)))
   val data = Mux(vectorReqReg.valid, io.readVrf.resp.vdOut, scalarReqReg.bits.rs2Value)
 
