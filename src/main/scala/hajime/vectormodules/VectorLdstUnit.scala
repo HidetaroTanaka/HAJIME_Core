@@ -28,6 +28,7 @@ class VectorLdstUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val dcache = new AXI4liteIO(addr_width = params.xprlen, data_width = params.xprlen)
 }
 
+// TODO: VtypeのSEWと異なるEEWをillegalにする
 class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
   require(params.useVector, "Let's all love Lain")
   val strb_width = params.xprlen/8

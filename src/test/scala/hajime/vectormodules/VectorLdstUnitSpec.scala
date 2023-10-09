@@ -144,12 +144,37 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       inputScalarDecode(inst = "vle16.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
       inputVectorDecode(inst = "vle16.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 3.U, vsew = 1.U, vl = 16.U, dut = dut)
       dut.clock.step()
-      // EX: vle16.v idx=0-31, WB: vse8.v
+      // EX: vle16.v idx=0-15, WB: vse8.v
       dut.io.signalIn.valid.poke(false.B)
-      for(i <- 0 until 32) {
+      for(_ <- 0 until 16) {
         dut.clock.step()
       }
       // WB: vle16.v
+      dut.clock.step()
+      // ID: vse8.v (vl = 32, masked)
+      inputScalarDecode(inst = "vse8.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vse8.v", vm = false.B, vs1 = 0.U, vs2 = 0.U, vd = 5.U, vsew = 0.U, vl = 32.U, dut = dut)
+      dut.clock.step()
+      // EX: vse8.v idx=0-30, mask=(0 until 32).map(i => (i%3 == 0).B)
+      dut.io.signalIn.valid.poke(false.B)
+      for(i <- 0 until 31) {
+        dut.io.readVrf.resp.vdOut.poke(0xFF.U)
+        // write only when index is 3*n
+        dut.io.readVrf.resp.vm.poke((i%3==0).B)
+        dut.clock.step()
+      }
+      // ID: vle8.v (vl = 32, no mask), EX: vse8.v idx=31, mask=false
+      dut.io.readVrf.resp.vdOut.poke(0xFF.U)
+      dut.io.readVrf.resp.vm.poke(false.B)
+      inputScalarDecode(inst = "vle8.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vle8.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 10.U, vsew = 0.U, vl = 32.U, dut = dut)
+      dut.clock.step()
+      // EX: vle8.v idx=0-31, WB: vse8.v
+      dut.io.signalIn.valid.poke(false.B)
+      for(_ <- 0 until 32) {
+        dut.clock.step()
+      }
+      // WB: vle8.v
       dut.clock.step()
     }
   }
