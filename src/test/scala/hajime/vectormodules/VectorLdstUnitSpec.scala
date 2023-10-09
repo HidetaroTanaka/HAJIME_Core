@@ -64,6 +64,17 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case "vse16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, Y)
       case "vse32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, Y)
       case "vse64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.D, N, CSR_FCN.N, N, Y)
+      case "vlm.v" => List(Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vsm.v" => List (Y, Branch.NONE, Value1.RS1, Value2.I_IMM, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vlse8.v" => List(Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vlse16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.H, N, CSR_FCN.N, N, Y)
+      case "vlse32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.W, N, CSR_FCN.N, N, Y)
+      case "vlse64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_RD, MEM_LEN.D, N, CSR_FCN.N, N, Y)
+      case "vsse8.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.B, N, CSR_FCN.N, N, Y)
+      case "vsse16.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.H, N, CSR_FCN.N, N, Y)
+      case "vsse32.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.W, N, CSR_FCN.N, N, Y)
+      case "vsse64.v" => List (Y, Branch.NONE, Value1.RS1, Value2.RS2, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_WR, MEM_LEN.D, N, CSR_FCN.N, N, Y)
+
       case _ => List (N, Branch.NONE, Value1.ZERO, Value2.ZERO, ARITHMETIC_FCN.ADDSUB, N, N, WB_SEL.NONE, MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N, N)
     }).map(_.litValue.toInt)
   }
@@ -87,6 +98,16 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       case "vse16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case "vse32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case "vse64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vlm.v" => List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.MASK_E8, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsm.v" => List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.MASK_E8, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vlse8.v" => List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vlse16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vlse32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vlse64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, Y, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsse8.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsse16.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsse32.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
+      case "vsse64.v" => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.STRIDED, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV)
       case _ => List (N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, N, VEU_FUN.ADD, VSOURCE.VV)
     }).map(_.litValue.toInt)
   }
@@ -189,19 +210,64 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
       }
       // WB: vle8.v
       dut.clock.step()
-      // ID: vse64.v (vl = 4, no mask)
+      // ID: vse64.v (vl = 4, no mask), 0x4000 ~ 0x401F
       inputScalarDecode(inst = "vse64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
       inputVectorDecode(inst = "vse64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 13.U, vsew = 3.U, vl = 4.U, dut = dut)
       dut.clock.step()
       // EX: vse64.v idx=0-3
       dut.io.signalIn.valid.poke(false.B)
-      val base = 0x0706050403020100L
-      val acc = 0x0808080808080808L
       for(i <- 0 until 4) {
+        val base = 0x0706050403020100L
+        val acc = 0x0808080808080808L
         dut.io.readVrf.resp.vdOut.poke((base + acc*i).U)
         dut.clock.step()
       }
-      // WB: vse64.v
+      // ID: vlse16.v (vl = 8, stride = 2, no mask), WB: vse64.v
+      inputScalarDecode(inst = "vlse16.v", rs1Value = 0x4000.U, rs2Value = 2.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vlse16.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 19.U, vsew = 1.U, vl = 8.U, dut = dut)
+      dut.clock.step()
+      // EX: vlse16.v, idx=0-7
+      dut.io.signalIn.valid.poke(false.B)
+      dut.clock.step()
+      // idx0: 0x4000 -> 0x0100
+      // idx1: 0x4004 -> 0x0504
+      // ... idx7: 0x401C -> 0x1D1C
+      for(i <- 0 until 8) {
+        val base = 0x0100
+        val acc =  0x0404
+        dut.io.vectorResp.toVRF.bits.data.expect((base + acc*i).U)
+        dut.io.vectorResp.toVRF.valid.expect(true.B)
+        dut.io.vectorResp.toVRF.bits.writeReq.expect(true.B)
+        dut.clock.step()
+      }
+      // ID: vsse8.v (vl = 10, stride = 3, no mask)
+      // 0x4000: FF0201FF
+      // 0x4004: 07FF0504
+      // 0x4008: 0B0AFF08
+      // 0x400C: FF0E0DFF
+      // 0x4010: 13FF1110
+      // 0x4014: 1716FF14
+      // 0x4018: FF1A19FF
+      // 0x401C: 1F1E1D1C
+      inputScalarDecode(inst = "vsse8.v", rs1Value = 0x4000.U, rs2Value = 3.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vsse8.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 24.U, vsew = 0.U, vl = 10.U, dut = dut)
+      dut.clock.step()
+      // EX: vsse8.v, idx = 0-8
+      dut.io.signalIn.valid.poke(false.B)
+      for(_ <- 0 until 9) {
+        dut.io.readVrf.resp.vdOut.poke(0xFF.U)
+        dut.clock.step()
+      }
+      // ID: vle64.v (vl = 4, no mask), EX: vsse8.v, idx = 9
+      inputScalarDecode(inst = "vle64.v", rs1Value = 0x4000.U, rs2Value = 0.U, immediate = 0.U, dut = dut)
+      inputVectorDecode(inst = "vle64.v", vm = true.B, vs1 = 0.U, vs2 = 0.U, vd = 9.U, vsew = 3.U, vl = 4.U, dut = dut)
+      dut.io.readVrf.resp.vdOut.poke(0xFF.U)
+      dut.clock.step()
+      // EX: vle64.v, idx = 0-4, WB: vsse8.v
+      for(_ <- 0 until 4) {
+        dut.clock.step()
+      }
+      // WB: vle64.v
       dut.clock.step()
     }
   }
