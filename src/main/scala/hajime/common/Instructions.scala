@@ -90,40 +90,6 @@ object Instructions {
   def CSRRWI             = BitPat("b?????????????????101?????1110011")
   def CSRRSI             = BitPat("b?????????????????110?????1110011")
   def CSRRCI             = BitPat("b?????????????????111?????1110011")
-  // im gonna add RVOchimus here
-  def CUSTOM0            = BitPat("b?????????????????000?????0001011")
-  def CUSTOM0_RS1        = BitPat("b?????????????????010?????0001011")
-  def CUSTOM0_RS1_RS2    = BitPat("b?????????????????011?????0001011")
-  def CUSTOM0_RD         = BitPat("b?????????????????100?????0001011")
-  def CUSTOM0_RD_RS1     = BitPat("b?????????????????110?????0001011")
-  def CUSTOM0_RD_RS1_RS2 = BitPat("b?????????????????111?????0001011")
-  def CUSTOM1            = BitPat("b?????????????????000?????0101011")
-  def CUSTOM1_RS1        = BitPat("b?????????????????010?????0101011")
-  def CUSTOM1_RS1_RS2    = BitPat("b?????????????????011?????0101011")
-  def CUSTOM1_RD         = BitPat("b?????????????????100?????0101011")
-  def CUSTOM1_RD_RS1     = BitPat("b?????????????????110?????0101011")
-  def CUSTOM1_RD_RS1_RS2 = BitPat("b?????????????????111?????0101011")
-  def CUSTOM2            = BitPat("b?????????????????000?????1011011")
-  def CUSTOM2_RS1        = BitPat("b?????????????????010?????1011011")
-  def CUSTOM2_RS1_RS2    = BitPat("b?????????????????011?????1011011")
-  def CUSTOM2_RD         = BitPat("b?????????????????100?????1011011")
-  def CUSTOM2_RD_RS1     = BitPat("b?????????????????110?????1011011")
-  def CUSTOM2_RD_RS1_RS2 = BitPat("b?????????????????111?????1011011")
-  def CUSTOM3            = BitPat("b?????????????????000?????1111011")
-  def CUSTOM3_RS1        = BitPat("b?????????????????010?????1111011")
-  def CUSTOM3_RS1_RS2    = BitPat("b?????????????????011?????1111011")
-  def CUSTOM3_RD         = BitPat("b?????????????????100?????1111011")
-  def CUSTOM3_RD_RS1     = BitPat("b?????????????????110?????1111011")
-  def CUSTOM3_RD_RS1_RS2 = BitPat("b?????????????????111?????1111011")
-  def SLLI_RV32          = BitPat("b0000000??????????001?????0010011")
-  def SRLI_RV32          = BitPat("b0000000??????????101?????0010011")
-  def SRAI_RV32          = BitPat("b0100000??????????101?????0010011")
-  def RDCYCLE            = BitPat("b11000000000000000010?????1110011")
-  def RDTIME             = BitPat("b11000000000100000010?????1110011")
-  def RDINSTRET          = BitPat("b11000000001000000010?????1110011")
-  def RDCYCLEH           = BitPat("b11001000000000000010?????1110011")
-  def RDTIMEH            = BitPat("b11001000000100000010?????1110011")
-  def RDINSTRETH         = BitPat("b11001000001000000010?????1110011")
 }
 
 object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
@@ -193,23 +159,108 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case _ => throw new Exception("amogus")
     }
   }
-  def vaddFunct6: String = "000000"
-  def VADD_VV            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VV) + "?????1010111")
-  def VADD_VX            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VX) + "?????1010111")
-  def VADD_VI            = BitPat("b" + vaddFunct6 + "???????????" + vsourceGen(VSOURCE.VI) + "?????1010111")
-}
-object Amogus extends App {
-  import VectorInstructions._
-  println(VLE8)
-  println(VLE16)
-  println(VLE32)
-  println(VLE64)
-  println(VSE8)
-  println(VSE16)
-  println(VSE32)
-  println(VSE64)
-  println(VLM)
-  println(VSM)
+  def vFunct6Gen(vInst: String): String = {
+    vInst match {
+      case "vadd" => "000000"
+      case "vsub" => "000010"
+      case "vrsub" => "000011"
+      case "vadc" => "010000"
+      case "vmadc" => "010001"
+      case "vsbc" => "010010"
+      case "vmsbc" => "010011"
+      case "vand" => "001001"
+      case "vor" => "001010"
+      case "vxor" => "001011"
+      case "vmseq" => "011000"
+      case "vmsne" => "011001"
+      case "vmsltu" => "011010"
+      case "vmslt" => "011011"
+      case "vmsleu" => "011100"
+      case "vmsle" => "011101"
+      case "vmsgtu" => "011110"
+      case "vmsgt" => "011111"
+      case "vminu" => "000100"
+      case "vmin" => "000101"
+      case "vmaxu" => "000110"
+      case "vmax" => "000111"
+      case "vmerge" => "010111"
+      case "vmv" => "010111"
+      case _ => throw new Exception(s"inst $vInst is invalid")
+    }
+  }
+  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String): BitPat = {
+    if(vm == "?" || vm == "0" || vm == "1") {
+      BitPat("b" + vFunct6Gen(vInst) + vm + "??????????" + vsourceGen(vsource) + "?????1010111")
+    } else {
+      throw new Exception(s"vm $vm is invalid")
+    }
+  }
+  def vArithGen(vInst: String, vsource: VSOURCE.Type): BitPat = vArithGen(vInst, vsource, vm = "?")
+  def VADD_VV  = vArithGen(vInst = "vadd", vsource = VSOURCE.VV)
+  def VADD_VX  = vArithGen(vInst = "vadd", vsource = VSOURCE.VX)
+  def VADD_VI  = vArithGen(vInst = "vadd", vsource = VSOURCE.VI)
+  def VSUB_VV  = vArithGen(vInst = "vsub", vsource = VSOURCE.VV)
+  def VSUB_VX  = vArithGen(vInst = "vsub", vsource = VSOURCE.VX)
+  def VRSUB_VX = vArithGen(vInst = "vrsub", vsource = VSOURCE.VX)
+  def VRSUB_VI = vArithGen(vInst = "vrsub", vsource = VSOURCE.VI)
+  def VADC_VVM = vArithGen(vInst = "vadc",  vsource = VSOURCE.VV, vm = "0")
+  def VADC_VXM = vArithGen(vInst = "vadc",  vsource = VSOURCE.VX, vm = "0")
+  def VADC_VIM = vArithGen(vInst = "vadc",  vsource = VSOURCE.VI, vm = "0")
+  def VMADC_VVM = vArithGen(vInst = "vmadc", vsource = VSOURCE.VV, vm = "0")
+  def VMADC_VXM = vArithGen(vInst = "vmadc", vsource = VSOURCE.VX, vm = "0")
+  def VMADC_VIM = vArithGen(vInst = "vmadc", vsource = VSOURCE.VI, vm = "0")
+  def VMADC_VV  = vArithGen(vInst = "vmadc", vsource = VSOURCE.VV, vm = "1")
+  def VMADC_VX  = vArithGen(vInst = "vmadc", vsource = VSOURCE.VX, vm = "1")
+  def VMADC_VI  = vArithGen(vInst = "vmadc", vsource = VSOURCE.VI, vm = "1")
+  def VSBC_VVM  = vArithGen(vInst = "vsbc", vsource = VSOURCE.VV, vm = "0")
+  def VSBC_VXM  = vArithGen(vInst = "vsbc", vsource = VSOURCE.VX, vm = "0")
+  def VMSBC_VVM = vArithGen(vInst = "vmsbc", vsource = VSOURCE.VV, vm = "0")
+  def VMSBC_VXM = vArithGen(vInst = "vmsbc", vsource = VSOURCE.VX, vm = "0")
+  def VMSBC_VV  = vArithGen(vInst = "vmsbc", vsource = VSOURCE.VV, vm = "1")
+  def VMSBC_VX  = vArithGen(vInst = "vmsbc", vsource = VSOURCE.VX, vm = "1")
+  def VAND_VV   = vArithGen(vInst = "vand", vsource = VSOURCE.VV)
+  def VAND_VX   = vArithGen(vInst = "vand", vsource = VSOURCE.VX)
+  def VAND_VI   = vArithGen(vInst = "vand", vsource = VSOURCE.VI)
+  def VOR_VV    = vArithGen(vInst = "vor", vsource = VSOURCE.VV)
+  def VOR_VX    = vArithGen(vInst = "vor", vsource = VSOURCE.VX)
+  def VOR_VI    = vArithGen(vInst = "vor", vsource = VSOURCE.VI)
+  def VXOR_VV   = vArithGen(vInst = "vxor", vsource = VSOURCE.VV)
+  def VXOR_VX   = vArithGen(vInst = "vxor", vsource = VSOURCE.VX)
+  def VXOR_VI   = vArithGen(vInst = "vxor", vsource = VSOURCE.VI)
+  def VMSEQ_VV  = vArithGen(vInst = "vmseq", vsource = VSOURCE.VV)
+  def VMSEQ_VX  = vArithGen(vInst = "vmseq", vsource = VSOURCE.VX)
+  def VMSEQ_VI  = vArithGen(vInst = "vmseq", vsource = VSOURCE.VI)
+  def VMSNE_VV  = vArithGen(vInst = "vmsne", vsource = VSOURCE.VV)
+  def VMSNE_VX  = vArithGen(vInst = "vmsne", vsource = VSOURCE.VX)
+  def VMSNE_VI  = vArithGen(vInst = "vmsne", vsource = VSOURCE.VI)
+  def VMSLTU_VV = vArithGen(vInst = "vmsltu", vsource = VSOURCE.VV)
+  def VMSLTU_VX = vArithGen(vInst = "vmsltu", vsource = VSOURCE.VX)
+  def VMSLT_VV = vArithGen(vInst = "vmslt", vsource = VSOURCE.VV)
+  def VMSLT_VX = vArithGen(vInst = "vmslt", vsource = VSOURCE.VX)
+  def VMSLEU_VV = vArithGen(vInst = "vmsleu", vsource = VSOURCE.VV)
+  def VMSLEU_VX = vArithGen(vInst = "vmsleu", vsource = VSOURCE.VX)
+  def VMSLEU_VI = vArithGen(vInst = "vmsleu", vsource = VSOURCE.VI)
+  def VMSLE_VV = vArithGen(vInst = "vmsle", vsource = VSOURCE.VV)
+  def VMSLE_VX = vArithGen(vInst = "vmsle", vsource = VSOURCE.VX)
+  def VMSLE_VI = vArithGen(vInst = "vmsle", vsource = VSOURCE.VI)
+  def VMSGTU_VX = vArithGen(vInst = "vmsgtu", vsource = VSOURCE.VX)
+  def VMSGTU_VI = vArithGen(vInst = "vmsgtu", vsource = VSOURCE.VI)
+  def VMSGT_VX = vArithGen(vInst = "vmsgt", vsource = VSOURCE.VX)
+  def VMSGT_VI = vArithGen(vInst = "vmsgt", vsource = VSOURCE.VI)
+  def VMINU_VV = vArithGen(vInst = "vminu", vsource = VSOURCE.VV)
+  def VMINU_VX = vArithGen(vInst = "vminu", vsource = VSOURCE.VX)
+  def VMIN_VV = vArithGen(vInst = "vmin", vsource = VSOURCE.VV)
+  def VMIN_VX = vArithGen(vInst = "vmin", vsource = VSOURCE.VX)
+  def VMAXU_VV = vArithGen(vInst = "vmaxu", vsource = VSOURCE.VV)
+  def VMAXU_VX = vArithGen(vInst = "vmaxu", vsource = VSOURCE.VX)
+  def VMAX_VV = vArithGen(vInst = "vmax", vsource = VSOURCE.VV)
+  def VMAX_VX = vArithGen(vInst = "vmax", vsource = VSOURCE.VX)
+  def VMERGE_VVM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VV, vm = "0")
+  def VMERGE_VXM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VX, vm = "0")
+  def VMERGE_VIM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VI, vm = "0")
+  def VMV_VV = vArithGen(vInst = "vmv", vsource = VSOURCE.VV, vm = "1")
+  def VMV_VX = vArithGen(vInst = "vmv", vsource = VSOURCE.VX, vm = "1")
+  def VMV_VI = vArithGen(vInst = "vmv", vsource = VSOURCE.VI, vm = "1")
 }
 
 object Causes {
