@@ -89,12 +89,13 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
   def inputScalarDecode(inst: String, rs1Value: UInt, rs2Value: UInt, immediate: UInt, dut: VectorLdstUnitWithDcache): Unit = {
     val scalarDecode = instScalarDecode(inst)
     dut.io.signalIn.valid.poke(scalarDecode(0).B)
-    for((d,i) <- dut.io.signalIn.bits.scalar.scalarDecode.toList zip (1 until 14)) {
+    for((d,i) <- dut.io.signalIn.bits.vector.scalarDecode.toList zip (1 until 14)) {
       d.poke(scalarDecode(i).U)
     }
     dut.io.signalIn.bits.vector.scalarVal.poke(rs1Value)
     dut.io.signalIn.bits.scalar.rs2Value.poke(rs2Value)
     dut.io.signalIn.bits.scalar.immediate.poke(immediate)
+    dut.io.signalIn.bits.scalar.rdIndex.poke(13.U)
   }
   def instVectorDecode(inst: String): List[Int] = {
     (inst match {

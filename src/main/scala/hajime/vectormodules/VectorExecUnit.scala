@@ -1,12 +1,12 @@
 package hajime.vectormodules
 
 import chisel3._
+import chisel3.experimental.BundleLiterals._
 import circt.stage.ChiselStage
 import chisel3.util._
 import hajime.common._
 import hajime.publicmodules._
-import chisel3.experimental.BundleLiterals._
-import firrtl.backends.experimental.smt.False
+import hajime.simple4Stage._
 
 class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   val vs1 = UInt(5.W)
@@ -16,7 +16,10 @@ class VectorExecUnitSignalIn(implicit params: HajimeCoreParams) extends Bundle {
   // val vm = Bool()
   val scalarVal = UInt(params.xprlen.W)
   val vectorDecode = new VectorDecoderResp()
+  val scalarDecode = new ID_output()
   val vecConf = new VecCtrlUnitResp()
+  val pc = new ProgramCounter()
+  val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
 class VectorExecUnitDataOut(implicit params: HajimeCoreParams) extends Bundle {
@@ -27,6 +30,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new VectorExecUnitSignalIn()))
   val readVrf = Flipped(new VecRegFileReadIO())
   val dataOut = Output(new VectorExecUnitDataOut())
+  val toExWbReg = Output(Valid(new EX_WB_IO()))
 }
 
 /**
@@ -34,6 +38,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
  * @param params
  */
 abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
+  require(params.useVector, "Insert Funni Amongus Reference here")
   // 演算内容をここに書けばop関数はいらない？
   def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt]
 
@@ -89,11 +94,15 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 
   val execResult = exec(instInfoReg.bits.vectorDecode, valueToExec)
 
-  /*
-  io.dataOut.toVRF.bits.data := MuxLookup(io.signalIn.bits.vectorDecode.veuFun, 0.U) (
-    (0 until instNum).map(i => i.U -> exec(io.signalIn.bits.scalarDecode, io.signalIn.bits.vectorDecode, io.dataIn)(i))
-  )
-   */
+  io.toExWbReg.valid := io.dataOut.toVRF.bits.last
+  io.toExWbReg.bits.dataSignals := DontCare
+  io.toExWbReg.bits.dataSignals.pc := instInfoReg.bits.pc
+  io.toExWbReg.bits.ctrlSignals.decode := instInfoReg.bits.scalarDecode
+  io.toExWbReg.bits.ctrlSignals.rd_index := 0.U
+  io.toExWbReg.bits.exceptionSignals.valid := false.B
+  io.toExWbReg.bits.exceptionSignals.bits := DontCare
+  io.toExWbReg.bits.vectorCsrPorts.get := DontCare
+  io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
 }
 
 class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
@@ -204,7 +213,9 @@ class LogicalVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExe
 }
 
 object LogicalVectorExecUnit extends App {
-  implicit val params: HajimeCoreParams = HajimeCoreParams()
-  def apply(implicit params: HajimeCoreParams): LogicalVectorExecUnit = new LogicalVectorExecUnit()
+  implicit val params: HajimeCoreParams = HajimeCoreParams(useVector = true)
+  def apply(implicit params: HajimeCoreParams): LogicalVectorExecUnit = {
+    if(params.useVector) new LogicalVectorExecUnit() else throw new Exception("vector not enabled in HajimeCoreParams")
+  }
   ChiselStage.emitSystemVerilogFile(new LogicalVectorExecUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
