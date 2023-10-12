@@ -219,3 +219,60 @@ object LogicalVectorExecUnit extends App {
   }
   ChiselStage.emitSystemVerilogFile(new LogicalVectorExecUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
+
+class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
+  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = {
+    import values._
+    val vadcResult = (vs2Out +& vs1Out) + vm
+    val vsbcResult = (vs2Out -& vs1Out) - vm
+    val vs2Mask = vs2Out(0)
+    val vs1Mask = vs1Out(0)
+    // vadd, vsub, vrsub, vadc, vmadc, (vsbc, vmsbc),
+    // seq, sne,
+    // sltu, slt, sleu, sle,
+    // sgtu, sgt,
+    // minu, min,
+    // maxu, max,
+    // merge, mv
+    // TODO: optimise (64bit加減算器1つで再現できる）
+    // is firtool doing enough optimisations?
+    vs2Out + vs1Out :: vs2Out - vs1Out :: vs1Out - vs2Out :: vadcResult.tail(1) :: vadcResult.head(1) :: vsbcResult.tail(1) :: vsbcResult.head(1) ::
+      (vs2Out === vs1Out) :: !(vs2Out === vs1Out) ::
+      (vs2Out < vs1Out) :: (vs2Out.asSInt < vs1Out.asSInt) :: !(vs2Out > vs1Out) :: !(vs2Out.asSInt > vs2Out.asSInt) ::
+      (vs2Out > vs1Out) :: (vs2Out.asSInt > vs2Out.asSInt) ::
+      Mux(vs2Out < vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt < vs1Out.asSInt, vs2Out, vs1Out) ::
+      Mux(vs2Out > vs1Out, vs2Out, vs2Out) :: Mux(vs2Out.asSInt > vs1Out.asSInt, vs2Out, vs1Out) ::
+      Mux(vm, vs1Out, vs2Out) :: vs1Out ::
+      (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) ::
+      (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
+      (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) :: Nil
+  }
+
+  import VEU_FUN._
+  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue1(0), execValue1)
+  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue2(0), execValue2)
+  val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
+    Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR).zipWithIndex.map(
+      x => x._1.asUInt -> execResult(x._2)
+    )
+  )
+
+  io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, MuxLookup(idx(2, 0), rawResult)(
+    (0 until 8).map(
+      i => i.U -> Cat((0 until 8).reverse.map(
+        j => if (j == i) rawResult(j) else io.readVrf.resp.vdOut(j)
+      ))
+    )
+  ), rawResult)
+  io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.writeAsMask
+  // vadc, vmadc, bsbc, vmsbc, vmerge, vmand...vmxnor writes to VRF regardless of vm
+  io.dataOut.toVRF.bits.writeReq := instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask || instInfoReg.bits.vectorDecode.veuFun.isMaskInst
+}
+
+object IntegerAluExecUnit extends App {
+  implicit val params: HajimeCoreParams = HajimeCoreParams(useVector = true)
+  def apply(implicit params: HajimeCoreParams): IntegerAluExecUnit = {
+    if(params.useVector) new IntegerAluExecUnit() else throw new Exception("fuck")
+  }
+  ChiselStage.emitSystemVerilogFile(new IntegerAluExecUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+}
