@@ -15,8 +15,8 @@ class VecRegIdxWithVtype(implicit params: HajimeCoreParams) extends Bundle {
 // TODO: ベクタ実行ユニットの数だけ各IOを用意 Vec(vrfPortNum, ...)
 class VrfReadyTableIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Bundle {
   val fromVecExecUnit = Vec(vrfPortNum, Flipped(ValidIO(new VecRegFileWriteReq())))
-  // IDステージから発行される命令のvd
-  val invalidateIdx = Flipped(ValidIO(new VecRegIdxWithVtype()))
+  // vdへ書き込みを行うか否か
+  val invalidatevd = Input(Bool())
   // IDステージへ各ベクトルレジスタが有効か否かを伝える
   val vs1Check = Flipped(DecoupledIO(new VecRegIdxWithVtype()))
   val vs2Check = Flipped(DecoupledIO(new VecRegIdxWithVtype()))
@@ -152,9 +152,9 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   )) || vdOnlyOneWrite || vrfWholeIdxReadyTable(io.vdCheck.bits.idx))
 
   // 書き込むvd
-  when(io.invalidateIdx.valid) {
-    vrfZeroIdxReadyTable(io.invalidateIdx.bits.idx) := false.B
-    vrfWholeIdxReadyTable(io.invalidateIdx.bits.idx) := false.B
+  when(io.invalidatevd) {
+    vrfZeroIdxReadyTable(io.vdCheck.bits.idx) := false.B
+    vrfWholeIdxReadyTable(io.vdCheck.bits.idx) := false.B
   }
 }
 

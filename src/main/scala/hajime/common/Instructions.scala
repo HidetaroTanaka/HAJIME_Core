@@ -188,13 +188,14 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case _ => throw new Exception(s"inst $vInst is invalid")
     }
   }
-  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String): BitPat = {
-    if(vm == "?" || vm == "0" || vm == "1") {
-      BitPat("b" + vFunct6Gen(vInst) + vm + "??????????" + vsourceGen(vsource) + "?????1010111")
+  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String, vs2Zero: Boolean) = {
+    if (vm == "?" || vm == "0" || vm == "1") {
+      BitPat("b" + vFunct6Gen(vInst) + vm + "??????????" + vsourceGen(vsource) + (if(vs2Zero) "00000" else "?????") + "1010111")
     } else {
       throw new Exception(s"vm $vm is invalid")
     }
   }
+  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String): BitPat = vArithGen(vInst, vsource, vm, vs2Zero = false)
   def vArithGen(vInst: String, vsource: VSOURCE.Type): BitPat = vArithGen(vInst, vsource, vm = "?")
   def VADD_VV  = vArithGen(vInst = "vadd", vsource = VSOURCE.VV)
   def VADD_VX  = vArithGen(vInst = "vadd", vsource = VSOURCE.VX)
@@ -258,9 +259,9 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMERGE_VVM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VV, vm = "0")
   def VMERGE_VXM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VX, vm = "0")
   def VMERGE_VIM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VI, vm = "0")
-  def VMV_VV = vArithGen(vInst = "vmv", vsource = VSOURCE.VV, vm = "1")
-  def VMV_VX = vArithGen(vInst = "vmv", vsource = VSOURCE.VX, vm = "1")
-  def VMV_VI = vArithGen(vInst = "vmv", vsource = VSOURCE.VI, vm = "1")
+  def VMV_VV = vArithGen(vInst = "vmv", vsource = VSOURCE.VV, vm = "1", vs2Zero = true)
+  def VMV_VX = vArithGen(vInst = "vmv", vsource = VSOURCE.VX, vm = "1", vs2Zero = true)
+  def VMV_VI = vArithGen(vInst = "vmv", vsource = VSOURCE.VI, vm = "1", vs2Zero = true)
 }
 
 object Causes {

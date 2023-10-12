@@ -8,17 +8,10 @@ import chisel3.experimental.BundleLiterals._
 
 class VrfReadyTableSpec extends AnyFlatSpec with ChiselScalatestTester {
   def invalidate(dut: VrfReadyTable, instVd: UInt, instVsew: UInt, instVm: Bool, veuNum: Int, resultInNextClock: Boolean)(implicit params: HajimeCoreParams): Unit = {
-    dut.io.invalidateIdx.valid.poke(true.B)
-    dut.io.invalidateIdx.bits.idx.poke(instVd)
-    dut.io.invalidateIdx.bits.vtype.poke(new VtypeBundle().Lit(
-      _.vill -> false.B,
-      _.vma -> false.B,
-      _.vta -> false.B,
-      _.vsew -> instVsew,
-      _.vlmul -> 0.U
-    ))
-    dut.io.invalidateIdx.bits.vm.poke(instVm)
+    dut.io.invalidatevd.poke(true.B)
     dut.io.vs1Check.valid.poke(false.B)
+    dut.io.vdCheck.valid.poke(true.B)
+    dut.io.vdCheck.bits.idx.poke(instVd)
     dut.clock.step()
     dut.io.fromVecExecUnit(veuNum).valid.poke(true.B)
     dut.io.fromVecExecUnit(veuNum).bits.vd.poke(instVd)

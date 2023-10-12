@@ -9,6 +9,7 @@ import hajime.publicmodules._
 import hajime.simple4Stage._
 
 class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
+  import VEU_FUN._
   require(params.useVector, "fuck")
   val io = IO(new CPUIO())
   io := DontCare
@@ -128,6 +129,28 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     bypassingUnit.io.ID.out.rs2_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.bits.rd.valid),
     bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
   ))
+
+  val vtypeBypass = Wire(new VtypeBundle())
+
+  vtypeBypass := Mux(vecCtrlUnit.io.resp.valid, vecCtrlUnit.io.resp.bits.vtype, EX_WB_REG.bits.vectorCsrPorts.get.vtype)
+
+  vectorDecoder.io.inst := decoded_inst
+
+  // ベクトル命令がベクトル設定・メモリアクセスでなく，かつvvならばvs1を使用する
+  vrfReadyTable.io.vs1Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && vectorDecoder.io.out.mop === MOP.NONE.asUInt && (vectorDecoder.io.out.vSource === VSOURCE.VV.asUInt)
+  vrfReadyTable.io.vs1Check.bits.idx := decoded_inst.rs1
+  vrfReadyTable.io.vs1Check.bits.vtype := vtypeBypass
+  vrfReadyTable.io.vs1Check.bits.vm := vectorDecoder.io.out.veuFun.isMaskInst
+  // ベクトル設定命令でなく，かつメモリアクセスでないまたはインデックスならばvs2を使用する
+  vrfReadyTable.io.vs2Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && ((vectorDecoder.io.out.mop === MOP.NONE.asUInt) || (vectorDecoder.io.out.mop === MOP.IDX_ORDERED.asUInt))
+  vrfReadyTable.io.vs2Check.bits.idx := decoded_inst.rs2
+  vrfReadyTable.io.vs2Check.bits.vtype := vtypeBypass
+  vrfReadyTable.io.vs2Check.bits.vm := vectorDecoder.io.out.veuFun.isMaskInst
+  vrfReadyTable.io.vdCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt)
+  vrfReadyTable.io.vdCheck.bits.idx := decoded_inst.rd
+  vrfReadyTable.io.vdCheck.bits.vtype := vtypeBypass
+  vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
+  vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && !vectorDecoder.io.out.vm
 
   if (params.useVector) {
     vectorDecoder.get.io.inst := decoded_inst
