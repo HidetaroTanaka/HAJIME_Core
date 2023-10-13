@@ -59,6 +59,17 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   val rs1_required_but_not_valid = WireInit(false.B)
   val rs2_required_but_not_valid = WireInit(false.B)
 
+  // これらがtrueならばベクトル命令を発行できる
+  val vs1NonRequiredOrReady = !vrfReadyTable.io.vs1Check.valid || vrfReadyTable.io.vs1Check.ready
+  val vs2NonRequiredOrReady = !vrfReadyTable.io.vs2Check.valid || vrfReadyTable.io.vs2Check.ready
+  val vdNonRequiredOrReady = !vrfReadyTable.io.vdCheck.valid || vrfReadyTable.io.vdCheck.ready
+  val vmNonRequiredOrReady = !vrfReadyTable.io.vmCheck.valid || vrfReadyTable.io.vmCheck.ready
+  // 使用するベクトル機能ユニットが空いているか否か
+  val vecLdstUnitReady = vectorLdstUnit.io.signalIn.ready
+  val vecAluExecUnitReady = vecAluExecUnit.map(_.io.signalIn.ready)
+  // 上記で1つでもfalseのものがあればベクトル命令は発行できない
+  val vectorInstStall = !(vs1NonRequiredOrReady && vs2NonRequiredOrReady && vdNonRequiredOrReady && vmNonRequiredOrReady)
+
   // START OF ID STAGE
   // TODO: 可読性向上のため，validのみのブロックとvalid && readyのブロックに分ける．EX，WBも同様
 
@@ -70,7 +81,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
   // flushならばストールさせる必要はない
-  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline)
+  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline || vectorInstStall)
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
@@ -146,25 +157,24 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   vrfReadyTable.io.vs2Check.bits.idx := decoded_inst.rs2
   vrfReadyTable.io.vs2Check.bits.vtype := vtypeBypass
   vrfReadyTable.io.vs2Check.bits.vm := vectorDecoder.io.out.veuFun.isMaskInst
+  // ベクトル設定命令でないならばvdを使用する
   vrfReadyTable.io.vdCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt)
   vrfReadyTable.io.vdCheck.bits.idx := decoded_inst.rd
   vrfReadyTable.io.vdCheck.bits.vtype := vtypeBypass
   vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
+  // vmフィールドが1ならばvmを使用する
   vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && !vectorDecoder.io.out.vm
 
-  if (params.useVector) {
-    vectorDecoder.get.io.inst := decoded_inst
-    when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
-      ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.get.io.out
-    }
-    // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
-    // 1 -> マスクなし，全て書き込む
-    // （マスクを使わないベクタ命令は全てvm=1か？）
-    ID_EX_REG.bits.vectorDataSignals.get.mask := decoded_inst.bits(25)
-    ID_EX_REG.bits.vectorDataSignals.get.vs1 := decoded_inst.rs1
-    ID_EX_REG.bits.vectorDataSignals.get.vs2 := decoded_inst.rs2
-    ID_EX_REG.bits.vectorDataSignals.get.vd := decoded_inst.rd
+  when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
+    ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.io.out
   }
+  // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
+  // 1 -> マスクなし，全て書き込む
+  // （マスクを使わないベクタ命令は全てvm=1か？）
+  ID_EX_REG.bits.vectorDataSignals.get.mask := vectorDecoder.io.out.vm
+  ID_EX_REG.bits.vectorDataSignals.get.vs1 := decoded_inst.rs1
+  ID_EX_REG.bits.vectorDataSignals.get.vs2 := decoded_inst.rs2
+  ID_EX_REG.bits.vectorDataSignals.get.vd := decoded_inst.rd
 
   if (params.debug) {
     ID_EX_REG.bits.debug.get.instruction := decoded_inst.bits
