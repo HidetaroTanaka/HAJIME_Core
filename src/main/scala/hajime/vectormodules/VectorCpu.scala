@@ -83,12 +83,24 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   // 使用するオペランドで1つでもfalseのものがある，または使用するベクトル機能ユニットが利用できないならばベクトル命令は発行できない
   val vectorInstStall = !(vs1NonRequiredOrReady && vs2NonRequiredOrReady && vdNonRequiredOrReady && vmNonRequiredOrReady && vecLdstUnitNonRequiredOrReady && vecAluExecUnitNonRequiredOrReady)
 
+  // メモリアクセス命令であればldstUnitがreadyである必要があり，
+  // 乗算命令であればmultiplier.respがvalidである必要がある
+  // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある
+  val vecExecUnitsReady: Seq[Bool] = (0 until params.vecAluExecUnitNum + 1).map(i =>
+    if (i == 0) vectorLdstUnit.io.signalIn.ready else vecAluExecUnit(i + 1).io.signalIn.ready
+  )
+  if (params.debug) assert(vecExecUnitsReady.map(_.asUInt).reduce(_ +& _) <= 1.U, s"Multiple VecUnits last Error.")
+
   // START OF ID STAGE
   // TODO: 可読性向上のため，validのみのブロックとvalid && readyのブロックに分ける．EX，WBも同様
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
+  // ベクトル命令がEXに存在し，そのベクトル命令がリタイアしない，かつIDがスカラ命令・発行できないベクトル命令ならば同じくストール
+  // vecExecUnitのうちreadyでないものが存在する
+  val vecInstInEx = !vecExecUnitsReady.reduce(_ && _)
   // flushならばストールさせる必要はない
-  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline || vectorInstStall)
+  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline || vectorInstStall
+    || (vecInstInEx && decoder.io.out.valid && (!decoder.io.out.bits.vector.get || vectorDecoder.io.out.isConfsetInst)))
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
@@ -174,6 +186,8 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
   // vmフィールドが1ならばvmを使用する
   vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && !vectorDecoder.io.out.vm
+  // ベクトル設定命令でなく，かつストア命令で無ければvdへ書き込む
+  vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && (vectorDecoder.io.out.avl_sel =/= AVL_SEL.NONE.asUInt) && !decoder.io.out.bits.memWrite
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
   when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec) {
@@ -264,9 +278,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     vecRegFile.io.readReq(i + 1) <> d.io.readVrf
   }
   // vecRegFileへのレジスタ書き込み
-  vecRegFile.io.writeReq(0) <> vectorLdstUnit.io.vectorResp.toVRF
+  vecRegFile.io.writeReq(0) := vectorLdstUnit.io.vectorResp.toVRF
+  vrfReadyTable.io.fromVecExecUnit(0) := vectorLdstUnit.io.vectorResp.toVRF
   for((d,i) <- vecAluExecUnit.zipWithIndex) {
-    vecRegFile.io.writeReq(i + 1) <> d.io.dataOut.toVRF
+    vecRegFile.io.writeReq(i + 1) := d.io.dataOut.toVRF
+    vrfReadyTable.io.fromVecExecUnit(i + 1) := d.io.dataOut.toVRF
   }
 
   if (params.debug) {
@@ -283,19 +299,6 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     Value2.S_IMM.asUInt -> ID_EX_REG.bits.dataSignals.imm,
     Value2.PC.asUInt -> ID_EX_REG.bits.dataSignals.pc.addr,
   ))
-
-  if (params.useVector) {
-    // ベクタメモリアクセス命令が有効ならaluへの入力を上書き
-    // UNIT_STRIDEならrs1+index*elen
-    when(ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt) {
-      alu.io.in2 := idxReg.get << MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.memory_length, 0.U)(Seq(
-        MEM_LEN.B.asUInt -> 0.U,
-        MEM_LEN.H.asUInt -> 1.U,
-        MEM_LEN.W.asUInt -> 2.U,
-        MEM_LEN.D.asUInt -> 3.U,
-      ))
-    }
-  }
   alu.io.funct := ID_EX_REG.bits.ctrlSignals.decode
 
   branch_evaluator.io.req.bits.ALU_Result := alu.io.out
@@ -317,36 +320,28 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
 
-  if (params.useVector) {
-    vecCtrlUnit.get.io.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst
-    vecCtrlUnit.get.io.req.bits.vDecode := ID_EX_REG.bits.vectorCtrlSignals.get
-    vecCtrlUnit.get.io.req.bits.rs1_value := ID_EX_REG.bits.dataSignals.rs1
-    vecCtrlUnit.get.io.req.bits.rs2_value := ID_EX_REG.bits.dataSignals.rs2
-    vecCtrlUnit.get.io.req.bits.zimm := ID_EX_REG.bits.dataSignals.zimm
-    vecCtrlUnit.get.io.req.bits.uimm := ID_EX_REG.bits.dataSignals.imm
-  }
+  // TODO: rs1がx0かつrdが非x0の場合にvlを最大に，rs1・rdともにx0の場合にvlを変更しないように仕様変更
+  vecCtrlUnit.io.req.valid := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst
+  vecCtrlUnit.io.req.bits.vDecode := ID_EX_REG.bits.vectorCtrlSignals.get
+  vecCtrlUnit.io.req.bits.rs1_value := ID_EX_REG.bits.dataSignals.rs1
+  vecCtrlUnit.io.req.bits.rs2_value := ID_EX_REG.bits.dataSignals.rs2
+  vecCtrlUnit.io.req.bits.zimm := ID_EX_REG.bits.dataSignals.zimm
+  vecCtrlUnit.io.req.bits.uimm := ID_EX_REG.bits.dataSignals.imm
 
-  val EX_arithmetic_result = if (params.useMulDiv) {
+  val exScalarRes = if (params.useMulDiv) {
     Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits, alu.io.out)
   } else {
     alu.io.out
   }
 
-  val EX_vector_result = if (params.useVector) Some(vecCtrlUnit.get.io.resp.bits.vl) else None
-
-  ldstUnit.io.cpu.req.valid := ID_EX_REG.valid && !EX_flush && (ID_EX_REG.bits.ctrlSignals.decode.memValid || (if (params.useVector) {
-    // マスク無しまたは要素が有効な場合にのみtrue
-    ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm
-  } else true.B))
-  ldstUnit.io.cpu.req.bits.addr := alu.io.out
-  ldstUnit.io.cpu.req.bits.data := (if (params.useVector) Mux(ID_EX_REG.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.readReq(0).resp.vdOut, ID_EX_REG.bits.dataSignals.rs2) else ID_EX_REG.bits.dataSignals.rs2)
-  ldstUnit.io.cpu.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
+  // placefolder for vec->scalar inst (vcpop.m, vfirst.m, vmv.x.s)
+  val exVectorRes = vecCtrlUnit.io.resp.bits.vl
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
   bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
-    WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
-    WB_SEL.VECTOR.asUInt -> (if (params.useVector) EX_vector_result.get else 0.U)
+    WB_SEL.ARITH.asUInt -> exScalarRes,
+    WB_SEL.VECTOR.asUInt -> exVectorRes,
   ))
   bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
@@ -358,16 +353,13 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   )) && ID_EX_REG.valid
   bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.write_to_rd && ID_EX_REG.valid
 
-  // メモリアクセス命令であればldstUnitがreadyである必要があり，
-  // 乗算命令であればmultiplier.respがvalidである必要がある
-  // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある(idxReg == vl)
-  EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) &&
+  EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || vectorLdstUnit.io.signalIn.ready) &&
     (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B) &&
-    (if (params.useVector) !ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || ((idxReg.get + 1.U((idxReg.get.getWidth + 1).W)) === EX_WB_REG.bits.vectorCsrPorts.get.vl) else true.B)
+    (!ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || vecExecUnitsReady.reduce(_ || _))
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
-    WB_SEL.ARITH.asUInt -> EX_arithmetic_result,
-    WB_SEL.VECTOR.asUInt -> (if (params.useVector) EX_vector_result.get else 0.U),
+    WB_SEL.ARITH.asUInt -> exScalarRes,
+    WB_SEL.VECTOR.asUInt -> exVectorRes,
   ))
   EX_WB_REG.bits.dataSignals.datatoCSR := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
   EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.zimm
@@ -383,21 +375,18 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   ))
   Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
-  if (params.useVector) {
-    when(vecCtrlUnit.get.io.resp.valid) {
-      EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.get.io.resp.bits
-    }
+  when(vecCtrlUnit.io.resp.valid) {
+    EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.io.resp.bits
   }
 
   if (params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
   // またはベクタ命令実行完了前にスカラ命令がID_EXレジスタにある，またはチェイニング不可能なベクタ命令（構造ハザード・0要素目の値が用意できていないなど）
-  EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if (params.useMulDiv) {
+  EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.signalIn.ready) || (if (params.useMulDiv) {
     ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
-  } else false.B) || (if (params.useVector) {
-    ID_EX_REG.bits.ctrlSignals.decode.vector.get && !ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst && (idxReg.get < EX_WB_REG.bits.vectorCsrPorts.get.vl - 1.U)
   } else false.B))
+  // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
 
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG
