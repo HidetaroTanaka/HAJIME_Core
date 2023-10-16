@@ -123,7 +123,7 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   val vs1SameWriteAndSewOKList = for((d, i) <- vs1SameWriteList.zipWithIndex) yield {
     d && (io.vs1Check.bits.vm || (!io.fromVecExecUnit(i).bits.vm && io.vs1Check.bits.vtype.vsew <= io.fromVecExecUnit(i).bits.vtype.vsew))
   }
-  val vs1OnlyOneWrite = (vs1SameWriteList.map(_.asUInt).reduce(_ + _) === 1.U) && (vs1SameWriteAndSewOKList.map(_.asUInt).reduce(_ + _) === 1.U)
+  val vs1OnlyOneWrite = (vs1SameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U) && (vs1SameWriteAndSewOKList.map(_.asUInt).reduce(_ +& _) === 1.U)
   // またはベクタレジスタ全体が有効ならばtrue
   io.vs1Check.ready := io.vs1Check.valid && ((vrfZeroIdxReadyTable(io.vs1Check.bits.idx) && (
     io.vs1Check.bits.vm || io.vs1Check.bits.vtype.vsew <= vrfWriteSewTable(io.vs1Check.bits.idx).sew
@@ -133,20 +133,20 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   val vs2SameWriteAndSewOKList = for ((d, i) <- vs2SameWriteList.zipWithIndex) yield {
     d && (io.vs2Check.bits.vm || (!io.fromVecExecUnit(i).bits.vm && io.vs2Check.bits.vtype.vsew <= io.fromVecExecUnit(i).bits.vtype.vsew))
   }
-  val vs2OnlyOneWrite = (vs1SameWriteList.map(_.asUInt).reduce(_ + _) === 1.U) && (vs2SameWriteAndSewOKList.map(_.asUInt).reduce(_ + _) === 1.U)
+  val vs2OnlyOneWrite = (vs1SameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U) && (vs2SameWriteAndSewOKList.map(_.asUInt).reduce(_ +& _) === 1.U)
   io.vs2Check.ready := io.vs2Check.valid && ((vrfZeroIdxReadyTable(io.vs2Check.bits.idx) && (
     io.vs2Check.bits.vm || io.vs2Check.bits.vtype.vsew <= vrfWriteSewTable(io.vs2Check.bits.idx).sew
   )) || vs2OnlyOneWrite || vrfWholeIdxReadyTable(io.vs2Check.bits.idx))
 
   val vmSameWriteList = io.fromVecExecUnit.map(sig => sig.valid && sig.bits.writeReq && (sig.bits.vd === 0.U))
-  val vmOnlyOneWrite = vmSameWriteList.map(_.asUInt).reduce(_ + _) === 1.U
+  val vmOnlyOneWrite = vmSameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U
   io.vmCheck.ready := io.vmCheck.valid && (vrfZeroIdxReadyTable(0) || vmOnlyOneWrite || vrfWholeIdxReadyTable(0))
 
   val vdSameWriteList = io.fromVecExecUnit.map(sig => sig.valid && sig.bits.writeReq && (sig.bits.vd === io.vdCheck.bits.idx))
   val vdSameWriteAndSewOKList = for ((d, i) <- vdSameWriteList.zipWithIndex) yield {
     d && (io.vdCheck.bits.vm || (!io.fromVecExecUnit(i).bits.vm && io.vdCheck.bits.vtype.vsew <= io.fromVecExecUnit(i).bits.vtype.vsew))
   }
-  val vdOnlyOneWrite = (vdSameWriteList.map(_.asUInt).reduce(_ + _) === 1.U) && (vdSameWriteAndSewOKList.map(_.asUInt).reduce(_ + _) === 1.U)
+  val vdOnlyOneWrite = (vdSameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U) && (vdSameWriteAndSewOKList.map(_.asUInt).reduce(_ +& _) === 1.U)
   io.vdCheck.ready := io.vdCheck.valid && ((vrfZeroIdxReadyTable(io.vdCheck.bits.idx) && (
     io.vdCheck.bits.vm || io.vdCheck.bits.vtype.vsew <= vrfWriteSewTable(io.vdCheck.bits.idx).sew
   )) || vdOnlyOneWrite || vrfWholeIdxReadyTable(io.vdCheck.bits.idx))

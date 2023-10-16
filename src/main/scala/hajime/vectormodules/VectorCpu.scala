@@ -86,10 +86,12 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   // メモリアクセス命令であればldstUnitがreadyである必要があり，
   // 乗算命令であればmultiplier.respがvalidである必要がある
   // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある
-  val vecExecUnitsReady: Seq[Bool] = (0 until params.vecAluExecUnitNum + 1).map(i =>
-    if (i == 0) vectorLdstUnit.io.signalIn.ready else vecAluExecUnit(i + 1).io.signalIn.ready
-  )
+  val vecExecUnitsReady: Seq[Bool] = Seq(vectorLdstUnit.io.signalIn.ready) ++ vecAluExecUnit.map(_.io.signalIn.ready)
   if (params.debug) assert(vecExecUnitsReady.map(_.asUInt).reduce(_ +& _) <= 1.U, s"Multiple VecUnits last Error.")
+
+  val vecExecUnitHasInstButNotRetire: Seq[Bool] = (vecExecUnitsReady.map(!_) zip (Seq(!vectorLdstUnit.io.toExWbReg.valid) ++ vecAluExecUnit.map(!_.io.toExWbReg.valid))).map {
+    case (notReady, notRetire) => notReady && notRetire
+  }
 
   // START OF ID STAGE
   // TODO: 可読性向上のため，validのみのブロックとvalid && readyのブロックに分ける．EX，WBも同様
@@ -388,6 +390,9 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   } else false.B))
   // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
 
+  // リタイアするベクトル命令があればそれでEX_WB_REGを上書き
+
+
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG
   }
@@ -399,8 +404,8 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   }
 
   // START OF WB STAGE
-  // メモリアクセス命令かつ，ldstUnitのrespがvalidでなければストール
-  WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.resp.valid)
+  // メモリアクセス命令かつ，ベクトル実行ユニットのベクトル命令がリタイアしない（toExWbRegがvalidでない）かつ，respがvalidでなければストール
+  WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.vectorResp.toVRF.valid && !vectorLdstUnit.io.scalarResp.valid)
   val dmemoryAccessException = (EX_WB_REG.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
   WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException)
   when(WB_pc_redirect) {
