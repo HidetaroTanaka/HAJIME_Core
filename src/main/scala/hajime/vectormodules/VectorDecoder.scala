@@ -66,6 +66,8 @@ class VectorDecoderResp extends Bundle with ScalarOpConstants with VectorOpConst
   val vm = Bool()
 
   def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop, vrfWrite, veuFun, vSource)
+  def useVecAluExec: Bool = !isConfsetInst && (mop === MOP.NONE.asUInt)
+  def useVecLdstExec: Bool = !isConfsetInst && (mop =/= MOP.NONE.asUInt)
 }
 
 class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {

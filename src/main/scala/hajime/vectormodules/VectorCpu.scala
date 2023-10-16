@@ -7,6 +7,7 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
 import hajime.simple4Stage._
+import chisel3.experimental.BundleLiterals._
 
 class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
   import VEU_FUN._
@@ -59,6 +60,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   val rs1_required_but_not_valid = WireInit(false.B)
   val rs2_required_but_not_valid = WireInit(false.B)
 
+  val decoded_inst = Wire(new InstBundle())
+  decoded_inst := io.frontend.resp.bits.inst
+  val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
+  val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
+
   // これらがtrueならばベクトル命令を発行できる
   val vs1NonRequiredOrReady = !vrfReadyTable.io.vs1Check.valid || vrfReadyTable.io.vs1Check.ready
   val vs2NonRequiredOrReady = !vrfReadyTable.io.vs2Check.valid || vrfReadyTable.io.vs2Check.ready
@@ -67,17 +73,18 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   // 使用するベクトル機能ユニットが空いているか否か
   val vecLdstUnitReady = vectorLdstUnit.io.signalIn.ready
   val vecAluExecUnitReady = vecAluExecUnit.map(_.io.signalIn.ready)
-  // 上記で1つでもfalseのものがあればベクトル命令は発行できない
-  val vectorInstStall = !(vs1NonRequiredOrReady && vs2NonRequiredOrReady && vdNonRequiredOrReady && vmNonRequiredOrReady)
+  // ベクトル命令がvecLdstUnitを使うか否か
+  val useVecLdstUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && io.frontend.req.valid
+  // vecLdstUnitを使わない，または（利用する必要がある時に）利用可能
+  val vecLdstUnitNonRequiredOrReady = !useVecLdstUnit || vecLdstUnitReady
+  // ベクトル命令がvecAluExecUnitを使うか否か
+  val useVecAluExecUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec && io.frontend.req.valid
+  val vecAluExecUnitNonRequiredOrReady = !useVecAluExecUnit || vecAluExecUnitReady.reduce(_ || _)
+  // 使用するオペランドで1つでもfalseのものがある，または使用するベクトル機能ユニットが利用できないならばベクトル命令は発行できない
+  val vectorInstStall = !(vs1NonRequiredOrReady && vs2NonRequiredOrReady && vdNonRequiredOrReady && vmNonRequiredOrReady && vecLdstUnitNonRequiredOrReady && vecAluExecUnitNonRequiredOrReady)
 
   // START OF ID STAGE
   // TODO: 可読性向上のため，validのみのブロックとvalid && readyのブロックに分ける．EX，WBも同様
-
-  val decoded_inst = Wire(new InstBundle())
-  decoded_inst := io.frontend.resp.bits.inst
-  val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
-  val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
-  // io.debug_io.get.ID_EX_Reg := ID_EX_REG
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
   // flushならばストールさせる必要はない
@@ -126,6 +133,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
   ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
 
+  // ベクトル命令を追加
   bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
   // exceptionの際にこれを下げる必要があるかもしれない
   bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1 && decoder.io.out.valid && io.frontend.resp.valid
@@ -141,9 +149,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
   ))
 
-  val vtypeBypass = Wire(new VtypeBundle())
+  val vecConfBypass = Wire(new VecCtrlUnitResp())
+  val vtypeBypass = vecConfBypass.vtype
+  val vlBypass = vecConfBypass.vl
 
-  vtypeBypass := Mux(vecCtrlUnit.io.resp.valid, vecCtrlUnit.io.resp.bits.vtype, EX_WB_REG.bits.vectorCsrPorts.get.vtype)
+  vecConfBypass := Mux(vecCtrlUnit.io.resp.valid, vecCtrlUnit.io.resp.bits, EX_WB_REG.bits.vectorCsrPorts.get)
 
   vectorDecoder.io.inst := decoded_inst
 
@@ -164,6 +174,61 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
   // vmフィールドが1ならばvmを使用する
   vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && !vectorDecoder.io.out.vm
+
+  // vecAluExecUnitを使用するなら，空いている方をvalidにする
+  when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec) {
+    val vecAluExecUnitAssigned = WireInit(false.B)
+    for (x <- vecAluExecUnit) {
+      when(x.io.signalIn.ready && !vecAluExecUnitAssigned) {
+        x.io.signalIn.valid := true.B
+        x.io.signalIn.bits := (new VectorExecUnitSignalIn()).Lit(
+          _.vs1 -> decoded_inst.rs1,
+          _.vs2 -> decoded_inst.rs2,
+          _.vd -> decoded_inst.rd,
+          _.scalarVal -> rs1ValueToEX,
+          _.vectorDecode -> vectorDecoder.io.out,
+          _.scalarDecode -> decoder.io.out.bits,
+          _.scalarDecode.vector.get -> decoder.io.out.bits.vector.get,
+          _.vecConf -> vecConfBypass,
+          _.pc -> io.frontend.resp.bits.pc,
+        )
+        if(params.debug) {
+          x.io.signalIn.bits.debug.get.instruction := decoded_inst.bits
+          x.io.signalIn.bits.debug.get.pc := io.frontend.resp.bits.pc
+        }
+        vecAluExecUnitAssigned := true.B
+      } .otherwise {
+        x.io.signalIn := DontCare
+        x.io.signalIn.valid := false.B
+      }
+    }
+  }
+  // vecLdstUnitに対しても同様
+  when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
+    vectorLdstUnit.io.signalIn.valid := true.B
+    vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
+    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
+    vectorLdstUnit.io.signalIn.bits.scalar.rdIndex := decoded_inst.rd
+    vectorLdstUnit.io.signalIn.bits.vector := (new VectorExecUnitSignalIn()).Lit(
+      _.vs1 -> decoded_inst.rs1,
+      _.vs2 -> decoded_inst.rs2,
+      _.vd -> decoded_inst.rd,
+      _.scalarVal -> rs1ValueToEX,
+      _.vectorDecode -> vectorDecoder.io.out,
+      _.scalarDecode -> decoder.io.out,
+      _.vecConf -> vecConfBypass,
+      _.pc -> io.frontend.resp.bits.pc,
+    )
+    if(params.debug) {
+      vectorLdstUnit.io.signalIn.bits.vector.debug.get := (new Debug_Info()).Lit(
+      _.pc -> io.frontend.resp.bits.pc,
+      _.instruction -> decoded_inst,
+      )
+    }
+  } .otherwise {
+    vectorLdstUnit.io.signalIn := DontCare
+    vectorLdstUnit.io.signalIn.valid := false.B
+  }
 
   when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
     ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.io.out
