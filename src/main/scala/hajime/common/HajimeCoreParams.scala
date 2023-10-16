@@ -32,6 +32,7 @@ case class HajimeCoreParams(
   usePackedSIMD: Boolean = false,
   debug: Boolean = true,
   vlen: Int = 256,
+  vecAluExecUnitNum: Int = 2,
 ) {
   def robTagWidth: Int = log2Up(robEntries)
   def generateDefaultMISA: UInt = {

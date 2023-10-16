@@ -37,9 +37,9 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   val multiplier = if (params.useMulDiv) Some(Module(new NonPipelinedMultiplierWrap())) else None
   val vectorDecoder = Module(new VectorDecoder())
   val vecCtrlUnit = Module(new VecCtrlUnit())
-  val vecRegFile = Module(new VecRegFile(vrfPortNum = 2))
-  val vrfReadyTable = Module(new VrfReadyTable())
-  val vecAluExecUnit = (0 until 2).map(_ => Module(new IntegerAluExecUnit()))
+  val vecRegFile = Module(new VecRegFile(vrfPortNum = params.vecAluExecUnitNum + 1))
+  val vrfReadyTable = Module(new VrfReadyTable(vrfPortNum = params.vecAluExecUnitNum + 1))
+  val vecAluExecUnit = (0 until params.vecAluExecUnitNum).map(_ => Module(new IntegerAluExecUnit()))
 
   if (params.useMulDiv) multiplier.get.io := DontCare
 
@@ -257,43 +257,20 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   }
 
   // START OF EX STAGE
-  val idxReg = if (params.useVector) Some(RegInit(0.U(log2Up(params.vlen / 8).W))) else None
-  val EX_WB_idxReg = if (params.useVector) Some(RegNext(idxReg.get)) else None
-  // TODO: ロードストアユニット内に入れる，他のベクタ実行ユニットも同様
-  val vecValid = if (params.useVector) Some(RegInit(false.B)) else None
-  val vecDataReg = if (params.useVector) Some(RegNext(ID_EX_REG.bits.vectorDataSignals.get)) else None
-  if (params.useVector) {
-    // ベクタ命令がベクタレジスタに書き込み，かつinst.vmが1またはv0.mask[i]=1ならば書き込み
-    val vecWriteBack = ID_EX_REG.bits.vectorCtrlSignals.get.vrfWrite && (ID_EX_REG.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm)
-    // vsetvli系でないベクタ命令が実行され，かつ最終要素でないならばインクリメント，それ以外ならばリセット
-    idxReg.get := MuxCase(0.U, Seq(
-      (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && !ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst &&
-        ((idxReg.get + 1.U) < EX_WB_REG.bits.vectorCsrPorts.get.vl)) -> (idxReg.get + 1.U)
-    ))
-    // Mux(!EX_stall && ID_inst_valid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
-    vecValid.get := ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.vector.get && vecWriteBack
 
-    // vecRegFileへの入力
-    vecRegFile.get.io.readReq(1) := DontCare
-    vecRegFile.get.io.writeReq(1) := DontCare
-    vecRegFile.get.io.readReq(0).req.sew := EX_WB_REG.bits.vectorCsrPorts.get.vtype.vsew
-    vecRegFile.get.io.readReq(0).req.idx := idxReg.get
-    vecRegFile.get.io.readReq(0).req.vs1 := ID_EX_REG.bits.vectorDataSignals.get.vs1
-    vecRegFile.get.io.readReq(0).req.vs2 := ID_EX_REG.bits.vectorDataSignals.get.vs2
-    vecRegFile.get.io.readReq(0).req.vd := ID_EX_REG.bits.vectorDataSignals.get.vd
+  // vecRegFileのレジスタ読み出し
+  vecRegFile.io.readReq(0) <> vectorLdstUnit.io.readVrf
+  for((d,i) <- vecAluExecUnit.zipWithIndex) {
+    vecRegFile.io.readReq(i + 1) <> d.io.readVrf
+  }
+  // vecRegFileへのレジスタ書き込み
+  vecRegFile.io.writeReq(0) <> vectorLdstUnit.io.vectorResp.toVRF
+  for((d,i) <- vecAluExecUnit.zipWithIndex) {
+    vecRegFile.io.writeReq(i + 1) <> d.io.dataOut.toVRF
+  }
 
-    vecRegFile.get.io.writeReq(0).valid := vecValid.get
-    vecRegFile.get.io.writeReq(0).bits.vd := vecDataReg.get.vd
-    vecRegFile.get.io.writeReq(0).bits.vtype := EX_WB_REG.bits.vectorCsrPorts.get.vtype
-    vecRegFile.get.io.writeReq(0).bits.index := EX_WB_idxReg.get
-    vecRegFile.get.io.writeReq(0).bits.last := (EX_WB_idxReg.get - 1.U) === EX_WB_REG.bits.vectorCsrPorts.get.vl
-    vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
-    vecRegFile.get.io.writeReq(0).bits.vm := false.B
-    vecRegFile.get.io.writeReq(0).bits.writeReq := vecValid.get
-
-    if (params.debug) {
-      io.debug_io.get.vrfMap := vecRegFile.get.io.debug.get
-    }
+  if (params.debug) {
+    io.debug_io.get.vrfMap := vecRegFile.io.debug.get
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
