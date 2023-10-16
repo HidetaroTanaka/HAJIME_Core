@@ -404,6 +404,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   }
 
   // START OF WB STAGE
+  // ここの論理がたぶん違う
   // メモリアクセス命令かつ，ベクトル実行ユニットのベクトル命令がリタイアしない（toExWbRegがvalidでない）かつ，respがvalidでなければストール
   WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.vectorResp.toVRF.valid && !vectorLdstUnit.io.scalarResp.valid)
   val dmemoryAccessException = (EX_WB_REG.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
