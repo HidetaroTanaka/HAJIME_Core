@@ -133,7 +133,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
-    (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm,
+    (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm19To15,
     (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
     (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
   ))
@@ -208,7 +208,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
         vecSigs.vs1 := decoded_inst.rs1
         vecSigs.vs2 := decoded_inst.rs2
         vecSigs.vd := decoded_inst.rd
-        vecSigs.scalarVal := rs1ValueToEX
+        vecSigs.scalarVal := Mux(vectorDecoder.io.out.vSource === VSOURCE.VX.asUInt, rs1ValueToEX, decoded_inst.imm19To15)
         vecSigs.vectorDecode := vectorDecoder.io.out
         vecSigs.scalarDecode := decoder.io.out.bits
         vecSigs.scalarDecode.vector.get := decoder.io.out.bits.vector.get

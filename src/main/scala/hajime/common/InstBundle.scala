@@ -21,7 +21,8 @@ class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
   def u_imm: UInt     = Cat(bits(31,12), 0.U(12.W)).ext(xprlen)
   def j_imm: UInt     = Cat(bits(31), bits(19,12), bits(20), bits(30,21), 0.U(1.W)).ext(xprlen)
   def zimm: UInt      = bits(31,20)
-  def uimm: UInt      = Cat(false.B, this.rs1)
+  def uimm19To15: UInt      = Cat(false.B, this.rs1)
+  def imm19To15: UInt = this.rs1.ext(xprlen)
 }
 
 class ProgramCounter(implicit params: HajimeCoreParams) extends Bundle {
