@@ -391,7 +391,14 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
 
   // リタイアするベクトル命令があればそれでEX_WB_REGを上書き
-
+  for(d <- vecAluExecUnit) {
+    when(d.io.toExWbReg.valid) {
+      EX_WB_REG := d.io.toExWbReg
+    }
+  }
+  when(vectorLdstUnit.io.toExWbReg.valid) {
+    EX_WB_REG := vectorLdstUnit.io.toExWbReg
+  }
 
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG
@@ -406,9 +413,17 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   // START OF WB STAGE
   // ここの論理がたぶん違う
   // メモリアクセス命令かつ，ベクトル実行ユニットのベクトル命令がリタイアしない（toExWbRegがvalidでない）かつ，respがvalidでなければストール
-  WB_stall := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.vectorResp.toVRF.valid && !vectorLdstUnit.io.scalarResp.valid)
-  val dmemoryAccessException = (EX_WB_REG.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
-  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException)
+  // 面倒くさいのでメモリ応答は常に1クロックで返ってくることにする
+  WB_stall := (if(true) false.B else EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.vectorResp.toVRF.valid && !vectorLdstUnit.io.scalarResp.valid))
+  // let's just ignore exception
+  val dmemoryAccessException = if(params.useException) {
+    EX_WB_REG.bits.ctrlSignals.decode.memValid && vectorLdstUnit.io.scalarResp.valid && vectorLdstUnit.io.scalarResp.bits.exceptionSignals.valid
+  } else {
+    false.B
+  }
+  WB_pc_redirect := EX_WB_REG.valid && (EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt
+    || (if(params.useException) EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException else EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt))
+
   when(WB_pc_redirect) {
     io.frontend.req.bits.pc := csrUnit.io.resp.data
   }
@@ -419,14 +434,14 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.exResult,
     WB_SEL.CSR -> csrUnit.io.resp.data,
-    WB_SEL.MEM -> ldstUnit.io.cpu.resp.bits.data,
-    WB_SEL.VECTOR -> (if (params.useVector) EX_WB_REG.bits.dataSignals.exResult else 0.U)
+    WB_SEL.MEM -> vectorLdstUnit.io.scalarResp.bits.data,
+    WB_SEL.VECTOR -> EX_WB_REG.bits.dataSignals.exResult
   ).map {
     case (wb_sel, data) => (wb_sel.asUInt, data)
   })
   rf.io.req.bits.rd := EX_WB_REG.bits.ctrlSignals.rd_index
 
-  bypassingUnit.io.WB.in.bits.rd.valid := bypassingUnit.io.WB.in.valid && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || ldstUnit.io.cpu.resp.valid)
+  bypassingUnit.io.WB.in.bits.rd.valid := bypassingUnit.io.WB.in.valid && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || vectorLdstUnit.io.scalarResp.valid)
   bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
   bypassingUnit.io.WB.in.bits.rd.bits.value := rf.io.req.bits.data
   bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && WB_inst_can_retire
@@ -441,9 +456,9 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
   csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
   csrUnit.io.exception.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
-  csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, ldstUnit.io.cpu.resp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)
+  csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, vectorLdstUnit.io.scalarResp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)
 
-  if (params.useVector) csrUnit.io.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
+  csrUnit.io.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
 
   // EXまたはWBステージにfence, ecall, mretがある
   sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)

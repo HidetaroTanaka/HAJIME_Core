@@ -13,6 +13,7 @@ case class HajimeCoreParams(
   physicalRegFileEntries: Int = 48,
   ras_depth: Int = 8,
   robEntries: Int = 8,
+  useException: Boolean = true,
   useAtomics: Boolean = false,
   useCompressed: Boolean = false,
   useZicsr: Boolean = true,
