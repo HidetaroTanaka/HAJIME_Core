@@ -125,6 +125,9 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
       Mux(vs2Out > vs1Out, vs2Out, vs2Out) :: Mux(vs2Out.asSInt > vs1Out.asSInt, vs2Out, vs1Out) ::
       Mux(vm, vs1Out, vs2Out) :: vs1Out :: Nil
   }
+  import VEU_FUN._
+  // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
+  valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
 
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(Seq(
     VEU_FUN.ADD -> 0,
@@ -153,7 +156,6 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
   // 書き込み先がマスクならばidxとうまい具合に組み合わせてなんとかする
   // seq, ..., sgtならば最下位bitがvm
   // vmadc, vmsbcならば，SEW=8 -> 8bit目，..., SEW=64 -> 64bit目がvm
-  import VEU_FUN._
   val writeVm = MuxCase(false.B, Seq(
     instInfoReg.bits.vectorDecode.veuFun.isCompMask -> rawResult(0),
     instInfoReg.bits.vectorDecode.veuFun.isCarryMask -> {
@@ -251,6 +253,8 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
   import VEU_FUN._
   valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue1(0), execValue1)
   valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue2(0), execValue2)
+  // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
+  valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
     Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR).zipWithIndex.map(
       x => x._1.asUInt -> execResult(x._2)

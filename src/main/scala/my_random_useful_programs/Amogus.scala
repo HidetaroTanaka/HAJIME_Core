@@ -1,11 +1,12 @@
 package my_random_useful_programs
 
 object Amogus extends App {
-  val instList = List("vminu", "vmin", "vmaxu", "vmax")
-  val vsource = List("VV", "VX")
+  val instList = List("vmerge"
+  )
+  val vsource = List("VVM", "VXM", "VIM")
   instList.foreach(
     x => vsource.foreach(
-      y => println(s"  def ${x.toUpperCase}_$y = vArithGen(vInst = \"$x\", vsource = VSOURCE.$y)")
+      y => println(s"${x.toUpperCase}_$y -> amogus(\"$x\", VSOURCE.$y),")
     )
   )
 }
