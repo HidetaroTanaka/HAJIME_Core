@@ -102,7 +102,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := DontCare
-  io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
+  if(params.debug) io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
 }
 
 class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {

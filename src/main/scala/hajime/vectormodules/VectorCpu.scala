@@ -74,11 +74,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   val vecLdstUnitReady = vectorLdstUnit.io.signalIn.ready
   val vecAluExecUnitReady = vecAluExecUnit.map(_.io.signalIn.ready)
   // ベクトル命令がvecLdstUnitを使うか否か
-  val useVecLdstUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && io.frontend.req.valid
+  val useVecLdstUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec // && io.frontend.req.valid
   // vecLdstUnitを使わない，または（利用する必要がある時に）利用可能
   val vecLdstUnitNonRequiredOrReady = !useVecLdstUnit || vecLdstUnitReady
   // ベクトル命令がvecAluExecUnitを使うか否か
-  val useVecAluExecUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec && io.frontend.req.valid
+  val useVecAluExecUnit = decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec // && io.frontend.req.valid
   val vecAluExecUnitNonRequiredOrReady = !useVecAluExecUnit || vecAluExecUnitReady.reduce(_ || _)
   // 使用するオペランドで1つでもfalseのものがある，または使用するベクトル機能ユニットが利用できないならばベクトル命令は発行できない
   val vectorInstStall = !(vs1NonRequiredOrReady && vs2NonRequiredOrReady && vdNonRequiredOrReady && vmNonRequiredOrReady && vecLdstUnitNonRequiredOrReady && vecAluExecUnitNonRequiredOrReady)
@@ -193,9 +193,16 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
   when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec) {
-    val vecAluExecUnitAssigned = WireInit(false.B)
-    for (x <- vecAluExecUnit) {
-      when(x.io.signalIn.ready && !vecAluExecUnitAssigned) {
+    val vecAluExecUnitAssigned = (0 until params.vecAluExecUnitNum).map(_ => WireInit(false.B))
+    for ((x,i) <- vecAluExecUnit.zipWithIndex) {
+      when(x.io.signalIn.ready && {
+        val assignedSeq = vecAluExecUnitAssigned.slice(0, i)
+        i match {
+          case 0 => true.B
+          case 1 => !assignedSeq(0)
+          case _ => !assignedSeq.reduce(_ || _)
+        }
+      }) {
         val vecSigs = x.io.signalIn.bits
         x.io.signalIn.valid := true.B
         vecSigs.vs1 := decoded_inst.rs1
@@ -211,7 +218,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
           x.io.signalIn.bits.debug.get.instruction := decoded_inst.bits
           x.io.signalIn.bits.debug.get.pc := io.frontend.resp.bits.pc
         }
-        vecAluExecUnitAssigned := true.B
+        vecAluExecUnitAssigned(i) := true.B
       } .otherwise {
         x.io.signalIn := DontCare
         x.io.signalIn.valid := false.B
@@ -475,7 +482,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
 }
 
 object VectorCpu extends App {
-  implicit val params: HajimeCoreParams = HajimeCoreParams()
+  implicit val params: HajimeCoreParams = HajimeCoreParams(debug = false)
   def apply(implicit params: HajimeCoreParams): VectorCpu = {
     if(params.useVector) new VectorCpu() else throw new Exception("fuck")
   }

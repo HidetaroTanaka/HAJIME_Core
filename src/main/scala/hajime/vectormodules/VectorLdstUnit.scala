@@ -206,7 +206,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := DontCare
-  io.toExWbReg.bits.debug.get := vectorReqReg.bits.debug.get
+  if(params.debug) io.toExWbReg.bits.debug.get := vectorReqReg.bits.debug.get
 }
 
 object VectorLdstUnit extends App {
