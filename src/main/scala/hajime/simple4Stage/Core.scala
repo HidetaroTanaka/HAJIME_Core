@@ -34,21 +34,28 @@ class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
   val debug_io = if(debug) Some(Output(new debugIO())) else None
 }
 
-class Core(implicit params: HajimeCoreParams) extends Module {
+class Core(useVectorCpu: Boolean)(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new CoreIO())
   val frontend = Module(new Frontend())
-  val cpu = Module(new CPU())
+  val internalCpu: CpuModule = Module(
+    if(useVectorCpu) {
+      new VectorCpu()
+    } else {
+      new CPU()
+    }
+  )
   io.icache_axi4lite <> frontend.io.icache_axi4lite
-  io.dcache_axi4lite <> cpu.io.dcache_axi4lite
+  io.dcache_axi4lite <> internalCpu.io.dcache_axi4lite
   frontend.io.reset_vector := io.reset_vector
-  cpu.io.frontend <> frontend.io.cpu
-  cpu.io.hartid := io.hartid
-  if(params.debug) io.debug_io.get := cpu.io.debug_io.get
+  internalCpu.io.frontend <> frontend.io.cpu
+  internalCpu.io.hartid := io.hartid
+  if(params.debug) io.debug_io.get := internalCpu.io.debug_io.get
 }
 
 object Core extends App {
-  def apply(implicit params: HajimeCoreParams): Core = new Core()
-  ChiselStage.emitSystemVerilogFile(Core(HajimeCoreParams()), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  implicit val params = HajimeCoreParams()
+  def apply(useVectorCpu: Boolean)(implicit params: HajimeCoreParams): Core = new Core(useVectorCpu)
+  ChiselStage.emitSystemVerilogFile(new Core(useVectorCpu = true), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
 @unused
@@ -69,6 +76,10 @@ class CPUIO(implicit params: HajimeCoreParams) extends Bundle {
   val hartid = Input(UInt(xprlen.W))
   val debug_io = if(debug) Some(Output(new debugIO())) else None
   // val accelerators = Vec(2, new AcceleratorInterface)
+}
+
+abstract class CpuModule(implicit params: HajimeCoreParams) extends Module {
+  val io = IO(new CPUIO())
 }
 
 class BasicCtrlSignals(implicit params: HajimeCoreParams) extends Bundle {
@@ -128,8 +139,8 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
-class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
-  val io = IO(new CPUIO())
+class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpConstants with VectorOpConstants {
+  // val io = IO(new CPUIO())
   io := DontCare
 
   // fence, ecall, mretがEX、WBに存在する

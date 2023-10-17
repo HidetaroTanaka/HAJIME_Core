@@ -9,10 +9,10 @@ import hajime.publicmodules._
 import hajime.simple4Stage._
 import chisel3.experimental.BundleLiterals._
 
-class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants with VectorOpConstants {
+class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpConstants with VectorOpConstants {
   import VEU_FUN._
   require(params.useVector, "fuck")
-  val io = IO(new CPUIO())
+  // val io = IO(new CPUIO())
   io := DontCare
 
   // fence, ecall, mretがEX、WBに存在する
@@ -482,7 +482,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
 }
 
 object VectorCpu extends App {
-  implicit val params: HajimeCoreParams = HajimeCoreParams(debug = false)
+  implicit val params: HajimeCoreParams = HajimeCoreParams(debug = false, useException = false)
   def apply(implicit params: HajimeCoreParams): VectorCpu = {
     if(params.useVector) new VectorCpu() else throw new Exception("fuck")
   }
