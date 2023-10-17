@@ -196,18 +196,17 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     val vecAluExecUnitAssigned = WireInit(false.B)
     for (x <- vecAluExecUnit) {
       when(x.io.signalIn.ready && !vecAluExecUnitAssigned) {
+        val vecSigs = x.io.signalIn.bits
         x.io.signalIn.valid := true.B
-        x.io.signalIn.bits := (new VectorExecUnitSignalIn()).Lit(
-          _.vs1 -> decoded_inst.rs1,
-          _.vs2 -> decoded_inst.rs2,
-          _.vd -> decoded_inst.rd,
-          _.scalarVal -> rs1ValueToEX,
-          _.vectorDecode -> vectorDecoder.io.out,
-          _.scalarDecode -> decoder.io.out.bits,
-          _.scalarDecode.vector.get -> decoder.io.out.bits.vector.get,
-          _.vecConf -> vecConfBypass,
-          _.pc -> io.frontend.resp.bits.pc,
-        )
+        vecSigs.vs1 := decoded_inst.rs1
+        vecSigs.vs2 := decoded_inst.rs2
+        vecSigs.vd := decoded_inst.rd
+        vecSigs.scalarVal := rs1ValueToEX
+        vecSigs.vectorDecode := vectorDecoder.io.out
+        vecSigs.scalarDecode := decoder.io.out.bits
+        vecSigs.scalarDecode.vector.get := decoder.io.out.bits.vector.get
+        vecSigs.vecConf := vecConfBypass
+        vecSigs.pc := io.frontend.resp.bits.pc
         if(params.debug) {
           x.io.signalIn.bits.debug.get.instruction := decoded_inst.bits
           x.io.signalIn.bits.debug.get.pc := io.frontend.resp.bits.pc
@@ -218,6 +217,13 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
         x.io.signalIn.valid := false.B
       }
     }
+  } .otherwise {
+    vecAluExecUnit.foreach(
+      x => {
+        x.io.signalIn := DontCare
+        x.io.signalIn.valid := false.B
+      }
+    )
   }
   // vecLdstUnitに対しても同様
   when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
@@ -225,21 +231,18 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
     vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
     vectorLdstUnit.io.signalIn.bits.scalar.rdIndex := decoded_inst.rd
-    vectorLdstUnit.io.signalIn.bits.vector := (new VectorExecUnitSignalIn()).Lit(
-      _.vs1 -> decoded_inst.rs1,
-      _.vs2 -> decoded_inst.rs2,
-      _.vd -> decoded_inst.rd,
-      _.scalarVal -> rs1ValueToEX,
-      _.vectorDecode -> vectorDecoder.io.out,
-      _.scalarDecode -> decoder.io.out,
-      _.vecConf -> vecConfBypass,
-      _.pc -> io.frontend.resp.bits.pc,
-    )
+    val vecSigs = vectorLdstUnit.io.signalIn.bits.vector
+    vecSigs.vs1 := decoded_inst.rs1
+    vecSigs.vs2 := decoded_inst.rs2
+    vecSigs.vd := decoded_inst.rd
+    vecSigs.scalarVal := rs1ValueToEX
+    vecSigs.vectorDecode := vectorDecoder.io.out
+    vecSigs.scalarDecode := decoder.io.out.bits
+    vecSigs.vecConf := vecConfBypass
+    vecSigs.pc := io.frontend.resp.bits.pc
     if(params.debug) {
-      vectorLdstUnit.io.signalIn.bits.vector.debug.get := (new Debug_Info()).Lit(
-      _.pc -> io.frontend.resp.bits.pc,
-      _.instruction -> decoded_inst,
-      )
+      vecSigs.debug.get.pc := io.frontend.resp.bits.pc
+      vecSigs.debug.get.instruction := decoded_inst.bits
     }
   } .otherwise {
     vectorLdstUnit.io.signalIn := DontCare
@@ -288,7 +291,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
   }
 
   if (params.debug) {
-    io.debug_io.get.vrfMap := vecRegFile.io.debug.get
+    io.debug_io.get.vrfMap.get := vecRegFile.io.debug.get
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
@@ -469,4 +472,12 @@ class VectorCpu(implicit params: HajimeCoreParams) extends Module with ScalarOpC
     io.debug_io.get.debug_retired.valid := WB_inst_can_retire
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }
+}
+
+object VectorCpu extends App {
+  implicit val params: HajimeCoreParams = HajimeCoreParams()
+  def apply(implicit params: HajimeCoreParams): VectorCpu = {
+    if(params.useVector) new VectorCpu() else throw new Exception("fuck")
+  }
+  ChiselStage.emitSystemVerilogFile(new VectorCpu(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

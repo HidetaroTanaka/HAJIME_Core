@@ -16,7 +16,7 @@ class debugIO(implicit params: HajimeCoreParams) extends Bundle {
     val pc = new ProgramCounter()
   })
   val debug_abi_map = new debug_map_physical_to_abi()
-  val vrfMap = Vec(32, UInt(params.vlen.W))
+  val vrfMap = if(params.useVector) Some(Vec(32, UInt(params.vlen.W))) else None
   // val ID_EX_Reg = Valid(new ID_EX_IO())
 }
 
@@ -310,7 +310,7 @@ class CPU(implicit params: HajimeCoreParams) extends Module with ScalarOpConstan
     vecRegFile.get.io.writeReq(0).bits.writeReq := vecValid.get
 
     if(params.debug) {
-      io.debug_io.get.vrfMap := vecRegFile.get.io.debug.get
+      io.debug_io.get.vrfMap.get := vecRegFile.get.io.debug.get
     }
   }
 
