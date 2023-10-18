@@ -164,7 +164,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
       MEM_LEN.W -> 32,
       MEM_LEN.D -> 64,
     ).map {
-      case (memLen: EnumType, width: Int) => memLen.asUInt -> Mux(vectorReqRegNext.scalarDecode.mem_sext, io.dcache.r.bits.data(width - 1, 0).ext(params.xprlen), io.dcache.r.bits.data.zext.asUInt)
+      case (memLen: EnumType, width: Int) => memLen.asUInt -> Mux(vectorReqRegNext.scalarDecode.mem_sext, io.dcache.r.bits.data(width - 1, 0).ext(params.xprlen), io.dcache.r.bits.data(width - 1, 0).zext.asUInt)
     }
   )
   io.scalarResp.valid := MuxCase(false.B, Seq(
