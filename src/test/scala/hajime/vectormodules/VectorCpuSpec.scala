@@ -110,14 +110,24 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
   }
 }
 
-class Rv64iAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
+class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   val rv64iTestList = Seq(
     "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
   )
   for (e <- rv64iTestList) {
-    ignore should s"execute $e" in {
+    it should s"execute $e" in {
       test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64i")
+      }
+    }
+  }
+  val rv64mTestList = Seq(
+    "factorial", "power", "vector_innerproduct"
+  )
+  for (e <- rv64mTestList) {
+    it should s"execute $e" in {
+      test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+        executeTest(dut, e, "rv64m")
       }
     }
   }

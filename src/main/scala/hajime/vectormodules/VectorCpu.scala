@@ -207,7 +207,12 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && (vectorDecoder.io.out.avl_sel =/= AVL_SEL.NONE.asUInt) && !decoder.io.out.bits.memWrite
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
-  when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec) {
+  when(ID_flush) {
+    vecAluExecUnit.foreach(e => {
+      e.io.signalIn.valid := false.B
+      e.io.signalIn.bits := DontCare
+    })
+  } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecAluExec) {
     val vecAluExecUnitAssigned = (0 until params.vecAluExecUnitNum).map(_ => WireInit(false.B))
     for ((x,i) <- vecAluExecUnit.zipWithIndex) {
       when(x.io.signalIn.ready && {
@@ -248,7 +253,10 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     )
   }
   // vecLdstUnitに対しても同様
-  when(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
+  when(ID_flush) {
+    vectorLdstUnit.io.signalIn.valid := false.B
+    vectorLdstUnit.io.signalIn.bits := DontCare
+  } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
     vectorLdstUnit.io.signalIn.valid := true.B
     vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
     vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
