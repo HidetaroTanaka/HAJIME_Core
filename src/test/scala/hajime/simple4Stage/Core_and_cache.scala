@@ -7,7 +7,7 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
 
-class Core_and_cache(icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000, useVector: Boolean = false, useVectorCpu: Boolean = false) extends Module {
+class Core_and_cache[T <: CpuModule](icache_memsize: Int = 8192, dcache_memsize: Int = 8192, tohost: Int = 0x10000000, useVector: Boolean = false, cpu: Class[T]) extends Module {
   implicit val params = HajimeCoreParams(useException = true, useVector = useVector)
   val io = IO(new Bundle{
     val reset_vector = Input(UInt(64.W))
@@ -21,7 +21,7 @@ class Core_and_cache(icache_memsize: Int = 8192, dcache_memsize: Int = 8192, toh
   })
 
   val core = withReset(io.icache_initialising || io.dcache_initialising || reset.asBool) {
-    Module(new Core(useVectorCpu))
+    Module(new Core(cpu))
   }
   val icache = Module(Icache_for_Verilator(memsize = icache_memsize))
   val dcache = Module(Dcache_for_Verilator(dcacheBaseAddr = 0x00004000, tohost = tohost, memsize = dcache_memsize))
@@ -64,6 +64,6 @@ class Core_and_cache(icache_memsize: Int = 8192, dcache_memsize: Int = 8192, toh
 }
 
 object Core_and_cache extends App {
-  def apply(icache_memsize: Int, dcache_memsize: Int, tohost: Int): Core_and_cache = new Core_and_cache(icache_memsize, dcache_memsize, tohost)
-  ChiselStage.emitSystemVerilogFile(apply(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  def apply[T <: CpuModule](icache_memsize: Int, dcache_memsize: Int, tohost: Int, cpu: Class[T]): Core_and_cache[T] = new Core_and_cache(icache_memsize, dcache_memsize, tohost, cpu = cpu)
+  ChiselStage.emitSystemVerilogFile(apply(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, classOf[CPU]), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

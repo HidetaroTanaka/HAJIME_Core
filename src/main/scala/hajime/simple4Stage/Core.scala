@@ -9,6 +9,7 @@ import hajime.publicmodules._
 import hajime.vectormodules._
 
 import scala.annotation.unused
+import scala.reflect.ClassTag
 
 class debugIO(implicit params: HajimeCoreParams) extends Bundle {
   val debug_retired = Valid(new Bundle{
@@ -33,29 +34,28 @@ class CoreIO(implicit params: HajimeCoreParams) extends Bundle {
   val hartid = Input(UInt(xprlen.W))
   val debug_io = if(debug) Some(Output(new debugIO())) else None
 }
-
-class Core(useVectorCpu: Boolean)(implicit params: HajimeCoreParams) extends Module {
+class Core[T <: CpuModule](cpu: Class[T])(implicit params: HajimeCoreParams) extends Module {
   val io = IO(new CoreIO())
   val frontend = Module(new Frontend())
-  val internalCpu: CpuModule = Module(
-    if(useVectorCpu) {
-      new VectorCpu()
-    } else {
-      new CPU()
-    }
-  )
+  val internalCpu = Module(cpu.getDeclaredConstructor(classOf[HajimeCoreParams]).newInstance(params))
   io.icache_axi4lite <> frontend.io.icache_axi4lite
   io.dcache_axi4lite <> internalCpu.io.dcache_axi4lite
   frontend.io.reset_vector := io.reset_vector
   internalCpu.io.frontend <> frontend.io.cpu
   internalCpu.io.hartid := io.hartid
-  if(params.debug) io.debug_io.get := internalCpu.io.debug_io.get
+  if (params.debug) io.debug_io.get := internalCpu.io.debug_io.get
 }
 
 object Core extends App {
   implicit val params = HajimeCoreParams()
-  def apply(useVectorCpu: Boolean)(implicit params: HajimeCoreParams): Core = new Core(useVectorCpu)
-  ChiselStage.emitSystemVerilogFile(new Core(useVectorCpu = true), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  def apply[T <: CpuModule](cpu: Class[T])(implicit params: HajimeCoreParams): Core[T] = {
+    if(cpu == classOf[VectorCpu] && !params.useVector) {
+      throw new Exception("useVector is false")
+    } else {
+      new Core(cpu)
+    }
+  }
+  ChiselStage.emitSystemVerilogFile(new Core(classOf[VectorCpu]), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
 @unused
@@ -511,4 +511,8 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     io.debug_io.get.debug_retired.valid := WB_inst_can_retire
     io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
   }
+}
+
+object CPU extends App {
+  def apply(implicit params: HajimeCoreParams): CPU = new CPU()
 }

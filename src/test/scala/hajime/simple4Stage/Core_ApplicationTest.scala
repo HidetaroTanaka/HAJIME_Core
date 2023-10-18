@@ -6,15 +6,15 @@ import org.scalatest.flatspec._
 import hajime.vectormodules.MemInitializer._
 
 object Core_ApplicationTest {
-  def get_toHostChar(dut: Core_and_cache): Char = {
+  def get_toHostChar[T <: CpuModule](dut: Core_and_cache[T]): Char = {
     dut.io.toHost.bits.peekInt().toChar
   }
 
-  def get_toHostValid(dut: Core_and_cache): Boolean = {
+  def get_toHostValid[T <: CpuModule](dut: Core_and_cache[T]): Boolean = {
     dut.io.toHost.valid.peekBoolean()
   }
 
-  def executeTest(dut: Core_and_cache, testName: String, testType: String): Unit = {
+  def executeTest[T <: CpuModule](dut: Core_and_cache[T], testName: String, testType: String): Unit = {
     println(s"test $testName:")
     fork {
       initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.hex", dut.io.imem_initialiseAXI, dut.io.icache_initialising, dut.clock, 0)
@@ -47,7 +47,7 @@ class Rv64iApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- rv64iTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64i")
       }
     }
@@ -60,7 +60,7 @@ class Rv64mApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- rv64mTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64m")
       }
     }
@@ -74,7 +74,7 @@ class ExceptionApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- exceptionTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "exceptions")
       }
     }
