@@ -87,7 +87,22 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   // 乗算命令であればmultiplier.respがvalidである必要がある
   // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある
   val vecExecUnitsReady: Seq[Bool] = Seq(vectorLdstUnit.io.signalIn.ready) ++ vecAluExecUnit.map(_.io.signalIn.ready)
-  if (params.debug) assert(vecExecUnitsReady.map(_.asUInt).reduce(_ +& _) <= 1.U, s"Multiple VecUnits last Error.")
+  val vecExecUnitsToExWbRegValid: Seq[Bool] = Seq(vectorLdstUnit.io.toExWbReg.valid) ++ vecAluExecUnit.map(_.io.toExWbReg.valid)
+  if(params.debug) {
+    when(vecExecUnitsToExWbRegValid.map(_.asUInt).reduce (_ +& _) > 1.U) {
+      printf("Multiple VecUnits last Error.\n")
+      printf("Debug Info:\n")
+      val toExWbRegList: Seq[Valid[EX_WB_IO]] = Seq(vectorLdstUnit.io.toExWbReg) ++ vecAluExecUnit.map(_.io.toExWbReg)
+      toExWbRegList.zipWithIndex.foreach {
+        case (d, i) => {
+          printf("vecExecUnit%d:\n", i.U)
+          printf("valid:%b\n", d.valid)
+          printf("inst:%x\n", d.bits.debug.get.instruction)
+          printf("pc:%x\n", d.bits.debug.get.pc.addr)
+        }
+      }
+    }
+  }
 
   val vecExecUnitHasInstButNotRetire: Seq[Bool] = (vecExecUnitsReady.map(!_) zip (Seq(!vectorLdstUnit.io.toExWbReg.valid) ++ vecAluExecUnit.map(!_.io.toExWbReg.valid))).map {
     case (notReady, notRetire) => notReady && notRetire
@@ -251,6 +266,16 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
       vecSigs.debug.get.pc := io.frontend.resp.bits.pc
       vecSigs.debug.get.instruction := decoded_inst.bits
     }
+  // スカラメモリアクセスの場合
+  } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.memValid && vecLdstUnitReady) {
+    vectorLdstUnit.io.signalIn.valid := true.B
+    vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
+    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
+    vectorLdstUnit.io.signalIn.bits.scalar.rdIndex := decoded_inst.rd
+    vectorLdstUnit.io.signalIn.bits.vector := DontCare
+    vectorLdstUnit.io.signalIn.bits.vector.scalarVal := rs1ValueToEX
+    vectorLdstUnit.io.signalIn.bits.vector.scalarDecode := decoder.io.out.bits
+    vectorLdstUnit.io.signalIn.bits.vector.pc := io.frontend.resp.bits.pc
   } .otherwise {
     vectorLdstUnit.io.signalIn := DontCare
     vectorLdstUnit.io.signalIn.valid := false.B
@@ -367,7 +392,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
 
   EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || vectorLdstUnit.io.signalIn.ready) &&
     (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B) &&
-    (!ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || vecExecUnitsReady.reduce(_ || _))
+    (!ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || vecExecUnitsToExWbRegValid.reduce(_ || _))
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
   EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
     WB_SEL.ARITH.asUInt -> exScalarRes,

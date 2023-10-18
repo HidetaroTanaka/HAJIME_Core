@@ -44,16 +44,18 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 
   val io = IO(new VectorExecUnitIO())
 
-  val idx = RegInit(0.U(log2Up(params.vlen/8).W))
-  when((io.signalIn.valid && io.signalIn.ready) || io.dataOut.toVRF.bits.last) {
-    idx := 0.U
-  } .otherwise {
-    idx := idx + 1.U
-  }
-
   val instInfoReg = RegInit(Valid(new VectorExecUnitSignalIn()).Lit(
     _.valid -> false.B,
   ))
+
+  val idx = RegInit(0.U(log2Up(params.vlen/8).W))
+  when((io.signalIn.valid && io.signalIn.ready) || io.dataOut.toVRF.bits.last) {
+    idx := 0.U
+  } .elsewhen(instInfoReg.valid) {
+    idx := idx + 1.U
+  } .otherwise {
+    idx := 0.U
+  }
 
   when(io.signalIn.valid && io.signalIn.ready) {
     instInfoReg.valid := true.B

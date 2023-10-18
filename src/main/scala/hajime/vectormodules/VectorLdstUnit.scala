@@ -44,41 +44,40 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   ))
   val scalarReqRegNext = RegNext(scalarReqReg)
   // vector
-  val vectorReqReg = RegInit(Valid(new VectorExecUnitSignalIn()).Lit(
-    _.valid -> false.B
-  ))
+  val vectorReqReg = Reg(new VectorExecUnitSignalIn())
+  val hasVectorInst = RegInit(false.B)
   val vectorReqRegNext = RegNext(vectorReqReg)
+  val hasVectorInstNext = RegNext(hasVectorInst)
 
   val vecIdx = RegInit(0.U(log2Up(params.vlen/8).W))
   val vecIdxToVrfWrite = RegNext(vecIdx)
 
   val accumulator = RegInit(0.U(params.xprlen.W))
 
-  val vecMemAccessValid = vectorReqReg.valid
+  val vecMemAccessValid = hasVectorInst
   // データメモリへのリクエストが命令の最終要素であれば次のIDステージの命令を得られる
-  val vecMemAccessLast = vecMemAccessValid && (vecIdx === vectorReqReg.bits.vecConf.vl-1.U)
-  //
+  val vecMemAccessLast = vecMemAccessValid && (vecIdx === vectorReqReg.vecConf.vl-1.U)
 
   when(io.signalIn.valid && io.signalIn.ready) {
     scalarReqReg.valid := true.B
     scalarReqReg.bits := io.signalIn.bits.scalar
-    vectorReqReg.valid := io.signalIn.bits.vector.vectorDecode.mop =/= MOP.NONE.asUInt
-    vectorReqReg.bits := io.signalIn.bits.vector
-  }.elsewhen(scalarReqReg.valid && (!vectorReqReg.valid || vecMemAccessLast)) {
+    hasVectorInst := (io.signalIn.bits.vector.scalarDecode.vector.get && io.signalIn.bits.vector.vectorDecode.mop =/= MOP.NONE.asUInt)
+    vectorReqReg := io.signalIn.bits.vector
+  }.elsewhen(scalarReqReg.valid && (!hasVectorInst || vecMemAccessLast)) {
     scalarReqReg.valid := false.B
-    when(vectorReqReg.valid) {
-      vectorReqReg.valid := false.B
+    when(hasVectorInst) {
+      hasVectorInst := false.B
     }
   }.otherwise {
     scalarReqReg := scalarReqReg
     vectorReqReg := vectorReqReg
   }
-  assert(scalarReqReg.valid || !vectorReqReg.valid, "scalarReq false and vectorReq true")
+  assert(scalarReqReg.valid || !hasVectorInst, "scalarReq false and vectorReq true")
 
   when((io.signalIn.valid && io.signalIn.ready) || vecMemAccessLast) {
     vecIdx := 0.U
     accumulator := 0.U
-  } .elsewhen(vectorReqReg.valid) {
+  } .elsewhen(hasVectorInst) {
     vecIdx := vecIdx + 1.U
     // unit-stride
     // sew=0 -> accumulator += 1
@@ -91,9 +90,9 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     // sew=1 -> stride << 1
     // sew=2 -> stride << 2
     // sew=3 -> stride << 3
-    accumulator := accumulator + Mux(vectorReqReg.bits.vectorDecode.mop === MOP.UNIT_STRIDE.asUInt, MuxLookup(vectorReqReg.bits.vecConf.vtype.vsew, 1.U)(
+    accumulator := accumulator + Mux(vectorReqReg.vectorDecode.mop === MOP.UNIT_STRIDE.asUInt, MuxLookup(vectorReqReg.vecConf.vtype.vsew, 1.U)(
       (0 until 4).map(i => i.U -> (1 << i).U)
-    ), MuxLookup(vectorReqReg.bits.vecConf.vtype.vsew, scalarReqReg.bits.rs2Value)(
+    ), MuxLookup(vectorReqReg.vecConf.vtype.vsew, scalarReqReg.bits.rs2Value)(
       (0 until 4).map(i => i.U -> (scalarReqReg.bits.rs2Value << i).asUInt)
     ))
   } .otherwise {
@@ -103,11 +102,11 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
 
   // scalarReqRegがvalidでない（メモリアクセスが存在しない）または，axiのreqがreadyであり次のサイクルで命令を受け取れるかつベクトルならば最終要素
   io.signalIn.ready := !scalarReqReg.valid || (MuxCase(false.B, Seq(
-    vectorReqReg.bits.scalarDecode.memRead -> io.dcache.ar.ready,
-    vectorReqReg.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
-  )) && (!vectorReqReg.valid || vecMemAccessLast))
+    vectorReqReg.scalarDecode.memRead -> io.dcache.ar.ready,
+    vectorReqReg.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
+  )) && (!hasVectorInst || vecMemAccessLast))
 
-  val idxOffset = MuxLookup(vectorReqReg.bits.scalarDecode.memory_length, io.readVrf.resp.vs2Out)(Seq(
+  val idxOffset = MuxLookup(vectorReqReg.scalarDecode.memory_length, io.readVrf.resp.vs2Out)(Seq(
     MEM_LEN.B -> 0,
     MEM_LEN.H -> 1,
     MEM_LEN.W -> 2,
@@ -115,22 +114,22 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   ).map{
     case (memLength, shiftVal) => memLength.asUInt -> (io.readVrf.resp.vs2Out << shiftVal).asUInt
   })
-  val addr = vectorReqReg.bits.scalarVal + MuxLookup(vectorReqReg.bits.vectorDecode.mop, vectorReqReg.bits.scalarVal)(Seq(
+  val addr = vectorReqReg.scalarVal + MuxLookup(vectorReqReg.vectorDecode.mop, vectorReqReg.scalarVal)(Seq(
     MOP.NONE -> scalarReqReg.bits.immediate,
     MOP.UNIT_STRIDE -> accumulator,
     MOP.IDX_UNORDERED -> idxOffset,
     MOP.STRIDED -> accumulator,
     MOP.IDX_ORDERED -> idxOffset,
   ).map(x => (x._1.asUInt, x._2)))
-  val data = Mux(vectorReqReg.valid, io.readVrf.resp.vdOut, scalarReqReg.bits.rs2Value)
+  val data = Mux(hasVectorInst, io.readVrf.resp.vdOut, scalarReqReg.bits.rs2Value)
 
   // AXI4Lite Read Address Request Channel
-  io.dcache.ar.valid := scalarReqReg.valid && vectorReqReg.bits.scalarDecode.memRead
+  io.dcache.ar.valid := scalarReqReg.valid && vectorReqReg.scalarDecode.memRead
   io.dcache.ar.bits.addr := addr
   io.dcache.ar.bits.prot := 0.U(3.W)
 
   // AXI4Lite Write Address Request Channel
-  io.dcache.aw.valid := scalarReqReg.valid && vectorReqReg.bits.scalarDecode.memWrite && (!vectorReqReg.valid || vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
+  io.dcache.aw.valid := scalarReqReg.valid && vectorReqReg.scalarDecode.memWrite && (!hasVectorInst || vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm)
   io.dcache.aw.bits.addr := addr
   io.dcache.aw.bits.prot := 0.U(3.W)
 
@@ -141,9 +140,9 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.dcache.r.ready := true.B
 
   // AXI4Lite Write Data Request Channel
-  io.dcache.w.valid := scalarReqReg.valid && vectorReqReg.bits.scalarDecode.memWrite && (!vectorReqReg.valid || vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm)
+  io.dcache.w.valid := scalarReqReg.valid && vectorReqReg.scalarDecode.memWrite && (!hasVectorInst || vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm)
   io.dcache.w.bits.data := data
-  io.dcache.w.bits.strb := MuxLookup(vectorReqReg.bits.scalarDecode.memory_length, 0.U(strb_width.W))(Seq(
+  io.dcache.w.bits.strb := MuxLookup(vectorReqReg.scalarDecode.memory_length, 0.U(strb_width.W))(Seq(
     MEM_LEN.B.asUInt -> "h01".U(strb_width.W),
     MEM_LEN.H.asUInt -> "h03".U(strb_width.W),
     MEM_LEN.W.asUInt -> "h0F".U(strb_width.W),
@@ -152,36 +151,36 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
 
   // toVRF
   io.readVrf.req.idx := vecIdx
-  io.readVrf.req.sew := vectorReqReg.bits.vecConf.vtype.vsew
+  io.readVrf.req.sew := vectorReqReg.vecConf.vtype.vsew
   io.readVrf.req.vs1 := 0.U
-  io.readVrf.req.vs2 := vectorReqReg.bits.vs2
-  io.readVrf.req.vd := vectorReqReg.bits.vd
+  io.readVrf.req.vs2 := vectorReqReg.vs2
+  io.readVrf.req.vd := vectorReqReg.vd
 
   // scalar resp
-  io.scalarResp.bits.data := MuxLookup(vectorReqRegNext.bits.scalarDecode.memory_length, io.dcache.r.bits.data)(
+  io.scalarResp.bits.data := MuxLookup(vectorReqRegNext.scalarDecode.memory_length, io.dcache.r.bits.data)(
     Seq(
       MEM_LEN.B -> 8,
       MEM_LEN.H -> 16,
       MEM_LEN.W -> 32,
       MEM_LEN.D -> 64,
     ).map {
-      case (memLen: EnumType, width: Int) => memLen.asUInt -> Mux(vectorReqRegNext.bits.scalarDecode.mem_sext, io.dcache.r.bits.data(width - 1, 0).ext(params.xprlen), io.dcache.r.bits.data.zext.asUInt)
+      case (memLen: EnumType, width: Int) => memLen.asUInt -> Mux(vectorReqRegNext.scalarDecode.mem_sext, io.dcache.r.bits.data(width - 1, 0).ext(params.xprlen), io.dcache.r.bits.data.zext.asUInt)
     }
   )
   io.scalarResp.valid := MuxCase(false.B, Seq(
-    vectorReqRegNext.bits.scalarDecode.memRead -> io.dcache.r.valid,
-    vectorReqRegNext.bits.scalarDecode.memWrite -> io.dcache.b.valid,
-  )) && scalarReqRegNext.valid && (!vectorReqRegNext.valid || RegNext(vecMemAccessLast))
+    vectorReqRegNext.scalarDecode.memRead -> io.dcache.r.valid,
+    vectorReqRegNext.scalarDecode.memWrite -> io.dcache.b.valid,
+  )) && scalarReqRegNext.valid && (!hasVectorInstNext || RegNext(vecMemAccessLast))
   io.scalarResp.bits.exceptionSignals.valid := false.B
   io.scalarResp.bits.exceptionSignals.bits := 0.U
 
   // vector resp
-  io.vectorResp.toVRF.valid := scalarReqRegNext.valid && vectorReqRegNext.valid
-  io.vectorResp.toVRF.bits.vd := vectorReqRegNext.bits.vd
-  io.vectorResp.toVRF.bits.vtype := vectorReqRegNext.bits.vecConf.vtype
+  io.vectorResp.toVRF.valid := scalarReqRegNext.valid && hasVectorInstNext
+  io.vectorResp.toVRF.bits.vd := vectorReqRegNext.vd
+  io.vectorResp.toVRF.bits.vtype := vectorReqRegNext.vecConf.vtype
   io.vectorResp.toVRF.bits.index := vecIdxToVrfWrite
   io.vectorResp.toVRF.bits.last := RegNext(vecMemAccessLast)
-  io.vectorResp.toVRF.bits.data := MuxLookup(vectorReqRegNext.bits.scalarDecode.memory_length, io.dcache.r.bits.data)(
+  io.vectorResp.toVRF.bits.data := MuxLookup(vectorReqRegNext.scalarDecode.memory_length, io.dcache.r.bits.data)(
     Seq(
       MEM_LEN.B -> 8,
       MEM_LEN.H -> 16,
@@ -192,21 +191,21 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     }
   )
   io.vectorResp.toVRF.bits.vm := false.B
-  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.bits.vectorDecode.vm || io.readVrf.resp.vm) && vectorReqRegNext.bits.scalarDecode.memRead
+  io.vectorResp.toVRF.bits.writeReq := io.vectorResp.toVRF.valid && RegNext(vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm) && vectorReqRegNext.scalarDecode.memRead
 
   // to EX_WB Reg
   io.toExWbReg.valid := scalarReqReg.valid && MuxCase(true.B, Seq(
-    vectorReqReg.bits.scalarDecode.memRead -> io.dcache.ar.ready,
-    vectorReqReg.bits.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
-  )) && (!vectorReqReg.bits.scalarDecode.vector.get || vecMemAccessLast)
+    vectorReqReg.scalarDecode.memRead -> io.dcache.ar.ready,
+    vectorReqReg.scalarDecode.memWrite -> (io.dcache.aw.ready && io.dcache.w.ready),
+  )) && (!vectorReqReg.scalarDecode.vector.get || vecMemAccessLast)
   io.toExWbReg.bits.dataSignals := DontCare // scalarRespの値を使う
-  io.toExWbReg.bits.dataSignals.pc := vectorReqReg.bits.pc
-  io.toExWbReg.bits.ctrlSignals.decode := vectorReqReg.bits.scalarDecode
+  io.toExWbReg.bits.dataSignals.pc := vectorReqReg.pc
+  io.toExWbReg.bits.ctrlSignals.decode := vectorReqReg.scalarDecode
   io.toExWbReg.bits.ctrlSignals.rd_index := scalarReqReg.bits.rdIndex
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := DontCare
-  if(params.debug) io.toExWbReg.bits.debug.get := vectorReqReg.bits.debug.get
+  if(params.debug) io.toExWbReg.bits.debug.get := vectorReqReg.debug.get
 }
 
 object VectorLdstUnit extends App {

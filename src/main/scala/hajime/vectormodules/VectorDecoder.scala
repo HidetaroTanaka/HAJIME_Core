@@ -189,7 +189,7 @@ class VectorDecoder(implicit params: HajimeCoreParams) extends Module with Decod
 
   import ContentValid._
   val csignals = ListLookup(io.inst.bits,
-    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.UNIT_STRIDE, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV).map(_.asUInt),
+    default = List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NORMAL, N, VEU_FUN.ADD, VSOURCE.VV).map(_.asUInt),
     mapping = tableForListLookup
   )
 

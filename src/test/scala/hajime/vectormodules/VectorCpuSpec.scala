@@ -16,7 +16,7 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
     "srl", "srli", "srliw", "srlw", "sub", "subw", "xor", "xori"
   )
   for (e <- instListWithoutDmem) {
-    ignore should s"pass the test ${e}" in {
+    it should s"Vector CPU pass the test ${e}" in {
       // 0x0000_0000 ~ 0x0000_1FFF : icache
       // 0x0000_4000 ~ 0x0000_5FFF : dcache
       // 0x1000_0000               : tohost
