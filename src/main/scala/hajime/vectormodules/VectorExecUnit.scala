@@ -103,7 +103,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.toExWbReg.bits.ctrlSignals.rd_index := 0.U
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
-  io.toExWbReg.bits.vectorCsrPorts.get := DontCare
+  io.toExWbReg.bits.vectorCsrPorts.get := instInfoReg.bits.vecConf
   if(params.debug) io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
 }
 

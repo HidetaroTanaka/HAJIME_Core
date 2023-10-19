@@ -204,7 +204,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.toExWbReg.bits.ctrlSignals.rd_index := scalarReqReg.bits.rdIndex
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
-  io.toExWbReg.bits.vectorCsrPorts.get := DontCare
+  io.toExWbReg.bits.vectorCsrPorts.get := vectorReqReg.vecConf
   if(params.debug) io.toExWbReg.bits.debug.get := vectorReqReg.debug.get
 }
 
