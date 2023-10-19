@@ -187,24 +187,24 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   vectorDecoder.io.inst := decoded_inst
 
   // ベクトル命令がベクトル設定・メモリアクセスでなく，かつvvならばvs1を使用する
-  vrfReadyTable.io.vs1Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && vectorDecoder.io.out.mop === MOP.NONE.asUInt && (vectorDecoder.io.out.vSource === VSOURCE.VV.asUInt)
+  vrfReadyTable.io.vs1Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && vectorDecoder.io.out.mop === MOP.NONE.asUInt && (vectorDecoder.io.out.vSource === VSOURCE.VV.asUInt)
   vrfReadyTable.io.vs1Check.bits.idx := decoded_inst.rs1
   vrfReadyTable.io.vs1Check.bits.vtype := vtypeBypass
   vrfReadyTable.io.vs1Check.bits.vm := vectorDecoder.io.out.veuFun.isMaskInst
   // ベクトル設定命令でなく，かつメモリアクセスでないまたはインデックスならばvs2を使用する
-  vrfReadyTable.io.vs2Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && ((vectorDecoder.io.out.mop === MOP.NONE.asUInt) || (vectorDecoder.io.out.mop === MOP.IDX_ORDERED.asUInt))
+  vrfReadyTable.io.vs2Check.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && ((vectorDecoder.io.out.mop === MOP.NONE.asUInt) || (vectorDecoder.io.out.mop === MOP.IDX_ORDERED.asUInt))
   vrfReadyTable.io.vs2Check.bits.idx := decoded_inst.rs2
   vrfReadyTable.io.vs2Check.bits.vtype := vtypeBypass
   vrfReadyTable.io.vs2Check.bits.vm := vectorDecoder.io.out.veuFun.isMaskInst
   // ベクトル設定命令でないならばvdを使用する
-  vrfReadyTable.io.vdCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt)
+  vrfReadyTable.io.vdCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst
   vrfReadyTable.io.vdCheck.bits.idx := decoded_inst.rd
   vrfReadyTable.io.vdCheck.bits.vtype := vtypeBypass
   vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
   // vmフィールドが1ならばvmを使用する
-  vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !(vectorDecoder.io.out.avl_sel === AVL_SEL.NONE.asUInt) && !vectorDecoder.io.out.vm
+  vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && !vectorDecoder.io.out.vm
   // ベクトル設定命令でなく，かつストア命令で無ければvdへ書き込む
-  vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && (vectorDecoder.io.out.avl_sel =/= AVL_SEL.NONE.asUInt) && !decoder.io.out.bits.memWrite
+  vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && !decoder.io.out.bits.memWrite
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
   when(ID_flush) {

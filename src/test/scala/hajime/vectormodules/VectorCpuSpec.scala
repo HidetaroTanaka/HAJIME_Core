@@ -49,7 +49,7 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
     "sb", "sd", "sh", "sw"
   ) else Nil
   for (e <- instListWithDmem) {
-    it should s"pass the test ${e}" in {
+    it should s"Vector CPU pass the test ${e}" in {
       test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
         dut.io.reset_vector.poke(0.U)
@@ -85,7 +85,7 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
     "mul", "mulh", "mulhsu", "mulhu", "mulw"
   ) else Nil
   for (e <- instListMult) {
-    it should s"pass the test ${e}" in {
+    it should s"Vector CPU pass the test ${e}" in {
       test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
         dut.io.reset_vector.poke(0.U)
@@ -115,7 +115,7 @@ class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "helloworld", "median", "printInt64", "selection_sort", "memcpy", "quicksort"
   )
   for (e <- rv64iTestList) {
-    it should s"execute $e" in {
+    it should s"Vector CPU execute $e" in {
       test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64i")
       }
@@ -125,9 +125,22 @@ class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "factorial", "power", "vector_innerproduct"
   )
   for (e <- rv64mTestList) {
-    it should s"execute $e" in {
+    it should s"Vector CPU execute $e" in {
       test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64m")
+      }
+    }
+  }
+}
+
+class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
+  val zve64xTestList = Seq(
+    "vector_conf", "vector_ldst", "vector_memcpy"
+  )
+  for (e <- zve64xTestList) {
+    it should s"Vector CPU execute $e" in {
+      test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+        executeTest(dut, e, "vector")
       }
     }
   }
