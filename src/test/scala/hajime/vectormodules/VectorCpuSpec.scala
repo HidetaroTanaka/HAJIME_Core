@@ -135,8 +135,8 @@ class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
 
 class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   val zve64xTestList = Seq(
-    // "vector_conf", "vector_ldst", "vector_memcpy",
-    "vector_stride"
+    "vector_conf", "vector_ldst", "vector_memcpy", "vector_stride",
+    "vector_index"
   )
   for (e <- zve64xTestList) {
     it should s"Vector CPU execute $e" in {

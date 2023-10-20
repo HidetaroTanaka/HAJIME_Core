@@ -207,7 +207,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && !decoder.io.out.bits.memWrite
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
-  when(ID_flush) {
+  when(ID_flush || ID_stall) {
     vecAluExecUnit.foreach(e => {
       e.io.signalIn.valid := false.B
       e.io.signalIn.bits := DontCare
@@ -253,7 +253,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     )
   }
   // vecLdstUnitに対しても同様
-  when(ID_flush) {
+  when(ID_flush || ID_stall) {
     vectorLdstUnit.io.signalIn.valid := false.B
     vectorLdstUnit.io.signalIn.bits := DontCare
   } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
