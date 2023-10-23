@@ -429,7 +429,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
   // またはベクタ命令実行完了前にスカラ命令がID_EXレジスタにある，またはチェイニング不可能なベクタ命令（構造ハザード・0要素目の値が用意できていないなど）
-  EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (ID_EX_REG.bits.ctrlSignals.decode.memValid && !vectorLdstUnit.io.signalIn.ready) || (if (params.useMulDiv) {
+  EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (if (params.useMulDiv) {
     ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
   } else false.B))
   // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
