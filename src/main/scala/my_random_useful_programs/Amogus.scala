@@ -86,8 +86,11 @@ object Amogus extends App {
 }
 
 object Amogus1 extends App {
-  val dataArray = Seq(0xA4, 0x3, 0x16, 0x5A, 0x84, 0xBD, 0x7A, 0xC4, 0x41, 0x55, 0x44, 0x6D, 0xE7, 0x3C, 0x0, 0x1B, 0xA7, 0x2A, 0x2C, 0x2B, 0xE4, 0xC7, 0x3, 0x82, 0xB8, 0xAB, 0xA1, 0x90, 0xF3, 0x1B, 0x81, 0x5, 0xE7, 0x6C, 0xA7, 0xD, 0x19, 0x2A, 0xC4, 0x31, 0x98, 0x5, 0xFA, 0xDE, 0x88, 0x1D, 0xA0, 0x95)
-  val indexArray: Seq[Byte] = Seq(-11, -12, 6, 8, 4, -4, -8, 16, -13, 7, 11, 2, 10, 20, -22, 1, -6, -2, -19, -5, -15, -16, 19, -17, 21, 15, -7, 22, -21, 18, 9, 17, -20, -23, -18, 3, -1, -3, -14, -10, 13, 0, -24, 5, 14, -9, 12)
-  println(indexArray.slice(0, 28).map(x => x.toHexString).mkString("{", ",", "}"))
-  println((0 until 28).map(i => dataArray(indexArray(i)+24).toHexString).mkString("{", ",", "}"))
+  val array0 = Seq(6, -12, 12, -5, 20, 15, -14, 8, 9, -19, 18, 11, 7, -10, -16, -3, 16, -23, -9, 19, 4, 1, -17, -20, 3, 0, -21, -8, -6, -22, 2, -13, -2, 22, 5, -24, -11, 14, -1, 10, -4, 13, 17, 21, -15, -7, -18)
+  val array1 = Seq(9, -13, -16, -21, -3, -23, 12, -17, -15, 22, 15, -19, 16, 10, -2, 6, -12, 4, 20, 18, -9, -7, 17, -14, 14, 8, -20, -24, -11, -10, 7, 2, 21, -4, 3, -22, 0, -8, 5, -18, -1, 13, -5, 19, 1, -6, 11)
+  (array0 zip array1).map {
+    case (a, b) => a + b
+  }.zipWithIndex.foreach {
+    case (d, i) => println(s"idx $i: $d")
+  }
 }

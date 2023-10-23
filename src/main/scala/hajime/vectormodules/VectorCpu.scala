@@ -223,6 +223,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
           case _ => !assignedSeq.reduce(_ || _)
         }
       }) {
+        printf("vecAluExecUnit%d valid\n", i.U)
         val vecSigs = x.io.signalIn.bits
         x.io.signalIn.valid := true.B
         vecSigs.vs1 := decoded_inst.rs1

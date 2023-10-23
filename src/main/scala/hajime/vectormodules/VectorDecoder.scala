@@ -45,7 +45,7 @@ object VDecode extends DecodeConstants with VectorOpConstants {
       case "vmv" => MV
       case _ => throw new Exception("fuck")
     }
-    List(Y, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NORMAL, Y, veuFunSel, vSource)
+    List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NORMAL, Y, veuFunSel, vSource)
   }
 
   val table: Array[(BitPat, List[EnumType])] = Array(
