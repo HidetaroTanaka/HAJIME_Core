@@ -30,6 +30,7 @@ void* resetMem(void* dest, size_t len) {
 }
 
 int main(int argc, char** argv) {
+  const char* ptr = dataArray + 24;
   asm volatile ("vsetvli x0, %0, e8, m1, ta, ma"
   :
   : "r"(28));
@@ -37,15 +38,16 @@ int main(int argc, char** argv) {
   :
   : "r"(indexArray));
   // v8 = (0 until 28).map(i => dataArray[indexArray[i]+24])
+  // {}
   asm volatile ("vloxei8.v v8, (%0), v17"
   :
-  : "r"(dataArray+24));
+  : "r"(ptr));
   asm volatile ("vse8.v v8, (%0)"
   :
   : "r"(vecResult));
   int i;
   for(i=0; i<28; i++) {
-    ansResult[i] = dataArray[indexArray[i]+24];
+    ansResult[i] = ptr[(signed char)indexArray[i]];
   }
   char string[19];
   _Bool correct = 1;

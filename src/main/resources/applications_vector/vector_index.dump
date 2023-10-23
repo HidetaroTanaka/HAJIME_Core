@@ -646,56 +646,55 @@ Disassembly of section .text.startup:
  958:	02078427          	vse8.v	v8,(a5)
  95c:	00004497          	auipc	s1,0x4
  960:	90c48493          	add	s1,s1,-1780 # 4268 <ansResult>
- 964:	00060713          	mv	a4,a2
+ 964:	00060793          	mv	a5,a2
  968:	00003597          	auipc	a1,0x3
  96c:	6b458593          	add	a1,a1,1716 # 401c <indexArray+0x1c>
  970:	00048693          	mv	a3,s1
- 974:	00074783          	lbu	a5,0(a4)
+ 974:	00078703          	lb	a4,0(a5)
  978:	00168693          	add	a3,a3,1
- 97c:	00170713          	add	a4,a4,1
- 980:	0187879b          	addw	a5,a5,24
- 984:	00f607b3          	add	a5,a2,a5
- 988:	0307c783          	lbu	a5,48(a5)
- 98c:	fef68fa3          	sb	a5,-1(a3)
- 990:	feb712e3          	bne	a4,a1,974 <main+0x64>
- 994:	00004917          	auipc	s2,0x4
- 998:	8a490913          	add	s2,s2,-1884 # 4238 <vecResult>
- 99c:	00100693          	li	a3,1
- 9a0:	00000413          	li	s0,0
- 9a4:	00003a17          	auipc	s4,0x3
- 9a8:	6eca0a13          	add	s4,s4,1772 # 4090 <dataArray+0x60>
- 9ac:	00003a97          	auipc	s5,0x3
- 9b0:	704a8a93          	add	s5,s5,1796 # 40b0 <dataArray+0x80>
- 9b4:	03000993          	li	s3,48
- 9b8:	00094703          	lbu	a4,0(s2)
- 9bc:	0004c783          	lbu	a5,0(s1)
- 9c0:	000a0513          	mv	a0,s4
- 9c4:	00190913          	add	s2,s2,1
- 9c8:	00148493          	add	s1,s1,1
- 9cc:	02f70463          	beq	a4,a5,9f4 <main+0xe4>
- 9d0:	8bdff0ef          	jal	28c <printstr>
- 9d4:	00810593          	add	a1,sp,8
- 9d8:	00040513          	mv	a0,s0
- 9dc:	829ff0ef          	jal	204 <int32ToHex>
- 9e0:	00810513          	add	a0,sp,8
- 9e4:	8a9ff0ef          	jal	28c <printstr>
- 9e8:	000a8513          	mv	a0,s5
- 9ec:	8a1ff0ef          	jal	28c <printstr>
- 9f0:	00000693          	li	a3,0
- 9f4:	0014041b          	addw	s0,s0,1
- 9f8:	fd3410e3          	bne	s0,s3,9b8 <main+0xa8>
- 9fc:	05813083          	ld	ra,88(sp)
- a00:	05013403          	ld	s0,80(sp)
- a04:	04813483          	ld	s1,72(sp)
- a08:	04013903          	ld	s2,64(sp)
- a0c:	03813983          	ld	s3,56(sp)
- a10:	03013a03          	ld	s4,48(sp)
- a14:	02813a83          	ld	s5,40(sp)
- a18:	0016c513          	xor	a0,a3,1
- a1c:	06010113          	add	sp,sp,96
- a20:	00008067          	ret
- a24:	fff00513          	li	a0,-1
- a28:	00008067          	ret
+ 97c:	00178793          	add	a5,a5,1
+ 980:	00e60733          	add	a4,a2,a4
+ 984:	04874703          	lbu	a4,72(a4)
+ 988:	fee68fa3          	sb	a4,-1(a3)
+ 98c:	feb794e3          	bne	a5,a1,974 <main+0x64>
+ 990:	00004917          	auipc	s2,0x4
+ 994:	8a890913          	add	s2,s2,-1880 # 4238 <vecResult>
+ 998:	00100693          	li	a3,1
+ 99c:	00000413          	li	s0,0
+ 9a0:	00003a17          	auipc	s4,0x3
+ 9a4:	6f0a0a13          	add	s4,s4,1776 # 4090 <dataArray+0x60>
+ 9a8:	00003a97          	auipc	s5,0x3
+ 9ac:	708a8a93          	add	s5,s5,1800 # 40b0 <dataArray+0x80>
+ 9b0:	03000993          	li	s3,48
+ 9b4:	00094703          	lbu	a4,0(s2)
+ 9b8:	0004c783          	lbu	a5,0(s1)
+ 9bc:	000a0513          	mv	a0,s4
+ 9c0:	00190913          	add	s2,s2,1
+ 9c4:	00148493          	add	s1,s1,1
+ 9c8:	02f70463          	beq	a4,a5,9f0 <main+0xe0>
+ 9cc:	8c1ff0ef          	jal	28c <printstr>
+ 9d0:	00810593          	add	a1,sp,8
+ 9d4:	00040513          	mv	a0,s0
+ 9d8:	82dff0ef          	jal	204 <int32ToHex>
+ 9dc:	00810513          	add	a0,sp,8
+ 9e0:	8adff0ef          	jal	28c <printstr>
+ 9e4:	000a8513          	mv	a0,s5
+ 9e8:	8a5ff0ef          	jal	28c <printstr>
+ 9ec:	00000693          	li	a3,0
+ 9f0:	0014041b          	addw	s0,s0,1
+ 9f4:	fd3410e3          	bne	s0,s3,9b4 <main+0xa4>
+ 9f8:	05813083          	ld	ra,88(sp)
+ 9fc:	05013403          	ld	s0,80(sp)
+ a00:	04813483          	ld	s1,72(sp)
+ a04:	04013903          	ld	s2,64(sp)
+ a08:	03813983          	ld	s3,56(sp)
+ a0c:	03013a03          	ld	s4,48(sp)
+ a10:	02813a83          	ld	s5,40(sp)
+ a14:	0016c513          	xor	a0,a3,1
+ a18:	06010113          	add	sp,sp,96
+ a1c:	00008067          	ret
+ a20:	fff00513          	li	a0,-1
+ a24:	00008067          	ret
 
 Disassembly of section .rodata:
 

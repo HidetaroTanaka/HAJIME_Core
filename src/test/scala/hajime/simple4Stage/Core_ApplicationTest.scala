@@ -33,7 +33,7 @@ object Core_ApplicationTest {
         toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
       }
     }
-    // dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
+    dut.io.debug_io.debug_abi_map.a0.expect(0.U(64.W))
     toHostWrittenChar.foreach(print)
     println()
   }
