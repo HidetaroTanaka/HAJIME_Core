@@ -29,8 +29,26 @@ void* resetMem(void* dest, size_t len) {
   return originalDest;
 }
 
+_Bool verifyVec(const char* array0, const char* array1, size_t n) {
+  _Bool correct = 1;
+  char string[19];
+  int i;
+  for(i=0; i<n; i++) {
+    if(array0[i] != array1[i]) {
+      printstr("ARRAY NOT CORRECT IN INDEX: ");
+      int32ToHex(i, string);
+      printstr(string);
+      printstr("\n");
+      correct = 0;
+    }
+  }
+  // 0 if correct, 1 if wrong
+  return !correct;
+}
+
 int main(int argc, char** argv) {
   const char* ptr = dataArray + 24;
+  // indexed load test
   asm volatile ("vsetvli x0, %0, e8, m1, ta, ma"
   :
   : "r"(28));
@@ -38,7 +56,6 @@ int main(int argc, char** argv) {
   :
   : "r"(indexArray));
   // v8 = (0 until 28).map(i => dataArray[indexArray[i]+24])
-  // {}
   asm volatile ("vloxei8.v v8, (%0), v17"
   :
   : "r"(ptr));
@@ -49,16 +66,25 @@ int main(int argc, char** argv) {
   for(i=0; i<28; i++) {
     ansResult[i] = ptr[(signed char)indexArray[i]];
   }
-  char string[19];
-  _Bool correct = 1;
-  for(i=0; i<48; i++) {
-    if(vecResult[i] != ansResult[i]) {
-      printstr("ARRAY NOT CORRECT IN INDEX: ");
-      int32ToHex(i, string);
-      printstr(string);
-      printstr("\n");
-      correct = 0;
-    }
+  _Bool returnVal = verifyVec(vecResult, ansResult, 48);
+  // indexed store test
+  asm volatile ("vsetvli x0, %0, e8, m1, ta, ma"
+  :
+  : "r"(32));
+  // v24: dataArray[16~47]
+  asm volatile ("vle8.v v24, (%0)"
+  :
+  : "r"(dataArray+16));
+  // v15: indexArray[16~47]
+  asm volatile ("vle8.v v15, (%0)"
+  :
+  : "r"(indexArray+16));
+  // vecResult[indexArray[16+i]+24] = dataArray[16+i]
+  asm volatile ("vsoxei8.v v24, (%0), v15"
+  :
+  : "r"(vecResult+24));
+  for(i=0; i<32; i++) {
+    ansResult[(signed char)indexArray[16+i]+24] = dataArray[16+i];
   }
-  return !correct;
+  return returnVal || verifyVec(vecResult, ansResult, 48);
 }
