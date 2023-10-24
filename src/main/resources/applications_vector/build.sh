@@ -145,4 +145,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vmadc_text_startup.bin > vmadc_text_startup.temp
 cat vmadc_rodata.temp vmadc_rodata_str1_8.temp vmadc_sdata.temp > vmadc_data.hex
 cat vmadc_text_init.temp vmadc_text.temp vmadc_text_startup.temp > vmadc_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmsbc.riscv ./vmsbc/vmsbc.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmsbc.riscv > vmsbc.dump
+riscv64-unknown-elf-objdump --disassemble-all vmsbc.riscv > vmsbc.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmsbc_rodata.bin vmsbc.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmsbc_rodata_str1_8.bin vmsbc.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmsbc_sdata.bin vmsbc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmsbc_text_init.bin vmsbc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmsbc_text.bin vmsbc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmsbc_text_startup.bin vmsbc.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_rodata.bin > vmsbc_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_rodata_str1_8.bin > vmsbc_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_sdata.bin > vmsbc_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_text_init.bin > vmsbc_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_text.bin > vmsbc_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmsbc_text_startup.bin > vmsbc_text_startup.temp
+cat vmsbc_rodata.temp vmsbc_rodata_str1_8.temp vmsbc_sdata.temp > vmsbc_data.hex
+cat vmsbc_text_init.temp vmsbc_text.temp vmsbc_text_startup.temp > vmsbc_inst.hex
+
 rm *.riscv *.bin *.temp

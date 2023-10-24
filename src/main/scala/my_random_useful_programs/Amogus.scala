@@ -102,4 +102,18 @@ object Amogus1 extends App {
   }.zipWithIndex.foreach {
     case (n, i) => println(s"index $i: ${n.toHexString}")
   }
+
+  val borrow = (array0 zip array1).map {
+    case (a, b) => (a - b) < 0
+  }
+  borrow.zipWithIndex.foreach {
+    case (b, i) => println(s"index $i: $b")
+  }
+  println()
+  (array2 zip borrow).map {
+    case (n, b) => n - 0x0721 - b.toInt
+  }.zipWithIndex.foreach {
+    case (n, i) => println(s"index $i: ${n.toHexString}")
+  }
+
 }

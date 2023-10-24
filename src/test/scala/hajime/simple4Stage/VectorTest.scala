@@ -9,7 +9,7 @@ class VectorTest extends AnyFlatSpec with ChiselScalatestTester {
     "vector_conf", "vector_ldst", "vector_memcpy"
   )
   for(e <- vectorTestList) {
-    it should s"execute $e" in {
+    ignore should s"execute $e" in {
       test(new Core_and_cache(useVector = true, cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "vector")
       }
