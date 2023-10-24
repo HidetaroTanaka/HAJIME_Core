@@ -12,7 +12,6 @@ class VecRegIdxWithVtype(implicit params: HajimeCoreParams) extends Bundle {
   val vm = Bool()
 }
 
-// TODO: ベクタ実行ユニットの数だけ各IOを用意 Vec(vrfPortNum, ...)
 class VrfReadyTableIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Bundle {
   val fromVecExecUnit = Vec(vrfPortNum, Flipped(ValidIO(new VecRegFileWriteReq())))
   // vdへ書き込みを行うか否か
@@ -133,7 +132,7 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   val vs2SameWriteAndSewOKList = for ((d, i) <- vs2SameWriteList.zipWithIndex) yield {
     d && (io.vs2Check.bits.vm || (!io.fromVecExecUnit(i).bits.vm && io.vs2Check.bits.vtype.vsew <= io.fromVecExecUnit(i).bits.vtype.vsew))
   }
-  val vs2OnlyOneWrite = (vs1SameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U) && (vs2SameWriteAndSewOKList.map(_.asUInt).reduce(_ +& _) === 1.U)
+  val vs2OnlyOneWrite = (vs2SameWriteList.map(_.asUInt).reduce(_ +& _) === 1.U) && (vs2SameWriteAndSewOKList.map(_.asUInt).reduce(_ +& _) === 1.U)
   io.vs2Check.ready := io.vs2Check.valid && ((vrfZeroIdxReadyTable(io.vs2Check.bits.idx) && (
     io.vs2Check.bits.vm || io.vs2Check.bits.vtype.vsew <= vrfWriteSewTable(io.vs2Check.bits.idx).sew
   )) || vs2OnlyOneWrite || vrfWholeIdxReadyTable(io.vs2Check.bits.idx))
