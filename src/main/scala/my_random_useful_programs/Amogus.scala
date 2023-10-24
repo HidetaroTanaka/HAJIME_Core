@@ -96,8 +96,9 @@ object Amogus1 extends App {
     case (b, i) => println(s"index $i: $b")
   }
   println()
+  import hajime.common.Functions._
   (array2 zip carry).map {
-    case (n, b) => n + 0x1919 + (if(b) 1 else 0)
+    case (n, b) => n + 0x1919 + b.toInt
   }.zipWithIndex.foreach {
     case (n, i) => println(s"index $i: ${n.toHexString}")
   }

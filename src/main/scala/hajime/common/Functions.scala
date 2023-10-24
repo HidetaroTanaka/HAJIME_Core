@@ -19,4 +19,9 @@ object Functions {
       ls.map(x => x === elem).reduce(_ || _)
     }
   }
+  implicit class booleanToInt(b: Boolean) {
+    def toInt: Int = {
+      if(b) 1 else 0
+    }
+  }
 }
