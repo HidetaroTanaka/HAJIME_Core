@@ -8,6 +8,7 @@ import hajime.common.Functions._
 
 class VecRegFileReadReq(implicit params: HajimeCoreParams) extends Bundle {
   val sew = UInt(3.W)
+  val readVdAsMaskSource = Bool()
   val idx = UInt(log2Up(params.vlen/8).W)
   val vs1 = Input(UInt(5.W))
   val vs2 = Input(UInt(5.W))
@@ -54,8 +55,8 @@ class VecRegFileIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends B
 // TODO: make it compatible with LMUL > 1 (bigger number of index)
 class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Module {
   def readVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReadReq): VecRegFileReadResp = {
-    def vecRegToData(vecReg: Vec[UInt], req: VecRegFileReadReq): UInt = {
-      MuxLookup(req.sew, 0.U)(
+    def vecRegToData(vecReg: Vec[UInt], req: VecRegFileReadReq, readAsVd: Boolean): UInt = {
+      val nonVmRes = MuxLookup(req.sew, 0.U)(
         (0 until 4).map(
           // 0.U -> vs1ReadVecReg(req.idx)
           // 1.U -> Cat(vs1ReadVecReg(req.idx << 1 + 1), vs1ReadVecReg(req.idx << 1))
@@ -64,6 +65,8 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
           i => i.U -> Cat((0 until (1 << i)).reverse.map(j => vecReg((req.idx << i).asUInt + j.U))).ext(targetWidth = 64)
         )
       )
+      val vmRes = if(readAsVd) Some(vecReg(req.idx.head(req.idx.getWidth-3))) else None
+      if(readAsVd) Mux(req.readVdAsMaskSource, vmRes.get, nonVmRes) else nonVmRes
     }
     val res = Wire(new VecRegFileReadResp())
 
@@ -71,9 +74,9 @@ class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Mod
     val vs2ReadVecReg: Vec[UInt] = vrf.read(req.vs2)
     val vdReadVecReg: Vec[UInt] = vrf.read(req.vd)
 
-    res.vs1Out := vecRegToData(vs1ReadVecReg, req)
-    res.vs2Out := vecRegToData(vs2ReadVecReg, req)
-    res.vdOut := vecRegToData(vdReadVecReg, req)
+    res.vs1Out := vecRegToData(vs1ReadVecReg, req, readAsVd = false)
+    res.vs2Out := vecRegToData(vs2ReadVecReg, req, readAsVd = false)
+    res.vdOut := vecRegToData(vdReadVecReg, req, readAsVd = true)
     res.vm := vrf.read(0.U)(req.idx.head(req.idx.getWidth-3))(req.idx(2,0))
 
     res

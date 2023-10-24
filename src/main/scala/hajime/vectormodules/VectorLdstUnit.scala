@@ -155,6 +155,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.readVrf.req.vs1 := 0.U
   io.readVrf.req.vs2 := vectorReqReg.vs2
   io.readVrf.req.vd := vectorReqReg.vd
+  io.readVrf.req.readVdAsMaskSource := false.B
 
   // scalar resp
   io.scalarResp.bits.data := MuxLookup(vectorReqRegNext.scalarDecode.memory_length, io.dcache.r.bits.data)(

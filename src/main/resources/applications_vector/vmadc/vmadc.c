@@ -47,5 +47,21 @@ int main(int argc, char** argv) {
     ptrRes += vl;
     avl -= vl;
   }
-  return 0;
+  int i;
+  for(i=0; i<41; i++) {
+    _Bool carry_out = ((int)dataArray0[i] + (int)dataArray1[i]) > 0xFFFF;
+    answerArray[i] = dataArray2[i] + 0x1919 + (unsigned short)carry_out;
+  }
+  _Bool correct = 1;
+  char string[19];
+  for(i=0; i<41; i++) {
+    if(resultArray[i] != answerArray[i]) {
+      printstr("ARRAY NOT CORRECT IN INDEX: ");
+      int32ToHex(i, string);
+      printstr(string);
+      printstr("\n");
+      correct = 0;
+    }
+  }
+  return !correct;
 }

@@ -72,6 +72,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.readVrf.req.vs1 := instInfoReg.bits.vs1
   io.readVrf.req.vs2 := instInfoReg.bits.vs2
   io.readVrf.req.vd := instInfoReg.bits.vd
+  io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask
 
   val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
   val execValue2 = io.readVrf.resp.vs2Out
@@ -263,10 +264,10 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
     )
   )
 
-  io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, MuxLookup(idx(2, 0), rawResult)(
+  io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.writeAsMask, MuxLookup(idx(2, 0), rawResult)(
     (0 until 8).map(
       i => i.U -> Cat((0 until 8).reverse.map(
-        j => if (j == i) rawResult(j) else io.readVrf.resp.vdOut(j)
+        j => if (j == i) rawResult(0) else io.readVrf.resp.vdOut(j)
       ))
     )
   ), rawResult)
