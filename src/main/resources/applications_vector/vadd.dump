@@ -632,69 +632,76 @@ Disassembly of section .text.startup:
  928:	02900413          	li	s0,41
  92c:	0d0475d7          	vsetvli	a1,s0,e32,m1,ta,ma
  930:	0005879b          	sext.w	a5,a1
- 934:	02076507          	vle32.v	v10,(a4)
- 938:	0206e587          	vle32.v	v11,(a3)
- 93c:	02a58657          	vadd.vv	v12,v10,v11
- 940:	02066627          	vse32.v	v12,(a2)
- 944:	00279793          	sll	a5,a5,0x2
- 948:	40b4043b          	subw	s0,s0,a1
- 94c:	00f70733          	add	a4,a4,a5
- 950:	00f686b3          	add	a3,a3,a5
- 954:	00f60633          	add	a2,a2,a5
- 958:	fc041ae3          	bnez	s0,92c <main+0x3c>
- 95c:	8c818493          	add	s1,gp,-1848 # 4418 <answerArray>
- 960:	00003797          	auipc	a5,0x3
- 964:	76078793          	add	a5,a5,1888 # 40c0 <dataArray0>
- 968:	00003617          	auipc	a2,0x3
- 96c:	69860613          	add	a2,a2,1688 # 4000 <dataArray1>
- 970:	00003517          	auipc	a0,0x3
- 974:	7f450513          	add	a0,a0,2036 # 4164 <dataArray0+0xa4>
- 978:	00048693          	mv	a3,s1
- 97c:	0007a583          	lw	a1,0(a5)
- 980:	00062703          	lw	a4,0(a2)
- 984:	00478793          	add	a5,a5,4
- 988:	00460613          	add	a2,a2,4
- 98c:	00b7073b          	addw	a4,a4,a1
- 990:	00e6a023          	sw	a4,0(a3)
- 994:	00468693          	add	a3,a3,4
- 998:	fea792e3          	bne	a5,a0,97c <main+0x8c>
- 99c:	00004917          	auipc	s2,0x4
- 9a0:	9bc90913          	add	s2,s2,-1604 # 4358 <resultArray>
- 9a4:	00100693          	li	a3,1
- 9a8:	00004a17          	auipc	s4,0x4
- 9ac:	808a0a13          	add	s4,s4,-2040 # 41b0 <dataArray0+0xf0>
- 9b0:	00004a97          	auipc	s5,0x4
- 9b4:	820a8a93          	add	s5,s5,-2016 # 41d0 <dataArray0+0x110>
- 9b8:	02900993          	li	s3,41
- 9bc:	00092703          	lw	a4,0(s2)
- 9c0:	0004a783          	lw	a5,0(s1)
- 9c4:	000a0513          	mv	a0,s4
- 9c8:	00490913          	add	s2,s2,4
- 9cc:	00448493          	add	s1,s1,4
- 9d0:	02f70463          	beq	a4,a5,9f8 <main+0x108>
- 9d4:	899ff0ef          	jal	26c <printstr>
- 9d8:	00810593          	add	a1,sp,8
- 9dc:	00040513          	mv	a0,s0
- 9e0:	805ff0ef          	jal	1e4 <int32ToHex>
- 9e4:	00810513          	add	a0,sp,8
- 9e8:	885ff0ef          	jal	26c <printstr>
- 9ec:	000a8513          	mv	a0,s5
+ 934:	000012b7          	lui	t0,0x1
+ 938:	8102829b          	addw	t0,t0,-2032 # 810 <memset+0x1c>
+ 93c:	02076507          	vle32.v	v10,(a4)
+ 940:	0206e587          	vle32.v	v11,(a3)
+ 944:	02a58657          	vadd.vv	v12,v10,v11
+ 948:	02c0b657          	vadd.vi	v12,v12,1
+ 94c:	02c2c657          	vadd.vx	v12,v12,t0
+ 950:	02066627          	vse32.v	v12,(a2)
+ 954:	00279793          	sll	a5,a5,0x2
+ 958:	40b4043b          	subw	s0,s0,a1
+ 95c:	00f70733          	add	a4,a4,a5
+ 960:	00f686b3          	add	a3,a3,a5
+ 964:	00f60633          	add	a2,a2,a5
+ 968:	fc0412e3          	bnez	s0,92c <main+0x3c>
+ 96c:	8c818493          	add	s1,gp,-1848 # 4418 <answerArray>
+ 970:	00001537          	lui	a0,0x1
+ 974:	00003717          	auipc	a4,0x3
+ 978:	74c70713          	add	a4,a4,1868 # 40c0 <dataArray0>
+ 97c:	00003617          	auipc	a2,0x3
+ 980:	68460613          	add	a2,a2,1668 # 4000 <dataArray1>
+ 984:	00003817          	auipc	a6,0x3
+ 988:	7e080813          	add	a6,a6,2016 # 4164 <dataArray0+0xa4>
+ 98c:	00048693          	mv	a3,s1
+ 990:	8115051b          	addw	a0,a0,-2031 # 811 <memset+0x1d>
+ 994:	00072583          	lw	a1,0(a4)
+ 998:	00062783          	lw	a5,0(a2)
+ 99c:	00470713          	add	a4,a4,4
+ 9a0:	00460613          	add	a2,a2,4
+ 9a4:	00b787bb          	addw	a5,a5,a1
+ 9a8:	00a787bb          	addw	a5,a5,a0
+ 9ac:	00f6a023          	sw	a5,0(a3)
+ 9b0:	00468693          	add	a3,a3,4
+ 9b4:	ff0710e3          	bne	a4,a6,994 <main+0xa4>
+ 9b8:	00004917          	auipc	s2,0x4
+ 9bc:	9a090913          	add	s2,s2,-1632 # 4358 <resultArray>
+ 9c0:	00100693          	li	a3,1
+ 9c4:	00003a17          	auipc	s4,0x3
+ 9c8:	7eca0a13          	add	s4,s4,2028 # 41b0 <dataArray0+0xf0>
+ 9cc:	00004a97          	auipc	s5,0x4
+ 9d0:	804a8a93          	add	s5,s5,-2044 # 41d0 <dataArray0+0x110>
+ 9d4:	02900993          	li	s3,41
+ 9d8:	00092703          	lw	a4,0(s2)
+ 9dc:	0004a783          	lw	a5,0(s1)
+ 9e0:	000a0513          	mv	a0,s4
+ 9e4:	00490913          	add	s2,s2,4
+ 9e8:	00448493          	add	s1,s1,4
+ 9ec:	02f70463          	beq	a4,a5,a14 <main+0x124>
  9f0:	87dff0ef          	jal	26c <printstr>
- 9f4:	00000693          	li	a3,0
- 9f8:	0014041b          	addw	s0,s0,1
- 9fc:	fd3410e3          	bne	s0,s3,9bc <main+0xcc>
- a00:	05813083          	ld	ra,88(sp)
- a04:	05013403          	ld	s0,80(sp)
- a08:	04813483          	ld	s1,72(sp)
- a0c:	04013903          	ld	s2,64(sp)
- a10:	03813983          	ld	s3,56(sp)
- a14:	03013a03          	ld	s4,48(sp)
- a18:	02813a83          	ld	s5,40(sp)
- a1c:	0016c513          	xor	a0,a3,1
- a20:	06010113          	add	sp,sp,96
- a24:	00008067          	ret
- a28:	fff00513          	li	a0,-1
- a2c:	00008067          	ret
+ 9f4:	00810593          	add	a1,sp,8
+ 9f8:	00040513          	mv	a0,s0
+ 9fc:	fe8ff0ef          	jal	1e4 <int32ToHex>
+ a00:	00810513          	add	a0,sp,8
+ a04:	869ff0ef          	jal	26c <printstr>
+ a08:	000a8513          	mv	a0,s5
+ a0c:	861ff0ef          	jal	26c <printstr>
+ a10:	00000693          	li	a3,0
+ a14:	0014041b          	addw	s0,s0,1
+ a18:	fd3410e3          	bne	s0,s3,9d8 <main+0xe8>
+ a1c:	05813083          	ld	ra,88(sp)
+ a20:	05013403          	ld	s0,80(sp)
+ a24:	04813483          	ld	s1,72(sp)
+ a28:	04013903          	ld	s2,64(sp)
+ a2c:	03813983          	ld	s3,56(sp)
+ a30:	03013a03          	ld	s4,48(sp)
+ a34:	02813a83          	ld	s5,40(sp)
+ a38:	0016c513          	xor	a0,a3,1
+ a3c:	06010113          	add	sp,sp,96
+ a40:	00008067          	ret
+ a44:	fff00513          	li	a0,-1
+ a48:	00008067          	ret
 
 Disassembly of section .rodata:
 

@@ -84,7 +84,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   valueToExec.vdOut := execValue3
   valueToExec.vm := execValueVM
 
-  io.dataOut.toVRF.bits.last := (idx-1.U === instInfoReg.bits.vecConf.vl)
+  io.dataOut.toVRF.bits.last := (idx === instInfoReg.bits.vecConf.vl-1.U) && instInfoReg.valid
   io.dataOut.toVRF.bits.index := Mux(instInfoReg.bits.vectorDecode.veuFun.writeAsMask, idx.head(idx.getWidth-3), idx)
   io.dataOut.toVRF.valid := instInfoReg.valid
   io.dataOut.toVRF.bits.vtype := instInfoReg.bits.vecConf.vtype
@@ -177,7 +177,7 @@ class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends Vector
   ), rawResult)
   io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.isArithmeticMask
   // if inst[25] is 1, unmasked. if 0, write only v0.mask[i] = 1. vadc, vmadc, vsbc, vmsbc, vmerge always writes to vd regardless of v0.mask
-  io.dataOut.toVRF.bits.writeReq := instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask
+  io.dataOut.toVRF.bits.writeReq := (instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask) && instInfoReg.valid
 }
 
 object ArithmeticVectorExecUnit extends App {

@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     asm volatile ("vsetvli %0, %1, e32, m1, ta, ma"
     : "=r"(vl)
     : "r"(avl));
+    asm volatile ("li t0, 0x810");
     asm volatile ("vle32.v v10, (%0)"
     :
     : "r"(ptr0));
@@ -30,6 +31,8 @@ int main(int argc, char** argv) {
     :
     : "r"(ptr1));
     asm volatile ("vadd.vv v12, v10, v11");
+    asm volatile ("vadd.vi v12, v12, 1");
+    asm volatile ("vadd.vx v12, v12, t0");
     asm volatile ("vse32.v v12, (%0)"
     :
     : "r"(ptr2));
@@ -40,7 +43,7 @@ int main(int argc, char** argv) {
   }
   int i;
   for(i=0; i<41; i++) {
-    answerArray[i] = dataArray0[i] + dataArray1[i];
+    answerArray[i] = dataArray0[i] + dataArray1[i] + 0x811;
   }
 
   _Bool correct = 1;
