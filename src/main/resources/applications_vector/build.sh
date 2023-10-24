@@ -109,4 +109,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vadd_text_startup.bin > vadd_text_startup.temp
 cat vadd_rodata.temp vadd_rodata_str1_8.temp vadd_sdata.temp > vadd_data.hex
 cat vadd_text_init.temp vadd_text.temp vadd_text_startup.temp > vadd_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vsub.riscv ./vsub/vsub.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vsub.riscv > vsub.dump
+riscv64-unknown-elf-objdump --disassemble-all vsub.riscv > vsub.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vsub_rodata.bin vsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vsub_rodata_str1_8.bin vsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vsub_sdata.bin vsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vsub_text_init.bin vsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vsub_text.bin vsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vsub_text_startup.bin vsub.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vsub_rodata.bin > vsub_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vsub_rodata_str1_8.bin > vsub_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vsub_sdata.bin > vsub_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vsub_text_init.bin > vsub_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vsub_text.bin > vsub_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vsub_text_startup.bin > vsub_text_startup.temp
+cat vsub_rodata.temp vsub_rodata_str1_8.temp vsub_sdata.temp > vsub_data.hex
+cat vsub_text_init.temp vsub_text.temp vsub_text_startup.temp > vsub_inst.hex
+
 rm *.riscv *.bin *.temp
