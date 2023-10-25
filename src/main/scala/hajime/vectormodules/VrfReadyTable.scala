@@ -96,8 +96,8 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   for(sigFromVEU <- io.fromVecExecUnit) {
     // vdへの書き込みを行う命令がある場合
     when(sigFromVEU.valid) {
-      // 0要素目への書き込みならば
-      when(sigFromVEU.bits.writeReq && sigFromVEU.bits.index === 0.U) {
+      // 0要素目への書き込みならば（マスクによって無効化されている場合も含む）
+      when(sigFromVEU.valid && sigFromVEU.bits.index === 0.U) {
         vrfZeroIdxReadyTable(sigFromVEU.bits.vd) := true.B
         vrfWriteSewTable(sigFromVEU.bits.vd).sew := sigFromVEU.bits.vtype.vsew
         vrfWriteSewTable(sigFromVEU.bits.vd).vm := sigFromVEU.bits.vm
@@ -106,7 +106,7 @@ class VrfReadyTable(vrfPortNum: Int = 2)(implicit params: HajimeCoreParams) exte
   }
   // vdレジスタの最後のインデックスへの書き込みが完了し，かつ他のベクトルユニットとvdが被っていなければ，該当vdレジスタの全ての値が利用可能
   for((sigFromVEU, i) <- io.fromVecExecUnit.zipWithIndex) {
-    when(sigFromVEU.valid && sigFromVEU.bits.writeReq && sigFromVEU.bits.last) {
+    when(sigFromVEU.valid && sigFromVEU.bits.last) {
       val sigExceptI = io.fromVecExecUnit.patch(i, Nil, 1)
       val otherWritesSameVd = sigExceptI.map(sigs => sigs.valid && sigs.bits.vd === sigFromVEU.bits.vd).reduce(_ || _)
       when(!otherWritesSameVd) {

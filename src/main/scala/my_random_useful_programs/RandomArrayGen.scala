@@ -20,11 +20,8 @@ object RandomIntTupleGen extends App {
 }
 
 object RandomArrayWithElenGen extends App {
-  val randomArray0 = (0 until 36).map(_ => Random.nextInt(0x10000)).map("0x" + _.toHexString.toUpperCase)
-  val randomArray1 = (0 until 36).map(_ => Random.nextInt(0x10000)).map("0x" + _.toHexString.toUpperCase)
-  val equalArray = (0 until 36).map(_ => Random.nextBoolean())
+  val randomArray0 = (0 until 48).map(_ => Random.nextInt(0x100)).map("0x" + _.toHexString.toUpperCase)
+  val randomArray1 = (0 until 48).map(_ => Random.nextInt(0x100)).map("0x" + _.toHexString.toUpperCase)
   println(randomArray0.mkString("{", ", ", "};"))
-  println(randomArray0.lazyZip(randomArray1).lazyZip(equalArray).map {
-    case (n0, n1, b) => if(b) n0 else n1
-  }.mkString("{", ", ", "};"))
+  println(randomArray1.mkString("{", ", ", "};"))
 }
