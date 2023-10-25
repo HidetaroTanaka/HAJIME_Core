@@ -682,43 +682,43 @@ Disassembly of section .text.startup:
  9e0:	6dc50513          	add	a0,a0,1756 # 40b8 <dataArray0+0x88>
  9e4:	00113423          	sd	ra,8(sp)
  9e8:	96dff0ef          	jal	354 <printstr>
- 9ec:	00003817          	auipc	a6,0x3
- 9f0:	64480813          	add	a6,a6,1604 # 4030 <dataArray0>
- 9f4:	00003697          	auipc	a3,0x3
- 9f8:	60c68693          	add	a3,a3,1548 # 4000 <dataArray1>
- 9fc:	00080713          	mv	a4,a6
- a00:	03000793          	li	a5,48
- a04:	00004517          	auipc	a0,0x4
- a08:	84c50513          	add	a0,a0,-1972 # 4250 <resultArray>
- a0c:	0c07f5d7          	vsetvli	a1,a5,e8,m1,ta,ma
- a10:	0005861b          	sext.w	a2,a1
- a14:	02070507          	vle8.v	v10,(a4)
- a18:	02068587          	vle8.v	v11,(a3)
- a1c:	6aa58057          	vmsltu.vv	v0,v10,v11
- a20:	00a2b557          	vadd.vi	v10,v10,5,v0.t
- a24:	02050527          	vse8.v	v10,(a0)
- a28:	40b787bb          	subw	a5,a5,a1
- a2c:	00c70733          	add	a4,a4,a2
- a30:	00c686b3          	add	a3,a3,a2
- a34:	fc079ce3          	bnez	a5,a0c <main+0x34>
+ 9ec:	00004597          	auipc	a1,0x4
+ 9f0:	86458593          	add	a1,a1,-1948 # 4250 <resultArray>
+ 9f4:	00003617          	auipc	a2,0x3
+ 9f8:	60c60613          	add	a2,a2,1548 # 4000 <dataArray1>
+ 9fc:	00003697          	auipc	a3,0x3
+ a00:	63468693          	add	a3,a3,1588 # 4030 <dataArray0>
+ a04:	03000793          	li	a5,48
+ a08:	0c07f557          	vsetvli	a0,a5,e8,m1,ta,ma
+ a0c:	0005071b          	sext.w	a4,a0
+ a10:	02068507          	vle8.v	v10,(a3)
+ a14:	02060587          	vle8.v	v11,(a2)
+ a18:	6aa58057          	vmsltu.vv	v0,v10,v11
+ a1c:	00a2b557          	vadd.vi	v10,v10,5,v0.t
+ a20:	02058527          	vse8.v	v10,(a1)
+ a24:	40a787bb          	subw	a5,a5,a0
+ a28:	00e686b3          	add	a3,a3,a4
+ a2c:	00e60633          	add	a2,a2,a4
+ a30:	00e585b3          	add	a1,a1,a4
+ a34:	fc079ae3          	bnez	a5,a08 <main+0x30>
  a38:	00003717          	auipc	a4,0x3
- a3c:	5c870713          	add	a4,a4,1480 # 4000 <dataArray1>
+ a3c:	5f870713          	add	a4,a4,1528 # 4030 <dataArray0>
  a40:	00003617          	auipc	a2,0x3
- a44:	5f160613          	add	a2,a2,1521 # 4031 <dataArray0+0x1>
+ a44:	5c060613          	add	a2,a2,1472 # 4000 <dataArray1>
  a48:	00004697          	auipc	a3,0x4
  a4c:	83868693          	add	a3,a3,-1992 # 4280 <answerArray>
- a50:	0a600793          	li	a5,166
- a54:	00c0006f          	j	a60 <main+0x88>
- a58:	00064783          	lbu	a5,0(a2)
- a5c:	00160613          	add	a2,a2,1
- a60:	00074583          	lbu	a1,0(a4)
+ a50:	00003817          	auipc	a6,0x3
+ a54:	61080813          	add	a6,a6,1552 # 4060 <dataArray0+0x30>
+ a58:	00074783          	lbu	a5,0(a4)
+ a5c:	00064583          	lbu	a1,0(a2)
+ a60:	00170713          	add	a4,a4,1
  a64:	0057851b          	addw	a0,a5,5
- a68:	00170713          	add	a4,a4,1
- a6c:	00b7f463          	bgeu	a5,a1,a74 <main+0x9c>
- a70:	0ff57793          	zext.b	a5,a0
- a74:	00f68023          	sb	a5,0(a3)
+ a68:	00b7f463          	bgeu	a5,a1,a70 <main+0x98>
+ a6c:	0ff57793          	zext.b	a5,a0
+ a70:	00f68023          	sb	a5,0(a3)
+ a74:	00160613          	add	a2,a2,1
  a78:	00168693          	add	a3,a3,1
- a7c:	fd071ee3          	bne	a4,a6,a58 <main+0x80>
+ a7c:	fce81ee3          	bne	a6,a4,a58 <main+0x80>
  a80:	03000613          	li	a2,48
  a84:	00003597          	auipc	a1,0x3
  a88:	7fc58593          	add	a1,a1,2044 # 4280 <answerArray>
