@@ -93,5 +93,43 @@ int main(int argc, char** argv) {
     }
     answerArray[i] = temp;
   }
-  return !verifyResult(resultArray, answerArray, 48);
+  _Bool correct = verifyResult(resultArray, answerArray, N);
+  memReset(resultArray, N);
+  memReset(answerArray, N);
+  ptr0 = dataArray0;
+  ptr1 = dataArray1;
+  ptrRes = resultArray;
+  avl = N;
+  printstr("START OF VMSLT TEST:\n");
+  while(avl != 0) {
+    asm volatile ("vsetvli %0, %1, e8, m1, ta, ma"
+    : "=r"(vl)
+    : "r"(avl)
+    );
+    asm volatile ("vle8.v v10, (%0)"
+    :
+    : "r"(ptr0));
+    asm volatile ("vle8.v v11, (%0)"
+    :
+    : "r"(ptr1));
+    asm volatile ("vmslt.vv v0, v10, v11");
+    // if(v10 < v11) v10 + 5 else nop
+    asm volatile ("vadd.vi v10, v10, 0x5, v0.t");
+    asm volatile ("vse8.v v10, (%0)"
+    :
+    : "r"(ptrRes));
+    ptr0 += vl;
+    ptr1 += vl;
+    ptrRes += vl;
+    avl -= vl;
+  }
+  for(i=0; i<N; i++) {
+    signed char temp = (signed char)dataArray0[i];
+    if(temp < (signed char)dataArray1[i]) {
+      temp += 5;
+    }
+    *((signed char*)(answerArray+i)) = temp;
+  }
+  correct = correct && verifyResult(resultArray, answerArray, N);
+  return !correct;
 }
