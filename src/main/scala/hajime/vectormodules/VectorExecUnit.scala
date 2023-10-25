@@ -244,7 +244,7 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
     vs2Out + vs1Out :: vs2Out - vs1Out :: vs1Out - vs2Out :: vadcResult.tail(1) :: vadcResult.head(1) :: vsbcResult.tail(1) :: vsbcResult.head(1) ::
       (vs2Out === vs1Out) :: !(vs2Out === vs1Out) ::
       (vs2Out < vs1Out) :: (vs2Out.asSInt < vs1Out.asSInt) :: !(vs2Out > vs1Out) :: !(vs2Out.asSInt > vs1Out.asSInt) ::
-      (vs2Out > vs1Out) :: (vs2Out.asSInt > vs2Out.asSInt) ::
+      (vs2Out > vs1Out) :: (vs2Out.asSInt > vs1Out.asSInt) ::
       Mux(vs2Out < vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt < vs1Out.asSInt, vs2Out, vs1Out) ::
       Mux(vs2Out > vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt > vs1Out.asSInt, vs2Out, vs1Out) ::
       Mux(vm, vs1Out, vs2Out) :: vs1Out ::

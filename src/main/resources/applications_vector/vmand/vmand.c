@@ -6,6 +6,8 @@
 // #define DEBUG
 
 const unsigned char dataArray0[N] = {0x14, 0x44, 0x68, 0x7, 0x82, 0x55, 0xB2, 0xE0, 0xC3, 0xB9, 0x93, 0x4E, 0xC6, 0x76, 0x50, 0xB6, 0xBF, 0x62, 0x76, 0x38, 0x27, 0x0, 0x8F, 0x58, 0xA1, 0xE5, 0x3, 0x23, 0x6A, 0x38, 0xAD, 0xD1, 0xBA, 0x6C, 0xF8, 0x53, 0x7A, 0xC8, 0xE1, 0xAB, 0x22, 0xB, 0xA3, 0xA4, 0x59, 0x81, 0x25, 0x4};
+const unsigned char dataArray1[N] = {0x8E, 0x57, 0x5, 0xAA, 0x2C, 0xA9, 0x35, 0xA6, 0x7F, 0x77, 0x46, 0x28, 0x70, 0x6F, 0xF0, 0xA6, 0x2B, 0x66, 0x22, 0x27, 0xDF, 0xA0, 0xDD, 0x81, 0xBC, 0x89, 0x39, 0xB9, 0xED, 0x4A, 0xC1, 0xD0, 0x56, 0x6, 0x3D, 0x42, 0x27, 0x2F, 0x9D, 0x70, 0xAD, 0x99, 0xDF, 0xA, 0x5C, 0x8E, 0xF4, 0x78};
+const unsigned char dataArray2[N] = {0xCE, 0x1F, 0x94, 0x38, 0x74, 0x13, 0x62, 0x16, 0x4E, 0x70, 0xC9, 0xC6, 0xBF, 0xB3, 0xCE, 0xED, 0x6A, 0xE7, 0xD3, 0x3F, 0xC3, 0xAA, 0xC0, 0x3D, 0xF5, 0x89, 0xC5, 0x48, 0x18, 0x13, 0x15, 0x7E, 0x52, 0x97, 0xFE, 0x47, 0x56, 0x9A, 0xAF, 0xAC, 0x71, 0x8F, 0x4E, 0xED, 0xFE, 0x98, 0xA1, 0x2D};
 unsigned char resultArray[N] = {0};
 unsigned char answerArray[N] = {0};
 
@@ -59,9 +61,8 @@ _Bool verifyResult(const unsigned char* ptr0, const unsigned char* ptr1, size_t 
 
 int main(int argc, char** argv) {
   int vl, avl = N;
-  const unsigned char *ptr0 = dataArray0;
+  const unsigned char *ptr0 = dataArray0, *ptr1 = dataArray1, *ptr2 = dataArray2;
   unsigned char *ptrRes = resultArray;
-  printstr("START OF VMSGTU TEST:\n");
   while(avl != 0) {
     asm volatile ("vsetvli %0, %1, e8, m1, ta, ma"
     : "=r"(vl)
@@ -70,60 +71,37 @@ int main(int argc, char** argv) {
     asm volatile ("vle8.v v10, (%0)"
     :
     : "r"(ptr0));
-    asm volatile ("vmsgtu.vx v0, v10, %0"
+    asm volatile ("vle8.v v11, (%0)"
     :
-    : "r"(0x5F));
-    // if(v10 < v11) v10 + 5 else nop
+    : "r"(ptr1));
+    asm volatile ("vle8.v v12, (%0)"
+    :
+    : "r"(ptr2));
+    asm volatile ("vmsgtu.vv v0, v10, v11");
+    asm volatile ("vmsltu.vv v1, v11, v12");
+    asm volatile ("vmand.mm v0, v0, v1");
     asm volatile ("vadd.vi v10, v10, 0x5, v0.t");
     asm volatile ("vse8.v v10, (%0)"
     :
     : "r"(ptrRes));
     ptr0 += vl;
+    ptr1 += vl;
+    ptr2 += vl;
     ptrRes += vl;
     avl -= vl;
   }
   int i;
   for(i=0; i<N; i++) {
-    unsigned char temp = dataArray0[i];
-    if(temp > (unsigned char)0x5F) {
-      temp += 5;
+    unsigned char temp0 = dataArray0[i];
+    unsigned char temp1 = dataArray1[i];
+    unsigned char temp2 = dataArray2[i];
+    _Bool vs2 = (temp0 > temp1);
+    _Bool vs1 = (temp1 < temp2);
+    if(vs2 && vs1) {
+      temp0 += 5;
     }
-    answerArray[i] = temp;
+    answerArray[i] = temp0;
   }
-  _Bool correct = verifyResult(resultArray, answerArray, N);
-  memReset(resultArray, N);
-  memReset(answerArray, N);
-  ptr0 = dataArray0;
-  ptrRes = resultArray;
-  avl = N;
-  printstr("START OF VMSGT TEST:\n");
-  while(avl != 0) {
-    asm volatile ("vsetvli %0, %1, e8, m1, ta, ma"
-    : "=r"(vl)
-    : "r"(avl)
-    );
-    asm volatile ("vle8.v v10, (%0)"
-    :
-    : "r"(ptr0));
-    asm volatile ("vmsgt.vx v0, v10, %0"
-    :
-    : "r"(-5));
-    // if(v10 < v11) v10 + 5 else nop
-    asm volatile ("vadd.vi v10, v10, 0x5, v0.t");
-    asm volatile ("vse8.v v10, (%0)"
-    :
-    : "r"(ptrRes));
-    ptr0 += vl;
-    ptrRes += vl;
-    avl -= vl;
-  }
-  for(i=0; i<N; i++) {
-    signed char temp = (signed char)dataArray0[i];
-    if(temp > (signed char)-5) {
-      temp += 5;
-    }
-    *((signed char*)(answerArray+i)) = temp;
-  }
-  correct = correct && verifyResult(resultArray, answerArray, N);
-  return !correct;
+
+  return !verifyResult(resultArray, answerArray, N);
 }
