@@ -163,4 +163,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vmsbc_text_startup.bin > vmsbc_text_startup.temp
 cat vmsbc_rodata.temp vmsbc_rodata_str1_8.temp vmsbc_sdata.temp > vmsbc_data.hex
 cat vmsbc_text_init.temp vmsbc_text.temp vmsbc_text_startup.temp > vmsbc_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vand.riscv ./vand/vand.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vand.riscv > vand.dump
+riscv64-unknown-elf-objdump --disassemble-all vand.riscv > vand.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vand_rodata.bin vand.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vand_rodata_str1_8.bin vand.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vand_sdata.bin vand.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vand_text_init.bin vand.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vand_text.bin vand.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vand_text_startup.bin vand.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vand_rodata.bin > vand_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vand_rodata_str1_8.bin > vand_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vand_sdata.bin > vand_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vand_text_init.bin > vand_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vand_text.bin > vand_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vand_text_startup.bin > vand_text_startup.temp
+cat vand_rodata.temp vand_rodata_str1_8.temp vand_sdata.temp > vand_data.hex
+cat vand_text_init.temp vand_text.temp vand_text_startup.temp > vand_inst.hex
+
 rm *.riscv *.bin *.temp
