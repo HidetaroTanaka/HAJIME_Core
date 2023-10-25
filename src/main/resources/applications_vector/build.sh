@@ -181,4 +181,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vand_text_startup.bin > vand_text_startup.temp
 cat vand_rodata.temp vand_rodata_str1_8.temp vand_sdata.temp > vand_data.hex
 cat vand_text_init.temp vand_text.temp vand_text_startup.temp > vand_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmseq.riscv ./vmseq/vmseq.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmseq.riscv > vmseq.dump
+riscv64-unknown-elf-objdump --disassemble-all vmseq.riscv > vmseq.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmseq_rodata.bin vmseq.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmseq_rodata_str1_8.bin vmseq.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmseq_sdata.bin vmseq.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmseq_text_init.bin vmseq.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmseq_text.bin vmseq.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmseq_text_startup.bin vmseq.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_rodata.bin > vmseq_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_rodata_str1_8.bin > vmseq_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_sdata.bin > vmseq_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_text_init.bin > vmseq_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_text.bin > vmseq_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmseq_text_startup.bin > vmseq_text_startup.temp
+cat vmseq_rodata.temp vmseq_rodata_str1_8.temp vmseq_sdata.temp > vmseq_data.hex
+cat vmseq_text_init.temp vmseq_text.temp vmseq_text_startup.temp > vmseq_inst.hex
+
 rm *.riscv *.bin *.temp
