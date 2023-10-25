@@ -137,7 +137,8 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   val ldstTest = Seq("vector_conf", "vector_ldst", "vector_memcpy", "vector_stride", "vector_index")
   val arithmeticTest = Seq(
     "vadd", "vsub", "vand", "vmseq",
-    "vmslt", "vmsle"
+    "vmslt", "vmsle",
+    "vmsgt"
   )
   val zve64xTestList: Seq[String] = (if(true) ldstTest else Nil) ++ (if(true) arithmeticTest else Nil)
   for (e <- zve64xTestList) {
