@@ -361,4 +361,24 @@ hexdump -v -e '1/4 "%08x" "\n"' vmv_text_startup.bin > vmv_text_startup.temp
 cat vmv_rodata.temp vmv_rodata_str1_8.temp vmv_sdata.temp > vmv_data.hex
 cat vmv_text_init.temp vmv_text.temp vmv_text_startup.temp > vmv_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vector_median.riscv ./vector_median/median.c ./vector_median/vector_median.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vector_median.riscv > vector_median.dump
+riscv64-unknown-elf-objdump --disassemble-all vector_median.riscv > vector_median.dump
+riscv64-unknown-elf-objcopy --dump-section .data=vector_median_data.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata=vector_median_rodata.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vector_median_rodata_str1_8.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vector_median_sdata.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vector_median_text_init.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vector_median_text.bin vector_median.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vector_median_text_startup.bin vector_median.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_data.bin > vector_median_data.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_rodata.bin > vector_median_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_rodata_str1_8.bin > vector_median_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_sdata.bin > vector_median_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_text_init.bin > vector_median_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_text.bin > vector_median_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vector_median_text_startup.bin > vector_median_text_startup.temp
+cat vector_median_data.temp vector_median_rodata.temp vector_median_rodata_str1_8.temp vector_median_sdata.temp > vector_median_data.hex
+cat vector_median_text_init.temp vector_median_text.temp vector_median_text_startup.temp > vector_median_inst.hex
+
 rm *.riscv *.bin *.temp
