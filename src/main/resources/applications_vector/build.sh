@@ -307,4 +307,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vmxor_text_startup.bin > vmxor_text_startup.temp
 cat vmxor_rodata.temp vmxor_rodata_str1_8.temp vmxor_sdata.temp > vmxor_data.hex
 cat vmxor_text_init.temp vmxor_text.temp vmxor_text_startup.temp > vmxor_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vminmax.riscv ./vminmax/vminmax.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vminmax.riscv > vminmax.dump
+riscv64-unknown-elf-objdump --disassemble-all vminmax.riscv > vminmax.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vminmax_rodata.bin vminmax.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vminmax_rodata_str1_8.bin vminmax.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vminmax_sdata.bin vminmax.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vminmax_text_init.bin vminmax.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vminmax_text.bin vminmax.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vminmax_text_startup.bin vminmax.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_rodata.bin > vminmax_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_rodata_str1_8.bin > vminmax_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_sdata.bin > vminmax_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_text_init.bin > vminmax_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_text.bin > vminmax_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vminmax_text_startup.bin > vminmax_text_startup.temp
+cat vminmax_rodata.temp vminmax_rodata_str1_8.temp vminmax_sdata.temp > vminmax_data.hex
+cat vminmax_text_init.temp vminmax_text.temp vminmax_text_startup.temp > vminmax_inst.hex
+
 rm *.riscv *.bin *.temp
