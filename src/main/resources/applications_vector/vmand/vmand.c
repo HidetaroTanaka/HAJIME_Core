@@ -63,8 +63,9 @@ int main(int argc, char** argv) {
   int vl, avl = N;
   const unsigned char *ptr0 = dataArray0, *ptr1 = dataArray1, *ptr2 = dataArray2;
   unsigned char *ptrRes = resultArray;
+  printstr("START OF VMAND TEST:\n");
   while(avl != 0) {
-    asm volatile ("vsetvli %0, %1, e8, m1, ta, ma"
+    asm volatile ("vsetvli %0, %1, e8, m1, ta, mu"
     : "=r"(vl)
     : "r"(avl)
     );
@@ -102,6 +103,100 @@ int main(int argc, char** argv) {
     }
     answerArray[i] = temp0;
   }
-
-  return !verifyResult(resultArray, answerArray, N);
+  _Bool correct = verifyResult(resultArray, answerArray, N);
+  memReset(resultArray, N);
+  memReset(answerArray, N);
+  avl = N;
+  ptr0 = dataArray0;
+  ptr1 = dataArray1;
+  ptr2 = dataArray2;
+  ptrRes = resultArray;
+  printstr("START OF VMNAND TEST:\n");
+  while(avl != 0) {
+    asm volatile ("vsetvli %0, %1, e8, m1, ta, mu"
+    : "=r"(vl)
+    : "r"(avl)
+    );
+    asm volatile ("vle8.v v10, (%0)"
+    :
+    : "r"(ptr0));
+    asm volatile ("vle8.v v11, (%0)"
+    :
+    : "r"(ptr1));
+    asm volatile ("vle8.v v12, (%0)"
+    :
+    : "r"(ptr2));
+    asm volatile ("vmsgtu.vv v0, v10, v11");
+    asm volatile ("vmsltu.vv v1, v11, v12");
+    asm volatile ("vmnand.mm v0, v0, v1");
+    asm volatile ("vadd.vi v10, v10, 0x5, v0.t");
+    asm volatile ("vse8.v v10, (%0)"
+    :
+    : "r"(ptrRes));
+    ptr0 += vl;
+    ptr1 += vl;
+    ptr2 += vl;
+    ptrRes += vl;
+    avl -= vl;
+  }
+  for(i=0; i<N; i++) {
+    unsigned char temp0 = dataArray0[i];
+    unsigned char temp1 = dataArray1[i];
+    unsigned char temp2 = dataArray2[i];
+    _Bool vs2 = (temp0 > temp1);
+    _Bool vs1 = (temp1 < temp2);
+    if(!(vs2 && vs1)) {
+      temp0 += 5;
+    }
+    answerArray[i] = temp0;
+  }
+  correct = correct && verifyResult(resultArray, answerArray, N);
+  memReset(resultArray, N);
+  memReset(answerArray, N);
+  avl = N;
+  ptr0 = dataArray0;
+  ptr1 = dataArray1;
+  ptr2 = dataArray2;
+  ptrRes = resultArray;
+  printstr("START OF VMANDN TEST:\n");
+  while(avl != 0) {
+    asm volatile ("vsetvli %0, %1, e8, m1, ta, mu"
+    : "=r"(vl)
+    : "r"(avl)
+    );
+    asm volatile ("vle8.v v10, (%0)"
+    :
+    : "r"(ptr0));
+    asm volatile ("vle8.v v11, (%0)"
+    :
+    : "r"(ptr1));
+    asm volatile ("vle8.v v12, (%0)"
+    :
+    : "r"(ptr2));
+    asm volatile ("vmsgtu.vv v0, v10, v11");
+    asm volatile ("vmsltu.vv v1, v11, v12");
+    asm volatile ("vmandn.mm v0, v0, v1");
+    asm volatile ("vadd.vi v10, v10, 0x5, v0.t");
+    asm volatile ("vse8.v v10, (%0)"
+    :
+    : "r"(ptrRes));
+    ptr0 += vl;
+    ptr1 += vl;
+    ptr2 += vl;
+    ptrRes += vl;
+    avl -= vl;
+  }
+  for(i=0; i<N; i++) {
+    unsigned char temp0 = dataArray0[i];
+    unsigned char temp1 = dataArray1[i];
+    unsigned char temp2 = dataArray2[i];
+    _Bool vs2 = (temp0 > temp1);
+    _Bool vs1 = (temp1 < temp2);
+    if(vs2 && !vs1) {
+      temp0 += 5;
+    }
+    answerArray[i] = temp0;
+  }
+  correct = correct && verifyResult(resultArray, answerArray, N);
+  return !correct;
 }
