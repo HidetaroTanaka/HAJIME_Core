@@ -72,7 +72,8 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.readVrf.req.vs1 := instInfoReg.bits.vs1
   io.readVrf.req.vs2 := instInfoReg.bits.vs2
   io.readVrf.req.vd := instInfoReg.bits.vd
-  io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask
+  // ベクトルマスク命令ならばidx自体が対応するため下げる
+  io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask && (instInfoReg.bits.vectorDecode.vSource =/= VSOURCE.MM.asUInt)
 
   val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt || instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
   val execValue2 = io.readVrf.resp.vs2Out

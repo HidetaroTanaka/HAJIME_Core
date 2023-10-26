@@ -55,6 +55,14 @@ class VecRegFileIO(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends B
 // TODO: make it compatible with LMUL > 1 (bigger number of index)
 class VecRegFile(vrfPortNum: Int)(implicit params: HajimeCoreParams) extends Module {
   def readVRF(vrf: Mem[Vec[UInt]], req: VecRegFileReadReq): VecRegFileReadResp = {
+    /**
+     * readVdAsMaskSourceならば，idxの下位3bitを消す
+     * mask(i) = e8(i / 8)(i % 8)
+     * @param vecReg
+     * @param req
+     * @param readAsVd
+     * @return
+     */
     def vecRegToData(vecReg: Vec[UInt], req: VecRegFileReadReq, readAsVd: Boolean): UInt = {
       val nonVmRes = MuxLookup(req.sew, 0.U)(
         (0 until 4).map(
