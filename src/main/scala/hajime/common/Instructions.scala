@@ -199,7 +199,7 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   }
   def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String, vs2Zero: Boolean) = {
     if (vm == "?" || vm == "0" || vm == "1") {
-      BitPat("b" + vFunct6Gen(vInst) + vm + "??????????" + vsourceGen(vsource) + (if(vs2Zero) "00000" else "?????") + "1010111")
+      BitPat("b" + vFunct6Gen(vInst) + vm + (if(vs2Zero) "00000" else "?????") + "?????" + vsourceGen(vsource) + "?????" + "1010111")
     } else {
       throw new Exception(s"vm $vm is invalid")
     }

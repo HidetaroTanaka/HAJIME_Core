@@ -343,4 +343,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vmerge_text_startup.bin > vmerge_text_startup.te
 cat vmerge_rodata.temp vmerge_rodata_str1_8.temp vmerge_sdata.temp > vmerge_data.hex
 cat vmerge_text_init.temp vmerge_text.temp vmerge_text_startup.temp > vmerge_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmv.riscv ./vmv/vmv.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmv.riscv > vmv.dump
+riscv64-unknown-elf-objdump --disassemble-all vmv.riscv > vmv.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmv_rodata.bin vmv.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmv_rodata_str1_8.bin vmv.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmv_sdata.bin vmv.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmv_text_init.bin vmv.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmv_text.bin vmv.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmv_text_startup.bin vmv.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmv_rodata.bin > vmv_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmv_rodata_str1_8.bin > vmv_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmv_sdata.bin > vmv_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmv_text_init.bin > vmv_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmv_text.bin > vmv_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmv_text_startup.bin > vmv_text_startup.temp
+cat vmv_rodata.temp vmv_rodata_str1_8.temp vmv_sdata.temp > vmv_data.hex
+cat vmv_text_init.temp vmv_text.temp vmv_text_startup.temp > vmv_inst.hex
+
 rm *.riscv *.bin *.temp
