@@ -54,6 +54,6 @@ trait VectorOpConstants {
   }
 
   object VSOURCE extends ChiselEnum {
-    val VV, VX, VI = Value
+    val VV, VX, VI, MM = Value
   }
 }

@@ -67,8 +67,8 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   }
 
   import VEU_FUN._
-  io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, idx.head(idx.getWidth-3), idx)
-  io.readVrf.req.sew := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, 0.U, instInfoReg.bits.vecConf.vtype.vsew)
+  io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, idx.head(idx.getWidth-3), idx)
+  io.readVrf.req.sew := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, 0.U, instInfoReg.bits.vecConf.vtype.vsew)
   io.readVrf.req.vs1 := instInfoReg.bits.vs1
   io.readVrf.req.vs2 := instInfoReg.bits.vs2
   io.readVrf.req.vd := instInfoReg.bits.vd
@@ -106,123 +106,6 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := instInfoReg.bits.vecConf
   if(params.debug) io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
-}
-
-class ArithmeticVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = {
-    import values._
-    // vadd, vsub, vrsub, (vadc, vmadc), (vsbc, vmsbc),
-    // seq, sne,
-    // sltu, slt, sleu, sle,
-    // sgtu, sgt,
-    // minu, min,
-    // maxu, max,
-    // merge, mv
-    // TODO: optimise (64bit加減算器1つで再現できる）
-    // is firtool doing enough optimisations?
-    vs2Out + vs1Out :: vs2Out - vs1Out :: vs1Out - vs2Out :: (vs2Out +& vs1Out) + vm :: (vs2Out -& vs1Out) - vm ::
-      (vs2Out === vs1Out) :: !(vs2Out === vs1Out) ::
-      (vs2Out < vs1Out) :: (vs2Out.asSInt < vs1Out.asSInt) :: !(vs2Out > vs1Out) :: !(vs2Out.asSInt > vs2Out.asSInt) ::
-      (vs2Out > vs1Out) :: (vs2Out.asSInt > vs2Out.asSInt) ::
-      Mux(vs2Out < vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt < vs1Out.asSInt, vs2Out, vs1Out) ::
-      Mux(vs2Out > vs1Out, vs2Out, vs2Out) :: Mux(vs2Out.asSInt > vs1Out.asSInt, vs2Out, vs1Out) ::
-      Mux(vm, vs1Out, vs2Out) :: vs1Out :: Nil
-  }
-  import VEU_FUN._
-  // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
-  valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
-
-  val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(Seq(
-    VEU_FUN.ADD -> 0,
-    VEU_FUN.SUB -> 1,
-    VEU_FUN.RSUB -> 2,
-    VEU_FUN.ADC -> 3,
-    VEU_FUN.MADC -> 3,
-    VEU_FUN.SBC -> 4,
-    VEU_FUN.MSBC -> 4,
-    VEU_FUN.SEQ -> 5,
-    VEU_FUN.SNE -> 6,
-    VEU_FUN.SLTU -> 7,
-    VEU_FUN.SLT -> 8,
-    VEU_FUN.SLEU -> 9,
-    VEU_FUN.SLE -> 10,
-    VEU_FUN.SGTU -> 11,
-    VEU_FUN.SGT -> 12,
-    VEU_FUN.MINU -> 13,
-    VEU_FUN.MIN -> 14,
-    VEU_FUN.MAXU -> 15,
-    VEU_FUN.MAX -> 16,
-    VEU_FUN.MERGE -> 17,
-    VEU_FUN.MV -> 18,
-  ).map(x => x._1.asUInt -> execResult(x._2)))
-
-  // 書き込み先がマスクならばidxとうまい具合に組み合わせてなんとかする
-  // seq, ..., sgtならば最下位bitがvm
-  // vmadc, vmsbcならば，SEW=8 -> 8bit目，..., SEW=64 -> 64bit目がvm
-  val writeVm = MuxCase(false.B, Seq(
-    instInfoReg.bits.vectorDecode.veuFun.isCompMask -> rawResult(0),
-    instInfoReg.bits.vectorDecode.veuFun.isCarryMask -> {
-      MuxLookup(instInfoReg.bits.vecConf.vtype.vsew, false.B)(
-        (0 until 4).map(i => i.U -> rawResult(8 << i))
-      )
-    }
-  ))
-
-  // idx(2,0)に応じてvdと合体
-  io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.isArithmeticMask, MuxLookup(idx(2,0), rawResult)(
-    (0 until 8).map(
-      i => i.U -> Cat((0 until 8).reverse.map(
-        j => if(j == i) writeVm else io.readVrf.resp.vdOut(j)
-      ))
-    )
-  ), rawResult)
-  io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.isArithmeticMask
-  // if inst[25] is 1, unmasked. if 0, write only v0.mask[i] = 1. vadc, vmadc, vsbc, vmsbc, vmerge always writes to vd regardless of v0.mask
-  io.dataOut.toVRF.bits.writeReq := (instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask) && instInfoReg.valid
-}
-
-object ArithmeticVectorExecUnit extends App {
-  implicit val params: HajimeCoreParams = HajimeCoreParams()
-  def apply(implicit params: HajimeCoreParams): ArithmeticVectorExecUnit = new ArithmeticVectorExecUnit()
-  ChiselStage.emitSystemVerilogFile(new ArithmeticVectorExecUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
-}
-
-class LogicalVectorExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = {
-    import values._
-    val vs2Mask = vs2Out(0)
-    val vs1Mask = vs1Out(0)
-    (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) ::
-      (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
-      (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) :: Nil
-  }
-
-  import VEU_FUN._
-  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue1(0), execValue1)
-  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue2(0), execValue2)
-  val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
-    Seq(AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR).zipWithIndex.map(
-      x => x._1.asUInt -> execResult(x._2)
-    )
-  )
-  io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, MuxLookup(idx(2,0), rawResult)(
-    (0 until 8).map(
-      i => i.U -> Cat((0 until 8).reverse.map(
-        j => if(j == i) rawResult(j) else io.readVrf.resp.vdOut(j)
-      ))
-    )
-  ), rawResult)
-  io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.isMaskInst
-  // do i need isMaskInst? All vector mask-register logical instructions encodes vm=1
-  io.dataOut.toVRF.bits.writeReq := instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || !instInfoReg.bits.vectorDecode.veuFun.isMaskInst
-}
-
-object LogicalVectorExecUnit extends App {
-  implicit val params: HajimeCoreParams = HajimeCoreParams(useVector = true)
-  def apply(implicit params: HajimeCoreParams): LogicalVectorExecUnit = {
-    if(params.useVector) new LogicalVectorExecUnit() else throw new Exception("vector not enabled in HajimeCoreParams")
-  }
-  ChiselStage.emitSystemVerilogFile(new LogicalVectorExecUnit(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
 class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {

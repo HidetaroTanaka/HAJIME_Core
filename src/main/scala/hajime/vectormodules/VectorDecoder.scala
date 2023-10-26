@@ -43,6 +43,14 @@ object VDecode extends DecodeConstants with VectorOpConstants {
       case "vmax" => MAX
       case "vmerge" => MERGE
       case "vmv" => MV
+      case "vmand" => MAND
+      case "vmnand" => MNAND
+      case "vmandn" => MANDN
+      case "vmxor" => MXOR
+      case "vmor" => MOR
+      case "vmnor" => MNOR
+      case "vmorn" => MORN
+      case "vmxnor" => MXNOR
       case _ => throw new Exception("fuck")
     }
     List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NORMAL, Y, veuFunSel, vSource)
@@ -151,6 +159,14 @@ object VDecode extends DecodeConstants with VectorOpConstants {
     VMV_VV -> amogus("vmv", VSOURCE.VV),
     VMV_VX -> amogus("vmv", VSOURCE.VX),
     VMV_VI -> amogus("vmv", VSOURCE.VI),
+    VMAND_MM -> amogus("vmand", VSOURCE.MM),
+    VMNAND_MM -> amogus("vmnand", VSOURCE.MM),
+    VMANDN_MM -> amogus("vmandn", VSOURCE.MM),
+    VMXOR_MM -> amogus("vmxor", VSOURCE.MM),
+    VMOR_MM -> amogus("vmor", VSOURCE.MM),
+    VMNOR_MM -> amogus("vmnor", VSOURCE.MM),
+    VMORN_MM -> amogus("vmorn", VSOURCE.MM),
+    VMXNOR_MM -> amogus("vmxnor", VSOURCE.MM),
   )
 }
 

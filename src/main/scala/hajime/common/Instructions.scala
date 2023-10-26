@@ -156,6 +156,7 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case VSOURCE.VV => "000"
       case VSOURCE.VX => "100"
       case VSOURCE.VI => "011"
+      case VSOURCE.MM => "010"
       case _ => throw new Exception("amogus")
     }
   }
@@ -185,6 +186,14 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case "vmax" => "000111"
       case "vmerge" => "010111"
       case "vmv" => "010111"
+      case "vmand" => "011001"
+      case "vmnand" => "011101"
+      case "vmandn" => "011000"
+      case "vmxor" => "011011"
+      case "vmor" => "011010"
+      case "vmnor" => "011110"
+      case "vmorn" => "011100"
+      case "vmxnor" => "011111"
       case _ => throw new Exception(s"inst $vInst is invalid")
     }
   }
@@ -262,6 +271,15 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMV_VV = vArithGen(vInst = "vmv", vsource = VSOURCE.VV, vm = "1", vs2Zero = true)
   def VMV_VX = vArithGen(vInst = "vmv", vsource = VSOURCE.VX, vm = "1", vs2Zero = true)
   def VMV_VI = vArithGen(vInst = "vmv", vsource = VSOURCE.VI, vm = "1", vs2Zero = true)
+
+  def VMAND_MM = vArithGen(vInst = "vmand", vsource = VSOURCE.MM, vm = "1")
+  def VMNAND_MM = vArithGen(vInst = "vmnand", vsource = VSOURCE.MM, vm = "1")
+  def VMANDN_MM = vArithGen(vInst = "vmandn", vsource = VSOURCE.MM, vm = "1")
+  def VMXOR_MM = vArithGen(vInst = "vmxor", vsource = VSOURCE.MM, vm = "1")
+  def VMOR_MM = vArithGen(vInst = "vmor", vsource = VSOURCE.MM, vm = "1")
+  def VMNOR_MM = vArithGen(vInst = "vmnor", vsource = VSOURCE.MM, vm = "1")
+  def VMORN_MM = vArithGen(vInst = "vmorn", vsource = VSOURCE.MM, vm = "1")
+  def VMXNOR_MM = vArithGen(vInst = "vmxnor", vsource = VSOURCE.MM, vm = "1")
 }
 
 object Causes {
