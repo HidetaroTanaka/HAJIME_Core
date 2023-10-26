@@ -74,7 +74,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.readVrf.req.vd := instInfoReg.bits.vd
   io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask
 
-  val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
+  val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt || instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
   val execValue2 = io.readVrf.resp.vs2Out
   val execValue3 = io.readVrf.resp.vdOut
   val execValueVM = io.readVrf.resp.vm
@@ -137,8 +137,8 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
   }
 
   import VEU_FUN._
-  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue1(0), execValue1)
-  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.veuFun.isMaskInst, execValue2(0), execValue2)
+  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
+  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, execValue2(7,0)(idx(2,0)), execValue2)
   // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
   valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
