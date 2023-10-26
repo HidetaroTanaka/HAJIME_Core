@@ -289,4 +289,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vmor_text_startup.bin > vmor_text_startup.temp
 cat vmor_rodata.temp vmor_rodata_str1_8.temp vmor_sdata.temp > vmor_data.hex
 cat vmor_text_init.temp vmor_text.temp vmor_text_startup.temp > vmor_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmxor.riscv ./vmxor/vmxor.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmxor.riscv > vmxor.dump
+riscv64-unknown-elf-objdump --disassemble-all vmxor.riscv > vmxor.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmxor_rodata.bin vmxor.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmxor_rodata_str1_8.bin vmxor.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmxor_sdata.bin vmxor.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmxor_text_init.bin vmxor.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmxor_text.bin vmxor.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmxor_text_startup.bin vmxor.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_rodata.bin > vmxor_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_rodata_str1_8.bin > vmxor_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_sdata.bin > vmxor_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_text_init.bin > vmxor_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_text.bin > vmxor_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmxor_text_startup.bin > vmxor_text_startup.temp
+cat vmxor_rodata.temp vmxor_rodata_str1_8.temp vmxor_sdata.temp > vmxor_data.hex
+cat vmxor_text_init.temp vmxor_text.temp vmxor_text_startup.temp > vmxor_inst.hex
+
 rm *.riscv *.bin *.temp
