@@ -325,4 +325,22 @@ hexdump -v -e '1/4 "%08x" "\n"' vminmax_text_startup.bin > vminmax_text_startup.
 cat vminmax_rodata.temp vminmax_rodata_str1_8.temp vminmax_sdata.temp > vminmax_data.hex
 cat vminmax_text_init.temp vminmax_text.temp vminmax_text_startup.temp > vminmax_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmerge.riscv ./vmerge/vmerge.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmerge.riscv > vmerge.dump
+riscv64-unknown-elf-objdump --disassemble-all vmerge.riscv > vmerge.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmerge_rodata.bin vmerge.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmerge_rodata_str1_8.bin vmerge.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmerge_sdata.bin vmerge.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmerge_text_init.bin vmerge.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmerge_text.bin vmerge.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmerge_text_startup.bin vmerge.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_rodata.bin > vmerge_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_rodata_str1_8.bin > vmerge_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_sdata.bin > vmerge_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_text_init.bin > vmerge_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_text.bin > vmerge_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmerge_text_startup.bin > vmerge_text_startup.temp
+cat vmerge_rodata.temp vmerge_rodata_str1_8.temp vmerge_sdata.temp > vmerge_data.hex
+cat vmerge_text_init.temp vmerge_text.temp vmerge_text_startup.temp > vmerge_inst.hex
+
 rm *.riscv *.bin *.temp
