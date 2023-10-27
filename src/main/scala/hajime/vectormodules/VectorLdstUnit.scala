@@ -50,6 +50,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   val hasVectorInstNext = RegNext(hasVectorInst)
 
   val vecIdx = RegInit(0.U(log2Up(params.vlen/8).W))
+  val executedNum = RegInit(0.U(log2Up(params.vlen/8).W))
   val vecIdxToVrfWrite = RegNext(vecIdx)
 
   val accumulator = RegInit(0.U(params.xprlen.W))
@@ -77,6 +78,7 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   when((io.signalIn.valid && io.signalIn.ready) || vecMemAccessLast) {
     vecIdx := 0.U
     accumulator := 0.U
+    executedNum := 0.U
   } .elsewhen(hasVectorInst) {
     vecIdx := vecIdx + 1.U
     // unit-stride
@@ -95,9 +97,11 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     ), MuxLookup(vectorReqReg.vecConf.vtype.vsew, scalarReqReg.bits.rs2Value)(
       (0 until 4).map(i => i.U -> (scalarReqReg.bits.rs2Value << i).asUInt)
     ))
+    executedNum := (executedNum + (vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm).asUInt)
   } .otherwise {
     vecIdx := 0.U
     accumulator := 0.U
+    executedNum := 0.U
   }
 
   // scalarReqRegがvalidでない（メモリアクセスが存在しない）または，axiのreqがreadyであり次のサイクルで命令を受け取れるかつベクトルならば最終要素
@@ -206,6 +210,9 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := vectorReqReg.vecConf
+  // ベクトル命令かつメモリアクセス命令
+  io.toExWbReg.bits.vectorExecNum.get.valid := io.toExWbReg.valid && vectorReqReg.scalarDecode.vector.get && vectorReqReg.scalarDecode.memValid
+  io.toExWbReg.bits.vectorExecNum.get.bits := executedNum + (vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm).asUInt
   if(params.debug) io.toExWbReg.bits.debug.get := vectorReqReg.debug.get
 }
 

@@ -27,6 +27,7 @@ class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
   val cpu_operating = Bool()
   val inst_retire = Bool()
   val hartid = UInt(xprlen.W)
+  val vectorExecNum = if(useVector) Some(Valid(UInt(log2Up(params.vlen/8).W))) else None
 }
 
 class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -61,8 +62,12 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   when(io.fromCPU.inst_retire) {
     instret := instret + 1.U(xprlen.W)
   }
-  // TODO: add operation counter at mhpmcounter3
-  val hpmcounter3 = zeroInit_Register()
+  val mhpmcounter3 = if(params.useVector) Some(zeroInit_Register()) else None
+  if(params.useVector) {
+    when(io.fromCPU.inst_retire) {
+      mhpmcounter3.get := (mhpmcounter3.get + Mux(io.fromCPU.vectorExecNum.get.valid, io.fromCPU.vectorExecNum.get.bits, 1.U))
+    }
+  }
   val mvendorid = "h426F79734C6F7665".U(xprlen.W)
   val marchid = "h53686F7461636F6E".U(xprlen.W)
   val mimpid = "h0001145141919810".U(xprlen.W)
@@ -129,7 +134,9 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.mtval2 -> mtval2,
     CSRs.mcycle -> cycle, // Only M-mode can overwrite cycle and instret?
     CSRs.minstret -> instret,
-  )
+  ) ++ (if(params.useVector) Seq(
+    CSRs.mhpmcounter3 -> mhpmcounter3.get,
+  ) else Nil)
 
   // mepcレジスタは書き込み時に下位2bitが0になっていることが保証されているのでそのまま出力する
   io.readResp.data := MuxLookup(io.csr_addr, 0.U(xprlen.W))(

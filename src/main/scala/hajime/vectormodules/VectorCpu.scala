@@ -498,6 +498,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   csrUnit.io.fromCPU.hartid := io.hartid
   csrUnit.io.fromCPU.cpu_operating := cpu_operating
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
+  csrUnit.io.fromCPU.vectorExecNum.get := EX_WB_REG.bits.vectorExecNum.get
   csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
   csrUnit.io.exception.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
   csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, vectorLdstUnit.io.scalarResp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)

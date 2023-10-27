@@ -136,6 +136,7 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
   val vectorCsrPorts = if(params.useVector) Some(new VecCtrlUnitResp()) else None
+  val vectorExecNum = if(params.useVector) Some(Valid(UInt(log2Up(params.vlen/8).W))) else None
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
@@ -439,6 +440,7 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     when(vecCtrlUnit.get.io.resp.valid) {
       EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.get.io.resp.bits
     }
+    EX_WB_REG.bits.vectorExecNum.get := 0.U
   }
 
   if(params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
@@ -496,6 +498,10 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   csrUnit.io.fromCPU.hartid := io.hartid
   csrUnit.io.fromCPU.cpu_operating := cpu_operating
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
+  if(params.useVector) {
+    csrUnit.io.fromCPU.vectorExecNum.get.valid := false.B
+    csrUnit.io.fromCPU.vectorExecNum.get.bits := DontCare
+  }
   csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
   csrUnit.io.exception.bits.mepc_write := EX_WB_REG.bits.dataSignals.pc.addr
   csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, ldstUnit.io.cpu.resp.bits.exceptionSignals.bits, EX_WB_REG.bits.exceptionSignals.bits)

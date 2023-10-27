@@ -49,12 +49,16 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   ))
 
   val idx = RegInit(0.U(log2Up(params.vlen/8).W))
+  val executedNum = RegInit(0.U(log2Up(params.vlen/8).W))
   when((io.signalIn.valid && io.signalIn.ready) || io.dataOut.toVRF.bits.last) {
     idx := 0.U
+    executedNum := 0.U
   } .elsewhen(instInfoReg.valid) {
     idx := idx + 1.U
+    executedNum := executedNum + (io.dataOut.toVRF.valid && io.dataOut.toVRF.bits.writeReq).asUInt
   } .otherwise {
     idx := 0.U
+    executedNum := 0.U
   }
 
   when(io.signalIn.valid && io.signalIn.ready) {
@@ -106,6 +110,8 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := instInfoReg.bits.vecConf
+  io.toExWbReg.bits.vectorExecNum.get.valid := io.dataOut.toVRF.bits.last
+  io.toExWbReg.bits.vectorExecNum.get.bits := executedNum + (io.dataOut.toVRF.valid && io.dataOut.toVRF.bits.writeReq).asUInt
   if(params.debug) io.toExWbReg.bits.debug.get := instInfoReg.bits.debug.get
 }
 
