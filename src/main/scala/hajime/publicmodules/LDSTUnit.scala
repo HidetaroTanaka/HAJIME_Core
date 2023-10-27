@@ -5,6 +5,7 @@ import chisel3._
 import chisel3.util._
 import hajime.axiIO.AXI4liteIO
 import hajime.common._
+import Functions._
 
 class LDSTReq(implicit params: HajimeCoreParams) extends Bundle {
   val addr = UInt(params.xprlen.W)
@@ -65,9 +66,9 @@ class LDSTUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCo
   ))
   io.cpu.resp.bits.exceptionSignals.valid := (access_fault || address_misaligned) && req_reg.funct.memValid
   io.cpu.resp.bits.data := MuxLookup(req_reg.funct.memory_length, io.dcache_axi4lite.r.bits.data)(Seq(
-    MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(7,0), params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
-    MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(15,0), params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),
-    MEM_LEN.W.asUInt -> Mux(req_reg.funct.mem_sext, hajime.common.Functions.sign_ext(io.dcache_axi4lite.r.bits.data(31,0), params.xprlen), io.dcache_axi4lite.r.bits.data(31,0).zext.asUInt),
+    MEM_LEN.B.asUInt -> Mux(req_reg.funct.mem_sext, io.dcache_axi4lite.r.bits.data(7,0).ext(params.xprlen), io.dcache_axi4lite.r.bits.data(7,0).zext.asUInt),
+    MEM_LEN.H.asUInt -> Mux(req_reg.funct.mem_sext, io.dcache_axi4lite.r.bits.data(15,0).ext(params.xprlen), io.dcache_axi4lite.r.bits.data(15,0).zext.asUInt),
+    MEM_LEN.W.asUInt -> Mux(req_reg.funct.mem_sext, io.dcache_axi4lite.r.bits.data(31,0).ext(params.xprlen), io.dcache_axi4lite.r.bits.data(31,0).zext.asUInt),
     MEM_LEN.D.asUInt -> io.dcache_axi4lite.r.bits.data
   ))
 

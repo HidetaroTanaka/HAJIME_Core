@@ -4,6 +4,7 @@ import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
 import hajime.common._
+import hajime.vectormodules._
 
 class CSRFileReadResp(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -26,6 +27,7 @@ class CPUtoCSR(implicit params: HajimeCoreParams) extends Bundle {
   val cpu_operating = Bool()
   val inst_retire = Bool()
   val hartid = UInt(xprlen.W)
+  val vectorExecNum = if(useVector) Some(Valid(UInt(log2Up(params.vlen/8).W))) else None
 }
 
 class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
@@ -35,6 +37,7 @@ class CSRFileIO(implicit params: HajimeCoreParams) extends Bundle {
   val writeReq = Flipped(ValidIO(new CSRFileWriteReq()))
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
+  val vectorCsrPorts = if(params.useVector) Some(Input(new VecCtrlUnitResp())) else None
 }
 
 class CSRFile(implicit params: HajimeCoreParams) extends Module {
@@ -59,6 +62,12 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   when(io.fromCPU.inst_retire) {
     instret := instret + 1.U(xprlen.W)
   }
+  val mhpmcounter3 = if(params.useVector) Some(zeroInit_Register()) else None
+  if(params.useVector) {
+    when(io.fromCPU.inst_retire) {
+      mhpmcounter3.get := (mhpmcounter3.get + Mux(io.fromCPU.vectorExecNum.get.valid, io.fromCPU.vectorExecNum.get.bits, 1.U))
+    }
+  }
   val mvendorid = "h426F79734C6F7665".U(xprlen.W)
   val marchid = "h53686F7461636F6E".U(xprlen.W)
   val mimpid = "h0001145141919810".U(xprlen.W)
@@ -79,6 +88,18 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
   val mtinst = zeroInit_Register()
   val mtval2 = zeroInit_Register()
 
+  /*
+  // TODO: Vector Trap and Fixed-Point
+  val vstart = if(params.useVector) Some(zeroInit_Register()) else None
+  val vcsr = if(params.useVector) Some(MixedVec(UInt(2.W), Bool())) else None
+  val vxsat = if(params.useVector) Some(vcsr(1)) else None
+  val vxrm = if(params.useVector) Some(vcsr(0)) else None
+   */
+  // vl and vtype can be read from EX_WB register
+  // val vl = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlenb).W))) else None
+  // val vtype = if(params.useVector) Some(zeroInit_Register()) else None
+  val vlenb = if(params.useVector) Some(params.vlenb.U) else None
+
   val readOnlyCSRs: Seq[(Int, UInt)] = Seq(
     CSRs.cycle -> cycle,
     CSRs.time -> time,
@@ -88,7 +109,13 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.mimpid -> mimpid,
     CSRs.mhartid -> mhartid,
     CSRs.mconfigptr -> mconfigptr,
-  )
+  ) ++ (if(params.useVector) {
+    Seq(
+      CSRs.vl -> io.vectorCsrPorts.get.vl,
+      CSRs.vtype -> io.vectorCsrPorts.get.vtype.getBits,
+      CSRs.vlenb -> vlenb.get,
+    )
+  } else Nil)
 
   val writableCSRs: Seq[(Int, UInt)] = Seq(
     CSRs.mstatus -> mstatus,
@@ -107,7 +134,9 @@ class CSRFile(implicit params: HajimeCoreParams) extends Module {
     CSRs.mtval2 -> mtval2,
     CSRs.mcycle -> cycle, // Only M-mode can overwrite cycle and instret?
     CSRs.minstret -> instret,
-  )
+  ) ++ (if(params.useVector) Seq(
+    CSRs.mhpmcounter3 -> mhpmcounter3.get,
+  ) else Nil)
 
   // mepcレジスタは書き込み時に下位2bitが0になっていることが保証されているのでそのまま出力する
   io.readResp.data := MuxLookup(io.csr_addr, 0.U(xprlen.W))(

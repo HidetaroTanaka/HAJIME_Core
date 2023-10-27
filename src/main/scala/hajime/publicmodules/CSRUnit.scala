@@ -3,7 +3,8 @@ package hajime.publicmodules
 import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
-import hajime.common.{ScalarOpConstants, _}
+import hajime.common._
+import hajime.vectormodules._
 
 class CSRUnitReq(implicit params: HajimeCoreParams) extends Bundle {
   import params._
@@ -17,6 +18,7 @@ class CSRUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val resp = Output(new CSRFileReadResp())
   val fromCPU = Input(new CPUtoCSR())
   val exception = Flipped(ValidIO(new CSRExceptionReq()))
+  val vectorCsrPorts = if(params.useVector) Some(Input(new VecCtrlUnitResp())) else None
 }
 
 class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
@@ -25,10 +27,13 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCon
   val csrFile = Module(CSRFile(params))
 
   csrFile.io.fromCPU := io.fromCPU
+  if(params.useVector) {
+    csrFile.io.fromCPU.vectorExecNum.get := io.fromCPU.vectorExecNum.get
+  }
   // mretならばmepc，そうでなければ命令で指定されたcsr
   csrFile.io.csr_addr := Mux(io.req.bits.funct.branch === Branch.MRET.asUInt, CSRs.mepc.U(12.W), io.req.bits.csr_addr)
   csrFile.io.writeReq.bits.data := MuxLookup(io.req.bits.funct.csr_funct, io.req.bits.data)(Seq(
-    CSR_FCN.C.asUInt -> (csrFile.io.readResp.data & ~io.req.bits.data),
+    CSR_FCN.C.asUInt -> (csrFile.io.readResp.data & (~io.req.bits.data).asUInt),
     CSR_FCN.S.asUInt -> (csrFile.io.readResp.data | io.req.bits.data),
     CSR_FCN.W.asUInt -> io.req.bits.data,
   ))
@@ -43,6 +48,8 @@ class CSRUnit(implicit params: HajimeCoreParams) extends Module with ScalarOpCon
 
   io.resp := csrFile.io.readResp
   csrFile.io.exception := io.exception
+
+  if(params.useVector) csrFile.io.vectorCsrPorts.get := io.vectorCsrPorts.get
 }
 
 object CSRUnit extends App {

@@ -88,7 +88,9 @@ void __attribute__((noreturn)) exit(int ret) {
   printstr(string);
 
   // guarantee that register a0 holds exit code
-  volatile register unsigned long exit_code asm ("a0") = ret;
+  asm volatile("mv a0, %0"
+  :
+  : "r"(ret));
   PUTCHAR_TOHOST('\0');
 _exit:
   goto _exit;

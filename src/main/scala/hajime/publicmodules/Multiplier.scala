@@ -4,6 +4,7 @@ import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
 import chisel3.experimental.BundleLiterals._
+import hajime.common.Functions._
 import hajime.common._
 import hajime.publicmodules
 
@@ -120,8 +121,8 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
       stageRegisters(i) := stageRegisters(i)
     } .otherwise {
       stageRegisters(i) := stageRegisters(i - 1)
-      stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << (i * 8).U) + stageRegisters(i - 1).bits.result
-      stageRegisters(i).bits.multiplier := stageRegisters(i - 1).bits.multiplier >> 8.U
+      stageRegisters(i).bits.result := (multipliers_64x8(i).io.out << (i * 8)).asUInt + stageRegisters(i - 1).bits.result
+      stageRegisters(i).bits.multiplier := stageRegisters(i - 1).bits.multiplier >> 8
     }
     if(params.debug) io.debug.get(i) := stageRegisters(i)
   }
@@ -129,7 +130,7 @@ class Multiplier(implicit params: HajimeCoreParams) extends Module {
   // STAGE 7
   multipliers_64x8(7).io.multiplicand := stageRegisters(6).bits.multiplicand
   multipliers_64x8(7).io.multiplier := stageRegisters(6).bits.multiplier(7,0)
-  io.resp.bits.result := (multipliers_64x8(7).io.out << 56.U) + stageRegisters(6).bits.result
+  io.resp.bits.result := (multipliers_64x8(7).io.out << 56).asUInt + stageRegisters(6).bits.result
   io.resp.bits.tag := stageRegisters(6).bits.tag
   io.resp.valid := stageRegisters(6).valid
 }
@@ -276,7 +277,7 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   nonPipelinedMultiplier.io.resp.ready := io.resp.ready
   val result128 = Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
   io.resp.bits := MuxCase(result128(127,64), Seq(
-    nonPipelinedMultiplier.io.resp.bits.decode.op32 -> Functions.sign_ext(result128(31,0), 64),
+    nonPipelinedMultiplier.io.resp.bits.decode.op32 -> result128(31,0).ext(64),
     (nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt) -> result128(63,0),
   ))
 }

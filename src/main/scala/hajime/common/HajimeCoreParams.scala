@@ -4,13 +4,16 @@ import chisel3._
 import chisel3.util._
 
 // TODO: add inst/data memory info
+// Do I even need multi issue? Vector and Multiply can overlap
 case class HajimeCoreParams(
-  issue_width: Int = 2,
+  issue_width: Int = 1,
+  threads: Int = 1,
   xprlen: Int = 64,
   frequency: Int = 50*1000*1000, // x[MHz] = x * 1000 * 1000
   physicalRegFileEntries: Int = 48,
   ras_depth: Int = 8,
   robEntries: Int = 8,
+  useException: Boolean = true,
   useAtomics: Boolean = false,
   useCompressed: Boolean = false,
   useZicsr: Boolean = true,
@@ -26,10 +29,11 @@ case class HajimeCoreParams(
   useUser: Boolean = false,
   useDynamicTransLang: Boolean = false,
   useUserLevelInt: Boolean = false,
-  useVector: Boolean = false,
+  useVector: Boolean = true,
   usePackedSIMD: Boolean = false,
   debug: Boolean = true,
   vlen: Int = 256,
+  vecAluExecUnitNum: Int = 2,
 ) {
   def robTagWidth: Int = log2Up(robEntries)
   def generateDefaultMISA: UInt = {
@@ -70,4 +74,5 @@ case class HajimeCoreParams(
       )
     )
   }
+  def vlenb: Int = vlen/8
 }

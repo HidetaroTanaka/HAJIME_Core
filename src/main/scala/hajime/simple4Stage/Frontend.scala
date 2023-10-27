@@ -34,7 +34,6 @@ class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
   val reset_vector = Input(UInt(params.xprlen.W))
 }
 
-// TODO: add inst address misaligned, access fault
 class Frontend(implicit params: HajimeCoreParams) extends Module {
   import params._
   val io = IO(new FrontEndIO())

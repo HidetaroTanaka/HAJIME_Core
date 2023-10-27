@@ -2,10 +2,26 @@ package hajime.common
 
 import chisel3._
 import chisel3.util._
+import chisel3.internal.firrtl._
 
 object Functions {
-  def sign_ext(in: UInt, extend_to: Int): UInt = {
-    require(in.getWidth < extend_to, "fuck")
-    Cat(Fill(extend_to - in.getWidth, in(in.getWidth-1)), in)
+  implicit class signExtend(uint: UInt) {
+    def ext(targetWidth: Int): UInt = {
+      if(uint.getWidth < targetWidth) {
+        Cat(Fill(targetWidth - uint.getWidth, uint.head(1)), uint)
+      } else {
+        uint
+      }
+    }
+  }
+  implicit class seqHasElementEquivalentToUInt(ls: List[UInt]) {
+    def has(elem: UInt): Bool = {
+      ls.map(x => x === elem).reduce(_ || _)
+    }
+  }
+  implicit class booleanToInt(b: Boolean) {
+    def toInt: Int = {
+      if(b) 1 else 0
+    }
   }
 }

@@ -2,9 +2,9 @@ package hajime.common
 
 import chisel3._
 import chisel3.util._
+import Functions._
 
 object RISCV_Consts {
-  val XLEN: Int = 64
   val INST_LEN: Int = 32
 }
 
@@ -17,14 +17,14 @@ trait ScalarOpConstants {
     val condBranchList = EQ :: NE :: LT :: GE :: LTU :: GEU :: Nil
     val jumpList = JAL :: JALR :: Nil
     def isCondBranch(signal: UInt): Bool = {
-      condBranchList.map(x => signal === x.asUInt).reduce(_ || _)
+      condBranchList.map(_.asUInt).has(signal)
     }
     def isJump(signal: UInt): Bool = {
-      jumpList.map(x => signal === x.asUInt).reduce(_ || _)
+      jumpList.map(_.asUInt).has(signal)
     }
   }
   object Value1 extends ChiselEnum {
-    val ZERO, RS1, U_IMM, CSR = Value
+    val ZERO, RS1, U_IMM, UIMM19_15 = Value
     def use_RS1(signal: UInt): Bool = {
       signal === RS1.asUInt
     }
@@ -41,14 +41,14 @@ trait ScalarOpConstants {
     val aluList = ADDSUB :: SLL :: SLT :: SLTU :: XOR :: SR :: OR :: AND :: Nil
     val mulList = MUL_LOW :: MUL_HIGH :: MUL_HISU :: MUL_HIU :: Nil
     def use_ALU(signal: UInt): Bool = {
-      aluList.map(x => signal === x.asUInt).reduce(_ || _)
+      aluList.map(_.asUInt).has(signal)
     }
     def use_MUL(signal: UInt): Bool = {
-      mulList.map(x => signal === x.asUInt).reduce(_ || _)
+      mulList.map(_.asUInt).has(signal)
     }
   }
   object WB_SEL extends ChiselEnum {
-    val NONE, PC4, ARITH, CSR, MEM = Value
+    val NONE, PC4, ARITH, CSR, MEM, VECTOR = Value
     def write_to_rd(signal: UInt): Bool = {
       signal =/= WB_SEL.NONE.asUInt
     }
