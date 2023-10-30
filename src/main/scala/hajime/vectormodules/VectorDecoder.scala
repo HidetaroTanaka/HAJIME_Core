@@ -101,6 +101,7 @@ object VDecode extends DecodeConstants with VectorOpConstants {
     VSUB_VX  -> amogus("vsub", VSOURCE.VX),
     VRSUB_VX -> amogus("vrsub", VSOURCE.VX),
     VRSUB_VI -> amogus("vrsub", VSOURCE.VI),
+    /*
     VADC_VVM -> amogus("vadc", VSOURCE.VV),
     VADC_VXM -> amogus("vadc", VSOURCE.VX),
     VADC_VIM -> amogus("vadc", VSOURCE.VI),
@@ -116,6 +117,7 @@ object VDecode extends DecodeConstants with VectorOpConstants {
     VMSBC_VXM -> amogus("vmsbc", VSOURCE.VX),
     VMSBC_VV -> amogus("vmsbc", VSOURCE.VV),
     VMSBC_VX -> amogus("vmsbc", VSOURCE.VX),
+     */
     VAND_VV -> amogus("vand", VSOURCE.VV),
     VAND_VX -> amogus("vand", VSOURCE.VX),
     VAND_VI -> amogus("vand", VSOURCE.VI),
