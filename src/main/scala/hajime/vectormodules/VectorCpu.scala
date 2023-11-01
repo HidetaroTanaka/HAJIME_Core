@@ -434,6 +434,10 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   } else false.B))
   // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
 
+  // EX_WB_REGのvectorExecNumのデフォルト値
+  EX_WB_REG.bits.vectorExecNum.get.valid := false.B
+  EX_WB_REG.bits.vectorExecNum.get.bits := 0.U
+
   // リタイアするベクトル命令があればそれでEX_WB_REGを上書き
   for(d <- vecAluExecUnit) {
     when(d.io.toExWbReg.valid) {
