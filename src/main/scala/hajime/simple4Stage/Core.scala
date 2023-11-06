@@ -203,7 +203,7 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
   io.frontend.req.valid := WB_pc_redirect || (branch_evaluator.io.out.valid && ID_EX_REG.valid) || (branch_predictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
   branch_predictor.io.pc := io.frontend.resp.bits.pc
-  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
+  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.getImm(ImmediateEnum.B), decoded_inst.getImm(ImmediateEnum.J))
   branch_predictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decoded_inst
@@ -227,10 +227,10 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
-    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
+    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.U),
     (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm19To15,
-    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
-    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
+    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.I),
+    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.S),
   ))
 
   val rs1ValueToEX = Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
