@@ -6,7 +6,7 @@ import Functions._
 
 import scala.annotation.unused
 
-class InstBundle(implicit params: HajimeCoreParams) extends Bundle with ScalarOpConstants {
+class InstBundle(implicit params: HajimeCoreParams) extends Bundle {
   import params._
   val bits: UInt = UInt(32.W)
 

@@ -12,9 +12,6 @@ trait ScalarOpConstants {
   object ContentValid extends ChiselEnum {
     val N, Y = Value
   }
-  object ImmediateEnum extends ChiselEnum {
-    val I, S, B, U, J = Value
-  }
   object Branch extends ChiselEnum {
     val NONE, EQ, NE, LT, GE, LTU, GEU, JAL, JALR, ECALL, MRET = Value
     val condBranchList = EQ :: NE :: LT :: GE :: LTU :: GEU :: Nil
@@ -68,6 +65,10 @@ trait ScalarOpConstants {
   object CSR_FCN extends ChiselEnum {
     val N, C, S, W, R, I = Value
   }
+}
+
+object ImmediateEnum extends ChiselEnum {
+  val I, S, B, U, J = Value
 }
 
 object COMPILE_CONSTANTS {
