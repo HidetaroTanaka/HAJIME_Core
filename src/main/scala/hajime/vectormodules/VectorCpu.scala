@@ -293,10 +293,6 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
     ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.io.out
   }
-  // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
-  // 1 -> マスクなし，全て書き込む
-  // （マスクを使わないベクタ命令は全てvm=1か？）
-  ID_EX_REG.bits.vectorDataSignals.get.mask := vectorDecoder.io.out.vm
   ID_EX_REG.bits.vectorDataSignals.get.vs1 := decoded_inst.rs1
   ID_EX_REG.bits.vectorDataSignals.get.vs2 := decoded_inst.rs2
   ID_EX_REG.bits.vectorDataSignals.get.vd := decoded_inst.rd

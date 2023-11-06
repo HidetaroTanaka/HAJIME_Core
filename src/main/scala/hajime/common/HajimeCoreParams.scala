@@ -34,6 +34,7 @@ case class HajimeCoreParams(
   vlen: Int = 256,
   vecAluExecUnitNum: Int = 2,
 ) {
+  def physicalRegWidth: Int = log2Up(physicalRegFileEntriesFor1Thread)
   def robTagWidth: Int = log2Up(robEntries)
   def generateDefaultMISA: UInt = {
     Cat((xprlen match {
