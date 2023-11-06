@@ -20,7 +20,7 @@ class BranchEvaluatorReq(implicit params: HajimeCoreParams) extends Bundle with 
 
 class BranchEvaluatorIO(implicit params: HajimeCoreParams) extends Bundle {
   val req = Flipped(new ValidIO(new BranchEvaluatorReq()))
-  val out = new ValidIO(new FrontEndReq())
+  val out = new ValidIO(new ProgramCounter())
 }
 
 class BranchEvaluator(implicit params: HajimeCoreParams) extends Module with ScalarOpConstants {
@@ -47,7 +47,7 @@ class BranchEvaluator(implicit params: HajimeCoreParams) extends Module with Sca
       x => x.asUInt -> (io.req.bits.bp_taken =/= branch_taken)
     )
   )
-  io.out.bits.pc := Mux(io.req.bits.BranchType === Branch.JALR.asUInt, Cat(io.req.bits.ALU_Result.head(params.xprlen-1), false.B), Mux(
+  io.out.bits.addr := Mux(io.req.bits.BranchType === Branch.JALR.asUInt, Cat(io.req.bits.ALU_Result.head(params.xprlen-1), false.B), Mux(
     branch_taken, io.req.bits.destPC, io.req.bits.pc.nextPC
   ))
 }

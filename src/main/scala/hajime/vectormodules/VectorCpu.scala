@@ -144,7 +144,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     ID_ecall -> Causes.machine_ecall.U,
   ))
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
-  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
+  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.addr
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.U),
@@ -473,7 +473,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     || (if(params.useException) EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException else EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt))
 
   when(WB_pc_redirect) {
-    io.frontend.req.bits.pc := csrUnit.io.resp.data
+    io.frontend.req.bits.addr := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val WB_inst_can_retire = EX_WB_REG.valid && !(EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && !WB_stall
