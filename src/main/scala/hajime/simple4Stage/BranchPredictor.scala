@@ -1,10 +1,9 @@
 package hajime.simple4Stage
 
-import circt.stage.ChiselStage
 import chisel3._
+import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.common.{ScalarOpConstants, _}
-import hajime.common.RISCV_Consts._
+import hajime.common._
 
 class BranchPredictorIO(implicit params: HajimeCoreParams) extends Bundle with ScalarOpConstants {
   // 分岐成立予測であれば，io.out.validはtrue
