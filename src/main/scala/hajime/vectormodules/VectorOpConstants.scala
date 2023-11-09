@@ -27,7 +27,7 @@ trait VectorOpConstants {
   object VEU_FUN extends ChiselEnum {
     val NONE, ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT,
     MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR,
-    MUL = Value
+    MUL, MULH, MULHU, MULHSU = Value
     val compMaskList = SEQ :: SNE :: SLTU :: SLT :: SLEU :: SLE :: SGTU :: SGT :: Nil
     val carryMaskList = MADC :: MSBC :: Nil
     val ignoreMaskList = ADC :: MADC :: SBC :: MSBC :: MERGE :: Nil

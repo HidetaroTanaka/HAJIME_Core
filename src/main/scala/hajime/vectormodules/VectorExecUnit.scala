@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.experimental.BundleLiterals._
 import circt.stage.ChiselStage
 import chisel3.util._
+import hajime.common.Functions.{signExtend, lsHasElementEquivalentToUInt}
 import hajime.common._
 import hajime.publicmodules._
 import hajime.simple4Stage._
@@ -39,8 +40,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
  */
 abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module with VectorOpConstants {
   require(params.useVector, "Insert Funni Amongus Reference here")
-  // 演算内容をここに書けばop関数はいらない？
-  def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt]
+  def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp, vsew: UInt): Seq[UInt]
 
   val io = IO(new VectorExecUnitIO())
 
@@ -71,6 +71,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   }
 
   import VEU_FUN._
+  // TODO: vs1Outの判定はMVVではなくベクトルマスク命令か否かで
   io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, idx.head(idx.getWidth-3), idx)
   io.readVrf.req.sew := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, 0.U, instInfoReg.bits.vecConf.vtype.vsew)
   io.readVrf.req.vs1 := instInfoReg.bits.vs1
@@ -100,7 +101,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 
   io.signalIn.ready := !instInfoReg.valid || io.dataOut.toVRF.bits.last
 
-  val execResult = exec(instInfoReg.bits.vectorDecode, valueToExec)
+  val execResult = exec(instInfoReg.bits.vectorDecode, valueToExec, instInfoReg.bits.vecConf.vtype.vsew)
 
   io.toExWbReg.valid := io.dataOut.toVRF.bits.last
   io.toExWbReg.bits.dataSignals := DontCare
@@ -116,12 +117,45 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
 }
 
 class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUnit {
-  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp): Seq[UInt] = {
+  override def exec(vectorDec: VectorDecoderResp, values: VecRegFileReadResp, vsew: UInt): Seq[UInt] = {
     import values._
     val vadcResult = (vs2Out +& vs1Out) + vm
     val vsbcResult = (vs2Out -& vs1Out) - vm
     val vs2Mask = vs2Out(0)
     val vs1Mask = vs1Out(0)
+    val vs2ForMult = MuxLookup(vsew, vs2Out)(
+      (0 until 4).map(
+        // vs2がunsignedならば零拡張，そうでなければ符号拡張
+        i => i.U -> {
+          val vs2OutMainBits = vs2Out((8 << i) - 1, 0)
+          Mux(vectorDec.veuFun === VEU_FUN.MULHU.asUInt, Cat(false.B, vs2OutMainBits), vs2OutMainBits.ext(params.xprlen+1))
+        }
+      )
+    ).asSInt
+    val vs1ForMult = MuxLookup(vsew, vs1Out)(
+      (0 until 4).map(
+        // vs1がunsignedならば零拡張，そうでなければ符号拡張
+        i => i.U -> {
+          val vs1OutMainBits = vs1Out((8 << i) - 1, 0)
+          Mux(Seq(VEU_FUN.MULHU, VEU_FUN.MULHSU).map(_.asUInt).has(vectorDec.veuFun), Cat(false.B, vs1OutMainBits), vs1OutMainBits.ext(params.xprlen+1))
+        }
+      )
+    ).asSInt
+    val multiplyRes = (vs2ForMult * vs1ForMult).asUInt
+    val multiplyResLowBits = MuxLookup(vsew, multiplyRes(7,0))(
+      (0 until 4).map(
+        i => i.U -> multiplyRes((8 << i) - 1, 0)
+      )
+    )
+    // (15, 7)
+    // (31, 16)
+    // (63, 32)
+    // (127, 64)
+    val multiplyResHighBits = MuxLookup(vsew, multiplyRes(15, 8))(
+      (0 until 4).map(
+        i => i.U -> multiplyRes((16 << i) - 1, 8 << i)
+      )
+    )
     // vadd, vsub, vrsub, vadc, vmadc, (vsbc, vmsbc),
     // seq, sne,
     // sltu, slt, sleu, sle,
@@ -141,16 +175,19 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) ::
       (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
       (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) ::
-      (vs2Out.asSInt * vs1Out.asSInt).asUInt :: Nil
+      multiplyResLowBits :: multiplyResHighBits :: multiplyResHighBits :: multiplyResHighBits :: Nil
   }
 
   import VEU_FUN._
+  // TODO: vs1Outの判定はMVVではなくベクトルマスク命令か否かで
   valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
   valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue2(7,0)(idx(2,0)), execValue2)
   // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
   valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
-    Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR, MUL).zipWithIndex.map(
+    Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT,
+      MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR,
+      MUL, MULH, MULHU, MULHSU).zipWithIndex.map(
       x => x._1.asUInt -> execResult(x._2)
     )
   )

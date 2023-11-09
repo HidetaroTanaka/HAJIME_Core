@@ -287,6 +287,13 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
 
   def VMUL_VV = vArithGen(vInst = "vmul", vsource = VSOURCE.MVV)
   def VMUL_VX = vArithGen(vInst = "vmul", vsource = VSOURCE.MVX)
+  def VMULH_VV = vArithGen(vInst = "vmulh", vsource = VSOURCE.MVV)
+  def VMULH_VX = vArithGen(vInst = "vmulh", vsource = VSOURCE.MVX)
+  def VMULHU_VV = vArithGen(vInst = "vmulhu", vsource = VSOURCE.MVV)
+  def VMULHU_VX = vArithGen(vInst = "vmulhu", vsource = VSOURCE.MVX)
+  def VMULHSU_VV = vArithGen(vInst = "vmulhsu", vsource = VSOURCE.MVV)
+  def VMULHSU_VX = vArithGen(vInst = "vmulhsu", vsource = VSOURCE.MVX)
+
   def VMERGE_VVM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VV, vm = "0")
   def VMERGE_VXM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VX, vm = "0")
   def VMERGE_VIM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VI, vm = "0")
