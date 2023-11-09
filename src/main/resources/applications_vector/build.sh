@@ -381,4 +381,23 @@ hexdump -v -e '1/4 "%08x" "\n"' vector_median_text_startup.bin > vector_median_t
 cat vector_median_data.temp vector_median_rodata.temp vector_median_rodata_str1_8.temp vector_median_sdata.temp > vector_median_data.hex
 cat vector_median_text_init.temp vector_median_text.temp vector_median_text_startup.temp > vector_median_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmul.riscv ./vmul/vmul.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
+riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmul_rodata.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmul_rodata_str1_8.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmul_sdata.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmul_text_init.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmul_text.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmul_text_startup.bin vmul.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmul_rodata.bin > vmul_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_rodata_str1_8.bin > vmul_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_sdata.bin > vmul_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text_init.bin > vmul_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text.bin > vmul_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text_startup.bin > vmul_text_startup.temp
+cat vmul_rodata.temp vmul_rodata_str1_8.temp vmul_sdata.temp > vmul_data.hex
+cat vmul_text_init.temp vmul_text.temp vmul_text_startup.temp > vmul_inst.hex
+
+
 rm *.riscv *.bin *.temp

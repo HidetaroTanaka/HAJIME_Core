@@ -71,15 +71,15 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   }
 
   import VEU_FUN._
-  io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, idx.head(idx.getWidth-3), idx)
-  io.readVrf.req.sew := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, 0.U, instInfoReg.bits.vecConf.vtype.vsew)
+  io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, idx.head(idx.getWidth-3), idx)
+  io.readVrf.req.sew := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, 0.U, instInfoReg.bits.vecConf.vtype.vsew)
   io.readVrf.req.vs1 := instInfoReg.bits.vs1
   io.readVrf.req.vs2 := instInfoReg.bits.vs2
   io.readVrf.req.vd := instInfoReg.bits.vd
   // ベクトルマスク命令ならばidx自体が対応するため下げる
-  io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask && (instInfoReg.bits.vectorDecode.vSource =/= VSOURCE.MM.asUInt)
+  io.readVrf.req.readVdAsMaskSource := instInfoReg.bits.vectorDecode.veuFun.writeAsMask && (instInfoReg.bits.vectorDecode.vSource =/= VSOURCE.MVV.asUInt)
 
-  val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt || instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
+  val execValue1 = Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.VV.asUInt || instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, io.readVrf.resp.vs1Out, instInfoReg.bits.scalarVal)
   val execValue2 = io.readVrf.resp.vs2Out
   val execValue3 = io.readVrf.resp.vdOut
   val execValueVM = io.readVrf.resp.vm
@@ -140,16 +140,17 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       Mux(vm, vs1Out, vs2Out) :: vs1Out ::
       (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) ::
       (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
-      (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) :: Nil
+      (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) ::
+      (vs2Out.asSInt * vs1Out.asSInt).asUInt :: Nil
   }
 
   import VEU_FUN._
-  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
-  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MM.asUInt, execValue2(7,0)(idx(2,0)), execValue2)
+  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
+  valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue2(7,0)(idx(2,0)), execValue2)
   // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
   valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
-    Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR).zipWithIndex.map(
+    Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT, MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR, MUL).zipWithIndex.map(
       x => x._1.asUInt -> execResult(x._2)
     )
   )

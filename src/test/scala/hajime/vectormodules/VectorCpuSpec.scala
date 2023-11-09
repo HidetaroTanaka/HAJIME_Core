@@ -139,6 +139,7 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "vadd", "vsub", "vand", "vmseq", "vmslt", "vmsle", "vmsgt",
     "vminmax", "vmerge", "vmv",
     "vmand", "vmor", "vmxor",
+    "vmul"
   )
   val applicationTest = Seq(
     "vector_median"
