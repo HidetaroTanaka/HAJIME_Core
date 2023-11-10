@@ -20,10 +20,10 @@ int main(int argc, char** argv) {
   const signed short *ptr1 = dataArray1;
   signed short *ptr2 = resultArray;
   while(avl != 0) {
-    asm volatile ("vsetvli %0, %1, e32, m1, ta, ma"
+    asm volatile ("vsetvli %0, %1, e16, m1, ta, ma"
     : "=r"(vl)
     : "r"(avl));
-    asm volatile ("li t0, 0x1919");
+    // asm volatile ("li t0, 0x1919");
     asm volatile ("vle16.v v10, (%0)"
     :
     : "r"(ptr0));
@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
     :
     : "r"(ptr1));
     asm volatile ("vmulh.vv v12, v10, v11");
-    asm volatile ("vmulh.vx v12, v12, t0");
-    asm volatile ("vse32.v v12, (%0)"
+    // asm volatile ("vmulh.vx v12, v12, t0");
+    asm volatile ("vse16.v v12, (%0)"
     :
     : "r"(ptr2));
     ptr0 += vl;
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
   }
   int i;
   for(i=0; i<41; i++) {
-    answerArray[i] = (signed short)(((signed int)dataArray0[i] * (signed int)dataArray1[i] * (signed int)0x1919) >> 16);
+    answerArray[i] = (signed short)((((signed int)dataArray0[i] * (signed int)dataArray1[i]) >> 16) & 0xFFFF);
   }
 
   _Bool correct = 1;
