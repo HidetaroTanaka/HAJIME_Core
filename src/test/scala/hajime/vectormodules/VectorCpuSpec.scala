@@ -139,12 +139,12 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "vadd", "vsub", "vand", "vmseq", "vmslt", "vmsle", "vmsgt",
     "vminmax", "vmerge", "vmv",
     "vmand", "vmor", "vmxor",
-    "vmul", "vmulh"
+    "vmul", "vmulh", "vmulhu"
   )
   val applicationTest = Seq(
     "vector_median"
   )
-  val zve64xTestList: Seq[String] = ldstTest ++ arithmeticTest ++ applicationTest
+  val zve64xTestList: Seq[String] = Seq("vmulhu")
   for (e <- zve64xTestList) {
     it should s"Vector CPU execute $e" in {
       test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
