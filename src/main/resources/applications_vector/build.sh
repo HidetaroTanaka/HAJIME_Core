@@ -381,4 +381,76 @@ hexdump -v -e '1/4 "%08x" "\n"' vector_median_text_startup.bin > vector_median_t
 cat vector_median_data.temp vector_median_rodata.temp vector_median_rodata_str1_8.temp vector_median_sdata.temp > vector_median_data.hex
 cat vector_median_text_init.temp vector_median_text.temp vector_median_text_startup.temp > vector_median_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmul.riscv ./vmul/vmul.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
+riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmul_rodata.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmul_rodata_str1_8.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmul_sdata.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmul_text_init.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmul_text.bin vmul.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmul_text_startup.bin vmul.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmul_rodata.bin > vmul_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_rodata_str1_8.bin > vmul_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_sdata.bin > vmul_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text_init.bin > vmul_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text.bin > vmul_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmul_text_startup.bin > vmul_text_startup.temp
+cat vmul_rodata.temp vmul_rodata_str1_8.temp vmul_sdata.temp > vmul_data.hex
+cat vmul_text_init.temp vmul_text.temp vmul_text_startup.temp > vmul_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulh.riscv ./vmulh/vmulh.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmulh.riscv > vmulh.dump
+riscv64-unknown-elf-objdump --disassemble-all vmulh.riscv > vmulh.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmulh_rodata.bin vmulh.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulh_rodata_str1_8.bin vmulh.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmulh_sdata.bin vmulh.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmulh_text_init.bin vmulh.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmulh_text.bin vmulh.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmulh_text_startup.bin vmulh.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_rodata.bin > vmulh_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_rodata_str1_8.bin > vmulh_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_sdata.bin > vmulh_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_text_init.bin > vmulh_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_text.bin > vmulh_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulh_text_startup.bin > vmulh_text_startup.temp
+cat vmulh_rodata.temp vmulh_rodata_str1_8.temp vmulh_sdata.temp > vmulh_data.hex
+cat vmulh_text_init.temp vmulh_text.temp vmulh_text_startup.temp > vmulh_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulhu.riscv ./vmulhu/vmulhu.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmulhu.riscv > vmulhu.dump
+riscv64-unknown-elf-objdump --disassemble-all vmulhu.riscv > vmulhu.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmulhu_rodata.bin vmulhu.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulhu_rodata_str1_8.bin vmulhu.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmulhu_sdata.bin vmulhu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmulhu_text_init.bin vmulhu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmulhu_text.bin vmulhu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmulhu_text_startup.bin vmulhu.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_rodata.bin > vmulhu_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_rodata_str1_8.bin > vmulhu_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_sdata.bin > vmulhu_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_text_init.bin > vmulhu_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_text.bin > vmulhu_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhu_text_startup.bin > vmulhu_text_startup.temp
+cat vmulhu_rodata.temp vmulhu_rodata_str1_8.temp vmulhu_sdata.temp > vmulhu_data.hex
+cat vmulhu_text_init.temp vmulhu_text.temp vmulhu_text_startup.temp > vmulhu_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulhsu.riscv ./vmulhsu/vmulhsu.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmulhsu.riscv > vmulhsu.dump
+riscv64-unknown-elf-objdump --disassemble-all vmulhsu.riscv > vmulhsu.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmulhsu_rodata.bin vmulhsu.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulhsu_rodata_str1_8.bin vmulhsu.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmulhsu_sdata.bin vmulhsu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmulhsu_text_init.bin vmulhsu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmulhsu_text.bin vmulhsu.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmulhsu_text_startup.bin vmulhsu.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_rodata.bin > vmulhsu_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_rodata_str1_8.bin > vmulhsu_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_sdata.bin > vmulhsu_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_text_init.bin > vmulhsu_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_text.bin > vmulhsu_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_text_startup.bin > vmulhsu_text_startup.temp
+cat vmulhsu_rodata.temp vmulhsu_rodata_str1_8.temp vmulhsu_sdata.temp > vmulhsu_data.hex
+cat vmulhsu_text_init.temp vmulhsu_text.temp vmulhsu_text_startup.temp > vmulhsu_inst.hex
+
 rm *.riscv *.bin *.temp

@@ -14,9 +14,15 @@ object Functions {
       }
     }
   }
+  implicit class lsHasElementEquivalentToUInt[T <: scala.collection.Iterable[UInt]](ls: T) {
+    def has(elem: UInt): Bool = {
+      ls.map(_ === elem).reduce(_ || _)
+    }
+  }
+  @deprecated("this only supports List, so use lsHasElementEquivalentToUInt instead as it supports everything Iterable")
   implicit class seqHasElementEquivalentToUInt(ls: List[UInt]) {
     def has(elem: UInt): Bool = {
-      ls.map(x => x === elem).reduce(_ || _)
+      Functions.lsHasElementEquivalentToUInt(ls).has(elem)
     }
   }
   implicit class booleanToInt(b: Boolean) {
