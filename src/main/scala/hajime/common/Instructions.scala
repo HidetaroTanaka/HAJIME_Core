@@ -189,10 +189,10 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case "vmulh" => "100111"
       case "vmulhu" => "100100"
       case "vmulhsu" => "100110"
-      case "vmacc" => ???
-      case "vnmsac" => ???
-      case "vmadd" => ???
-      case "vnmsub" => ???
+      case "vmacc" => "101101"
+      case "vnmsac" => "101111"
+      case "vmadd" => "101001"
+      case "vnmsub" => "101011"
       case "vmerge" => "010111"
       case "vmv" => "010111"
       case "vredsum" => ???
@@ -293,6 +293,11 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMULHU_VX = vArithGen(vInst = "vmulhu", vsource = VSOURCE.MVX)
   def VMULHSU_VV = vArithGen(vInst = "vmulhsu", vsource = VSOURCE.MVV)
   def VMULHSU_VX = vArithGen(vInst = "vmulhsu", vsource = VSOURCE.MVX)
+
+  def VMACC_VV = vArithGen(vInst = "vmacc", vsource = VSOURCE.MVV)
+  def VMACC_VX = vArithGen(vInst = "vmacc", vsource = VSOURCE.MVX)
+  def VNMSAC_VV = vArithGen(vInst = "vnmsac", vsource = VSOURCE.MVV)
+  def VNMSAC_VX = vArithGen(vInst = "vnmsac", vsource = VSOURCE.MVX)
 
   def VMERGE_VVM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VV, vm = "0")
   def VMERGE_VXM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VX, vm = "0")
