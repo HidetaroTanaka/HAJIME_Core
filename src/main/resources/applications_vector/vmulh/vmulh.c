@@ -14,6 +14,33 @@ extern void int32ToHex(int num, char* str);
 extern void clearCounters();
 extern void printCounters();
 
+// #define DEBUG
+
+_Bool verifyResult(const unsigned short* ptr0, const unsigned short* ptr1, size_t n) {
+  int i;
+  _Bool correct = 1;
+  char string[19];
+  for(i=0; i<n; i++) {
+    if(ptr0[i] != ptr1[i]) {
+      printstr("ARRAY NOT CORRECT IN INDEX: ");
+      int32ToHex(i, string);
+      printstr(string);
+      printstr("\n");
+#ifdef DEBUG
+      printstr("RES: ");
+      int32ToHex(ptr0[i], string);
+      printstr(string);
+      printstr(", ANS: ");
+      int32ToHex(ptr1[i], string);
+      printstr(string);
+      printstr("\n");
+#endif
+      correct = 0;
+    }
+  }
+  return correct;
+}
+
 int main(int argc, char** argv) {
   int vl, avl = 41;
   const signed short *ptr0 = dataArray0;
@@ -42,20 +69,32 @@ int main(int argc, char** argv) {
   }
   int i;
   for(i=0; i<41; i++) {
-    answerArray[i] = (signed short)((((signed int)dataArray0[i] * (signed int)dataArray1[i]) >> 16) & 0xFFFF);
+    answerArray[i] = (signed short)(((signed int)dataArray0[i] * (signed int)dataArray1[i]) >> 16);
   }
 
-  _Bool correct = 1;
-  char string[19];
-  for(i=0; i<41; i++) {
-    if(resultArray[i] != answerArray[i]) {
-      printstr("ARRAY NOT CORRECT IN INDEX: ");
-      int32ToHex(i, string);
-      printstr(string);
-      printstr("\n");
-      correct = 0;
-    }
+  _Bool correct = verifyResult(resultArray, answerArray, 41);
+  ptr0 = dataArray0;
+  ptr2 = resultArray;
+  avl = 41;
+  while(avl != 0) {
+    asm volatile ("vsetvli %0, %1, e16, m1, ta, ma"
+    : "=r"(vl)
+    : "r"(avl));
+    asm volatile ("li t0, 0x4545");
+    asm volatile ("vle16.v v10, (%0)"
+    :
+    : "r"(ptr0));
+    asm volatile ("vmulh.vx v12, v10, t0");
+    asm volatile ("vse16.v v12, (%0)"
+    :
+    : "r"(ptr2));
+    ptr0 += vl;
+    ptr2 += vl;
+    avl -= vl;
   }
+  for(i=0; i<41; i++) {
+    answerArray[i] = (signed short)(((signed int)dataArray0[i] * (signed int)0x4545) >> 16);
+  }
+  correct = correct && verifyResult(resultArray, answerArray, 41);
   return !correct;
 }
-
