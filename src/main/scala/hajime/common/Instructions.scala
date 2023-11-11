@@ -298,6 +298,10 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMACC_VX = vArithGen(vInst = "vmacc", vsource = VSOURCE.MVX)
   def VNMSAC_VV = vArithGen(vInst = "vnmsac", vsource = VSOURCE.MVV)
   def VNMSAC_VX = vArithGen(vInst = "vnmsac", vsource = VSOURCE.MVX)
+  def VMADD_VV = vArithGen(vInst = "vmadd", vsource = VSOURCE.MVV)
+  def VMADD_VX = vArithGen(vInst = "vmadd", vsource = VSOURCE.MVX)
+  def VNMSUB_VV = vArithGen(vInst = "vnmsub", vsource = VSOURCE.MVV)
+  def VNMSUB_VX = vArithGen(vInst = "vnmsub", vsource = VSOURCE.MVX)
 
   def VMERGE_VVM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VV, vm = "0")
   def VMERGE_VXM = vArithGen(vInst = "vmerge", vsource = VSOURCE.VX, vm = "0")

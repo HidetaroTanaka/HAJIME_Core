@@ -47,6 +47,10 @@ object VDecode extends DecodeConstants with VectorOpConstants {
       case "vmulh" => MULH
       case "vmulhu" => MULHU
       case "vmulhsu" => MULHSU
+      case "vmacc" => MACC
+      case "vnmsac" => NMSAC
+      case "vmadd" => MADD
+      case "vnmsub" => NMSUB
       case "vmand" => MAND
       case "vmnand" => MNAND
       case "vmandn" => MANDN
@@ -180,7 +184,15 @@ object VDecode extends DecodeConstants with VectorOpConstants {
     VMULHU_VV -> amogus("vmulhu", VSOURCE.VV),
     VMULHU_VX -> amogus("vmulhu", VSOURCE.VX),
     VMULHSU_VV -> amogus("vmulhsu", VSOURCE.VV),
-    VMULHSU_VX -> amogus("vmulhsu", VSOURCE.VX)
+    VMULHSU_VX -> amogus("vmulhsu", VSOURCE.VX),
+    VMACC_VV -> amogus("vmacc", VSOURCE.VV),
+    VMACC_VX -> amogus("vmacc", VSOURCE.VX),
+    VNMSAC_VV -> amogus("vnmsac", VSOURCE.VV),
+    VNMSAC_VX -> amogus("vnmsac", VSOURCE.VX),
+    VMADD_VV -> amogus("vmadd", VSOURCE.VV),
+    VMADD_VX -> amogus("vmadd", VSOURCE.VX),
+    VNMSUB_VV -> amogus("vnmsub", VSOURCE.VV),
+    VNMSUB_VX -> amogus("vnmsub", VSOURCE.VX)
   )
 }
 

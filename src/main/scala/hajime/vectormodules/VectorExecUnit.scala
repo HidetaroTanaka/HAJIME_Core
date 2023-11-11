@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.experimental.BundleLiterals._
 import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.common.Functions.{signExtend, lsHasElementEquivalentToUInt}
+import hajime.common.Functions.{lsHasElementEquivalentToUInt, signExtend}
 import hajime.common._
 import hajime.publicmodules._
 import hajime.simple4Stage._
@@ -141,13 +141,20 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
         }
       )
     ).asSInt
-    val multiplyRes = (vs2ForMult * vs1ForMult).asUInt
+
+    val vdForMult = MuxLookup(vsew, vdOut)(
+      (0 until 4).map(
+        i => i.U -> vdOut((8 << i) - 1, 0).ext(params.xprlen+1)
+      )
+    ).asSInt
+    // vs2*vs1, vd*vs1
+    val multiplyRes = (Mux(Seq(VEU_FUN.MADD, VEU_FUN.NMSUB).map(_.asUInt).has(vectorDec.veuFun), vdForMult, vs2ForMult) * vs1ForMult).asUInt
     val multiplyResLowBits = MuxLookup(vsew, multiplyRes(7,0))(
       (0 until 4).map(
         i => i.U -> multiplyRes((8 << i) - 1, 0)
       )
     )
-    // (15, 7)
+    // (15, 8)
     // (31, 16)
     // (63, 32)
     // (127, 64)
@@ -156,6 +163,17 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
         i => i.U -> multiplyRes((16 << i) - 1, 8 << i)
       )
     )
+
+    // multiply-add
+    val mulAddRes = MuxLookup(vectorDec.veuFun, multiplyResLowBits + vdOut)(Seq(
+      VEU_FUN.MACC -> (multiplyRes + vdOut),
+      VEU_FUN.NMSAC -> (-multiplyRes + vdOut),
+      VEU_FUN.MADD -> (multiplyRes + vs2Out),
+      VEU_FUN.NMSUB -> (-multiplyRes + vs2Out),
+    ).map {
+      case (fcn, res) => (fcn.asUInt -> res)
+    })
+
     // vadd, vsub, vrsub, vadc, vmadc, (vsbc, vmsbc),
     // seq, sne,
     // sltu, slt, sleu, sle,
@@ -175,7 +193,8 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) ::
       (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
       (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) ::
-      multiplyResLowBits :: multiplyResHighBits :: multiplyResHighBits :: multiplyResHighBits :: Nil
+      multiplyResLowBits :: multiplyResHighBits :: multiplyResHighBits :: multiplyResHighBits ::
+      mulAddRes :: mulAddRes :: mulAddRes :: mulAddRes :: Nil
   }
 
   import VEU_FUN._
@@ -187,7 +206,7 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
   val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
     Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT,
       MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR,
-      MUL, MULH, MULHU, MULHSU).zipWithIndex.map(
+      MUL, MULH, MULHU, MULHSU, MACC, NMSAC, MADD, NMSUB).zipWithIndex.map(
       x => x._1.asUInt -> execResult(x._2)
     )
   )
