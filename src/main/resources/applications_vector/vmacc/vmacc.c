@@ -57,5 +57,39 @@ int main(int argc, char** argv) {
       correct = 0;
     }
   }
+  avl = 41;
+  ptr0 = dataArray0;
+  ptr1 = dataArray1;
+  ptr3 = resultArray;
+  while(avl != 0) {
+    asm volatile ("vsetvli %0, %1, e16, m1, ta, ma"
+    : "=r"(vl)
+    : "r"(avl));
+    asm volatile ("vle16.v v10, (%0)"
+    :
+    : "r"(ptr0));
+    asm volatile ("vle16.v v11, (%0)"
+    :
+    : "r"(ptr1));
+    // v11 = 0x1919 * v10 + v11
+    asm volatile ("vmacc.vx v11, %0, v10"
+    :
+    : "r"(0x1919));
+    asm volatile ("vse16.v v11, (%0)"
+    :
+    : "r"(ptr3));
+    ptr0 += vl;
+    ptr1 += vl;
+    ptr3 += vl;
+    avl -= vl;
+  }
+  for(i=0; i<41; i++) {
+    answerArray[i] = 0x1919 * dataArray0[i] + dataArray1[i];
+  }
+  for(i=0; i<41; i++) {
+    if(resultArray[i] != answerArray[i]) {
+      correct = 0;
+    }
+  }
   return !correct;
 }
