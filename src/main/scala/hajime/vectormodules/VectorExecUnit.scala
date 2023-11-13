@@ -49,6 +49,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   ))
 
   val idx = RegInit(0.U(log2Up(params.vlen/8).W))
+  val reductionAccumulator = RegInit(0.U(params.xprlen.W))
   val executedNum = RegInit(0.U(log2Up(params.vlen/8).W))
   when((io.signalIn.valid && io.signalIn.ready) || io.dataOut.toVRF.bits.last) {
     idx := 0.U
@@ -194,22 +195,34 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       (vs2Mask && vs1Mask) :: !(vs2Mask && vs1Mask) :: (vs2Mask && !vs1Mask) :: (vs2Mask ^ vs1Mask) ::
       (vs2Mask || vs1Mask) :: !(vs2Mask || vs1Mask) :: (vs2Mask || !vs1Mask) :: !(vs2Mask ^ vs1Mask) ::
       multiplyResLowBits :: multiplyResHighBits :: multiplyResHighBits :: multiplyResHighBits ::
-      mulAddRes :: mulAddRes :: mulAddRes :: mulAddRes :: Nil
+      mulAddRes :: mulAddRes :: mulAddRes :: mulAddRes ::
+      // reduction
+      vs2Out + vs1Out :: Mux(vs2Out > vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt > vs1Out.asSInt, vs2Out, vs1Out) ::
+      Mux(vs2Out < vs1Out, vs2Out, vs1Out) :: Mux(vs2Out.asSInt < vs1Out.asSInt, vs2Out, vs1Out) ::
+      (vs2Out & vs1Out) :: (vs2Out | vs1Out) :: (vs2Out ^ vs1Out) :: Nil
   }
 
   import VEU_FUN._
   // TODO: vs1Outの判定はMVVではなくベクトルマスク命令か否かで
-  valueToExec.vs1Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
+  valueToExec.vs1Out := MuxCase(execValue1, Seq(
+    (instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt) -> execValue1(7,0)(idx(2,0)),
+    (instInfoReg.bits.vectorDecode.veuFun.isReductionInst) -> Mux(idx === 0.U, execValue1, reductionAccumulator)
+  )) // Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue1(7,0)(idx(2,0)), execValue1)
   valueToExec.vs2Out := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, execValue2(7,0)(idx(2,0)), execValue2)
   // VMADC, VMSBCでマスクが無効(vm=1)の場合は0
   valueToExec.vm := !(instInfoReg.bits.vectorDecode.veuFun.isCarryMask && instInfoReg.bits.vectorDecode.vm) && io.readVrf.resp.vm
-  val rawResult = MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
+  // reductionでvm=0ならばaccumulatorをそのまま入れる
+  val rawResult = Mux(instInfoReg.bits.vectorDecode.veuFun.isReductionInst && !instInfoReg.bits.vectorDecode.vm && !io.readVrf.resp.vm,
+    reductionAccumulator,
+    MuxLookup(instInfoReg.bits.vectorDecode.veuFun, 0.U)(
     Seq(ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT,
       MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR,
-      MUL, MULH, MULHU, MULHSU, MACC, NMSAC, MADD, NMSUB).zipWithIndex.map(
+      MUL, MULH, MULHU, MULHSU, MACC, NMSAC, MADD, NMSUB,
+      REDSUM, REDMAXU, REDMAX, REDMINU, REDMIN, REDAND, REDOR, REDXOR).zipWithIndex.map(
       x => x._1.asUInt -> execResult(x._2)
     )
-  )
+  ))
+  reductionAccumulator := rawResult
 
   io.dataOut.toVRF.bits.data := Mux(instInfoReg.bits.vectorDecode.veuFun.writeAsMask, MuxLookup(idx(2, 0), rawResult)(
     (0 until 8).map(
@@ -220,7 +233,12 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
   ), rawResult)
   io.dataOut.toVRF.bits.vm := instInfoReg.bits.vectorDecode.veuFun.writeAsMask
   // vadc, vmadc, bsbc, vmsbc, vmerge, vmand...vmxnor writes to VRF regardless of vm
-  io.dataOut.toVRF.bits.writeReq := instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask || instInfoReg.bits.vectorDecode.veuFun.isMaskInst
+  // reductionならば最後のみ書く
+  io.dataOut.toVRF.bits.writeReq := Mux(instInfoReg.bits.vectorDecode.veuFun.isReductionInst, io.dataOut.toVRF.bits.last, instInfoReg.bits.vectorDecode.vm || io.readVrf.resp.vm || instInfoReg.bits.vectorDecode.veuFun.ignoreMask || instInfoReg.bits.vectorDecode.veuFun.isMaskInst)
+  // reductionならばidxは0
+  when(instInfoReg.bits.vectorDecode.veuFun.isReductionInst) {
+    io.dataOut.toVRF.bits.index := 0.U
+  }
 }
 
 object IntegerAluExecUnit extends App {

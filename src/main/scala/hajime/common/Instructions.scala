@@ -195,14 +195,14 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case "vnmsub" => "101011"
       case "vmerge" => "010111"
       case "vmv" => "010111"
-      case "vredsum" => ???
-      case "vredmaxu" => ???
-      case "vredmax" => ???
-      case "vredminu" => ???
-      case "vredmin" => ???
-      case "vredand" => ???
-      case "vredor" => ???
-      case "vredxor" => ???
+      case "vredsum" => "000000"
+      case "vredmaxu" => "000110"
+      case "vredmax" => "000111"
+      case "vredminu" => "000100"
+      case "vredmin" => "000101"
+      case "vredand" => "000001"
+      case "vredor" => "000010"
+      case "vredxor" => "000011"
       case "vmand" => "011001"
       case "vmnand" => "011101"
       case "vmandn" => "011000"
@@ -309,6 +309,15 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMV_VV = vArithGen(vInst = "vmv", vsource = VSOURCE.VV, vm = "1", vs2Zero = true)
   def VMV_VX = vArithGen(vInst = "vmv", vsource = VSOURCE.VX, vm = "1", vs2Zero = true)
   def VMV_VI = vArithGen(vInst = "vmv", vsource = VSOURCE.VI, vm = "1", vs2Zero = true)
+
+  def VREDSUM_VS = vArithGen(vInst = "vredsum", vsource = VSOURCE.MVV)
+  def VREDMAXU_VS = vArithGen(vInst = "vredmaxu", vsource = VSOURCE.MVV)
+  def VREDMAX_VS = vArithGen(vInst = "vredmax", vsource = VSOURCE.MVV)
+  def VREDMINU_VS = vArithGen(vInst = "vredminu", vsource = VSOURCE.MVV)
+  def VREDMIN_VS = vArithGen(vInst = "vredmin", vsource = VSOURCE.MVV)
+  def VREDAND_VS = vArithGen(vInst = "vredand", vsource = VSOURCE.MVV)
+  def VREDOR_VS = vArithGen(vInst = "vredor", vsource = VSOURCE.MVV)
+  def VREDXOR_VS = vArithGen(vInst = "vredxor", vsource = VSOURCE.MVV)
 
   def VMAND_MM = vArithGen(vInst = "vmand", vsource = VSOURCE.MVV, vm = "1")
   def VMNAND_MM = vArithGen(vInst = "vmnand", vsource = VSOURCE.MVV, vm = "1")

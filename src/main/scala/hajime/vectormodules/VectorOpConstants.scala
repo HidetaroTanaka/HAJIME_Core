@@ -27,11 +27,13 @@ trait VectorOpConstants {
   object VEU_FUN extends ChiselEnum {
     val NONE, ADD, SUB, RSUB, ADC, MADC, SBC, MSBC, SEQ, SNE, SLTU, SLT, SLEU, SLE, SGTU, SGT,
     MINU, MIN, MAXU, MAX, MERGE, MV, AND, OR, XOR, MAND, MNAND, MANDN, MXOR, MOR, MNOR, MORN, MXNOR,
-    MUL, MULH, MULHU, MULHSU, MACC, NMSAC, MADD, NMSUB = Value
+    MUL, MULH, MULHU, MULHSU, MACC, NMSAC, MADD, NMSUB,
+    REDSUM, REDMAXU, REDMAX, REDMINU, REDMIN, REDAND, REDOR, REDXOR = Value
     val compMaskList = SEQ :: SNE :: SLTU :: SLT :: SLEU :: SLE :: SGTU :: SGT :: Nil
     val carryMaskList = MADC :: MSBC :: Nil
     val ignoreMaskList = ADC :: MADC :: SBC :: MSBC :: MERGE :: Nil
     val maskInstList = MAND :: MNAND :: MANDN :: MXOR :: MOR :: MNOR :: MORN :: MXNOR :: Nil
+    val reductionInstList = REDSUM :: REDMAXU :: REDMAX :: REDMINU :: REDMIN :: REDAND :: REDOR :: REDXOR :: Nil
 
     implicit class masks(signal: UInt) {
       def isCompMask: Bool = {
@@ -51,6 +53,9 @@ trait VectorOpConstants {
       }
       def writeAsMask: Bool = {
         signal.isArithmeticMask || signal.isMaskInst
+      }
+      def isReductionInst: Bool = {
+        reductionInstList.map(_.asUInt).has(signal)
       }
     }
   }
