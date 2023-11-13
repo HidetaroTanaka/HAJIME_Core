@@ -35,50 +35,12 @@ int main(int argc, char** argv) {
     ptr0 += vl;
     avl -= vl;
   }
-  int i;
+  result = sum;
+  int i, answer = 0;
   for(i=0; i<41; i++) {
-    answerArray[i] = -(dataArray0[i] * dataArray2[i]) + dataArray1[i];
+    answer += dataArray0[i];
   }
 
-  _Bool correct = 1;
-  for(i=0; i<41; i++) {
-    if(resultArray[i] != answerArray[i]) {
-      correct = 0;
-    }
-  }
-  avl = 41;
-  ptr0 = dataArray0;
-  ptr1 = dataArray1;
-  ptr3 = resultArray;
-  while(avl != 0) {
-    asm volatile ("vsetvli %0, %1, e16, m1, ta, ma"
-    : "=r"(vl)
-    : "r"(avl));
-    asm volatile ("vle16.v v10, (%0)"
-    :
-    : "r"(ptr0));
-    asm volatile ("vle16.v v11, (%0)"
-    :
-    : "r"(ptr1));
-    // v11 = -(0x1919 * v11) + v10
-    asm volatile ("vnmsub.vx v11, %0, v10"
-    :
-    : "r"(0x1919));
-    asm volatile ("vse16.v v11, (%0)"
-    :
-    : "r"(ptr3));
-    ptr0 += vl;
-    ptr1 += vl;
-    ptr3 += vl;
-    avl -= vl;
-  }
-  for(i=0; i<41; i++) {
-    answerArray[i] = -(0x1919 * dataArray1[i]) + dataArray0[i];
-  }
-  for(i=0; i<41; i++) {
-    if(resultArray[i] != answerArray[i]) {
-      correct = 0;
-    }
-  }
+  _Bool correct = (result == answer);
   return !correct;
 }
