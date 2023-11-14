@@ -501,4 +501,21 @@ hexdump -v -e '1/4 "%08x" "\n"' vnmsub_text_startup.bin > vnmsub_text_startup.te
 cat vnmsub_rodata.temp vnmsub_rodata_str1_8.temp vnmsub_sdata.temp > vnmsub_data.hex
 cat vnmsub_text_init.temp vnmsub_text.temp vnmsub_text_startup.temp > vnmsub_inst.hex
 
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vredsum.riscv ./vredsum/vredsum.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vredsum.riscv > vredsum.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vredsum_rodata.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vredsum_rodata_str1_8.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vredsum_sdata.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vredsum_text_init.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vredsum_text.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vredsum_text_startup.bin vredsum.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_rodata.bin > vredsum_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_rodata_str1_8.bin > vredsum_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_sdata.bin > vredsum_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text_init.bin > vredsum_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text.bin > vredsum_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text_startup.bin > vredsum_text_startup.temp
+cat vredsum_rodata.temp vredsum_rodata_str1_8.temp vredsum_sdata.temp > vredsum_data.hex
+cat vredsum_text_init.temp vredsum_text.temp vredsum_text_startup.temp > vredsum_inst.hex
+
 rm *.riscv *.bin *.temp

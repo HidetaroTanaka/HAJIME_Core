@@ -239,6 +239,26 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
   when(instInfoReg.bits.vectorDecode.veuFun.isReductionInst) {
     io.dataOut.toVRF.bits.index := 0.U
   }
+
+  // vmv.x.s
+  when(instInfoReg.bits.vectorDecode.veuFun === VEU_FUN.MV_X_S.asUInt) {
+    io.dataOut.toVRF.valid := true.B
+    io.dataOut.toVRF.bits.last := true.B
+    io.dataOut.toVRF.bits.writeReq := false.B
+    io.toExWbReg.valid := true.B
+    io.toExWbReg.bits.vectorExecNum.get.bits := 1.U
+    io.toExWbReg.bits.vectorExecNum.get.valid := true.B
+    io.toExWbReg.bits.ctrlSignals.rd_index := instInfoReg.bits.vd
+    io.toExWbReg.bits.dataSignals.exResult := io.readVrf.resp.vs1Out
+  } .elsewhen(instInfoReg.bits.vectorDecode.veuFun === VEU_FUN.MV_S_X.asUInt) {
+    io.dataOut.toVRF.valid := true.B
+    io.dataOut.toVRF.bits.data := instInfoReg.bits.scalarVal
+    io.dataOut.toVRF.bits.last := true.B
+    io.dataOut.toVRF.bits.writeReq := true.B
+    io.toExWbReg.valid := true.B
+    io.toExWbReg.bits.vectorExecNum.get.bits := 1.U
+    io.toExWbReg.bits.vectorExecNum.get.valid := true.B
+  }
 }
 
 object IntegerAluExecUnit extends App {

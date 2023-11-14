@@ -162,6 +162,8 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
     }
   }
   def vFunct6Gen(vInst: String): String = {
+    val VWXUNARY0 = "010000"
+    val VRXUNARY0 = "010000"
     vInst match {
       case "vadd" => "000000"
       case "vsub" => "000010"
@@ -211,18 +213,19 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
       case "vmnor" => "011110"
       case "vmorn" => "011100"
       case "vmxnor" => "011111"
-      case "vmv_x_s" => ???
-      case "vmv_s_x" => ???
+      case "vmv_x_s" => VWXUNARY0
+      case "vmv_s_x" => VRXUNARY0
       case _ => throw new Exception(s"inst $vInst is invalid")
     }
   }
-  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String, vs2Zero: Boolean) = {
+  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String, vs2Zero: Boolean, vs1Zero: Boolean): BitPat = {
     if (vm == "?" || vm == "0" || vm == "1") {
-      BitPat("b" + vFunct6Gen(vInst) + vm + (if(vs2Zero) "00000" else "?????") + "?????" + vsourceGen(vsource) + "?????" + "1010111")
+      BitPat("b" + vFunct6Gen(vInst) + vm + (if (vs2Zero) "00000" else "?????") + (if(vs1Zero) "00000" else "?????") + vsourceGen(vsource) + "?????" + "1010111")
     } else {
       throw new Exception(s"vm $vm is invalid")
     }
   }
+  def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String, vs2Zero: Boolean): BitPat = vArithGen(vInst, vsource, vm, vs2Zero, vs1Zero = false)
   def vArithGen(vInst: String, vsource: VSOURCE.Type, vm: String): BitPat = vArithGen(vInst, vsource, vm, vs2Zero = false)
   def vArithGen(vInst: String, vsource: VSOURCE.Type): BitPat = vArithGen(vInst, vsource, vm = "?")
   def VADD_VV  = vArithGen(vInst = "vadd", vsource = VSOURCE.VV)
@@ -327,6 +330,11 @@ object VectorInstructions extends ScalarOpConstants with VectorOpConstants {
   def VMNOR_MM = vArithGen(vInst = "vmnor", vsource = VSOURCE.MVV, vm = "1")
   def VMORN_MM = vArithGen(vInst = "vmorn", vsource = VSOURCE.MVV, vm = "1")
   def VMXNOR_MM = vArithGen(vInst = "vmxnor", vsource = VSOURCE.MVV, vm = "1")
+
+  // x[rd] = vs2[0]
+  def VMV_X_S = vArithGen(vInst = "vmv_x_s", vsource = VSOURCE.MVV, vm = "1", vs2Zero = false, vs1Zero = true)
+  // vd[0] = x[rs1]
+  def VMV_S_X = vArithGen(vInst = "vmv_s_x", vsource = VSOURCE.MVX, vm = "1", vs2Zero = true, vs1Zero = false)
 }
 
 object Causes {

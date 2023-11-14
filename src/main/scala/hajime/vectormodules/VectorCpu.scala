@@ -117,7 +117,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   val vecInstInEx = !vecExecUnitsReady.reduce(_ && _)
   // flushならばストールさせる必要はない
   ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline || vectorInstStall
-    || (vecInstInEx && decoder.io.out.valid && (!decoder.io.out.bits.vector.get || vectorDecoder.io.out.isConfsetInst)))
+    || (vecInstInEx && decoder.io.out.valid && (!decoder.io.out.bits.vector.get || vectorDecoder.io.out.isConfsetInst || vectorDecoder.io.out.vecPermutation)))
   io.frontend.resp.ready := cpu_operating && !ID_stall
 
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
@@ -203,8 +203,10 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   vrfReadyTable.io.vdCheck.bits.vm := vectorDecoder.io.out.veuFun.writeAsMask
   // vmフィールドが1ならばvmを使用する
   vrfReadyTable.io.vmCheck.valid := decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && !vectorDecoder.io.out.vm
-  // ベクトル設定命令でなく，かつストア命令で無ければvdへ書き込む
-  vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get && !vectorDecoder.io.out.isConfsetInst && !decoder.io.out.bits.memWrite
+  // ベクトル設定命令でなく，かつストア命令で無い，ならばvdへ書き込む
+  // vmv.{x.s, s.x}はチェイニングしないので無視する
+  vrfReadyTable.io.invalidateVd := io.frontend.resp.valid && io.frontend.resp.ready && decoder.io.out.valid && decoder.io.out.bits.vector.get &&
+    !vectorDecoder.io.out.isConfsetInst && !decoder.io.out.bits.memWrite && !vectorDecoder.io.out.vecPermutation
 
   // vecAluExecUnitを使用するなら，空いている方をvalidにする
   when(ID_flush || ID_stall) {
@@ -381,6 +383,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   }
 
   // placefolder for vec->scalar inst (vcpop.m, vfirst.m, vmv.x.s)
+  // ベクトル機能ユニットが上書きする？
   val exVectorRes = vecCtrlUnit.io.resp.bits.vl
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
