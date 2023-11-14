@@ -383,8 +383,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   }
 
   // placefolder for vec->scalar inst (vcpop.m, vfirst.m, vmv.x.s)
-  // ベクトル機能ユニットが上書きする？
-  val exVectorRes = vecCtrlUnit.io.resp.bits.vl
+  val exVectorRes = Mux(ID_EX_REG.bits.vectorCtrlSignals.get.vecPermutation, vecAluExecUnit(0).io.toExWbReg.bits.dataSignals.exResult, vecCtrlUnit.io.resp.bits.vl)
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
   bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(

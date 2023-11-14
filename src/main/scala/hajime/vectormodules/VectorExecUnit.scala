@@ -250,7 +250,7 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       io.toExWbReg.bits.vectorExecNum.get.bits := 1.U
       io.toExWbReg.bits.vectorExecNum.get.valid := true.B
       io.toExWbReg.bits.ctrlSignals.rd_index := instInfoReg.bits.vd
-      io.toExWbReg.bits.dataSignals.exResult := io.readVrf.resp.vs1Out
+      io.toExWbReg.bits.dataSignals.exResult := io.readVrf.resp.vs2Out
     }.elsewhen(instInfoReg.bits.vectorDecode.veuFun === VEU_FUN.MV_S_X.asUInt) {
       // vmv.s.x
       io.dataOut.toVRF.valid := true.B
