@@ -93,7 +93,6 @@ cat vector_index_text_init.temp vector_index_text.temp vector_index_text_startup
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vadd.riscv ./vadd/vadd.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vadd.riscv > vadd.dump
-riscv64-unknown-elf-objdump --disassemble-all vadd.riscv > vadd.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vadd_rodata.bin vadd.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vadd_rodata_str1_8.bin vadd.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vadd_sdata.bin vadd.riscv
@@ -110,7 +109,6 @@ cat vadd_rodata.temp vadd_rodata_str1_8.temp vadd_sdata.temp > vadd_data.hex
 cat vadd_text_init.temp vadd_text.temp vadd_text_startup.temp > vadd_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vsub.riscv ./vsub/vsub.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vsub.riscv > vsub.dump
 riscv64-unknown-elf-objdump --disassemble-all vsub.riscv > vsub.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vsub_rodata.bin vsub.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vsub_rodata_str1_8.bin vsub.riscv
@@ -129,7 +127,6 @@ cat vsub_text_init.temp vsub_text.temp vsub_text_startup.temp > vsub_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmadc.riscv ./vmadc/vmadc.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmadc.riscv > vmadc.dump
-riscv64-unknown-elf-objdump --disassemble-all vmadc.riscv > vmadc.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmadc_rodata.bin vmadc.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmadc_rodata_str1_8.bin vmadc.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmadc_sdata.bin vmadc.riscv
@@ -146,7 +143,6 @@ cat vmadc_rodata.temp vmadc_rodata_str1_8.temp vmadc_sdata.temp > vmadc_data.hex
 cat vmadc_text_init.temp vmadc_text.temp vmadc_text_startup.temp > vmadc_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmsbc.riscv ./vmsbc/vmsbc.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmsbc.riscv > vmsbc.dump
 riscv64-unknown-elf-objdump --disassemble-all vmsbc.riscv > vmsbc.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmsbc_rodata.bin vmsbc.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmsbc_rodata_str1_8.bin vmsbc.riscv
@@ -165,7 +161,6 @@ cat vmsbc_text_init.temp vmsbc_text.temp vmsbc_text_startup.temp > vmsbc_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vand.riscv ./vand/vand.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vand.riscv > vand.dump
-riscv64-unknown-elf-objdump --disassemble-all vand.riscv > vand.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vand_rodata.bin vand.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vand_rodata_str1_8.bin vand.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vand_sdata.bin vand.riscv
@@ -182,7 +177,6 @@ cat vand_rodata.temp vand_rodata_str1_8.temp vand_sdata.temp > vand_data.hex
 cat vand_text_init.temp vand_text.temp vand_text_startup.temp > vand_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmseq.riscv ./vmseq/vmseq.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmseq.riscv > vmseq.dump
 riscv64-unknown-elf-objdump --disassemble-all vmseq.riscv > vmseq.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmseq_rodata.bin vmseq.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmseq_rodata_str1_8.bin vmseq.riscv
@@ -201,7 +195,6 @@ cat vmseq_text_init.temp vmseq_text.temp vmseq_text_startup.temp > vmseq_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmslt.riscv ./vmslt/vmslt.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmslt.riscv > vmslt.dump
-riscv64-unknown-elf-objdump --disassemble-all vmslt.riscv > vmslt.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmslt_rodata.bin vmslt.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmslt_rodata_str1_8.bin vmslt.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmslt_sdata.bin vmslt.riscv
@@ -218,7 +211,6 @@ cat vmslt_rodata.temp vmslt_rodata_str1_8.temp vmslt_sdata.temp > vmslt_data.hex
 cat vmslt_text_init.temp vmslt_text.temp vmslt_text_startup.temp > vmslt_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmsle.riscv ./vmsle/vmsle.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmsle.riscv > vmsle.dump
 riscv64-unknown-elf-objdump --disassemble-all vmsle.riscv > vmsle.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmsle_rodata.bin vmsle.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmsle_rodata_str1_8.bin vmsle.riscv
@@ -237,7 +229,6 @@ cat vmsle_text_init.temp vmsle_text.temp vmsle_text_startup.temp > vmsle_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmsgt.riscv ./vmsgt/vmsgt.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmsgt.riscv > vmsgt.dump
-riscv64-unknown-elf-objdump --disassemble-all vmsgt.riscv > vmsgt.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmsgt_rodata.bin vmsgt.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmsgt_rodata_str1_8.bin vmsgt.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmsgt_sdata.bin vmsgt.riscv
@@ -254,7 +245,6 @@ cat vmsgt_rodata.temp vmsgt_rodata_str1_8.temp vmsgt_sdata.temp > vmsgt_data.hex
 cat vmsgt_text_init.temp vmsgt_text.temp vmsgt_text_startup.temp > vmsgt_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmand.riscv ./vmand/vmand.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmand.riscv > vmand.dump
 riscv64-unknown-elf-objdump --disassemble-all vmand.riscv > vmand.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmand_rodata.bin vmand.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmand_rodata_str1_8.bin vmand.riscv
@@ -273,7 +263,6 @@ cat vmand_text_init.temp vmand_text.temp vmand_text_startup.temp > vmand_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmor.riscv ./vmor/vmor.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmor.riscv > vmor.dump
-riscv64-unknown-elf-objdump --disassemble-all vmor.riscv > vmor.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmor_rodata.bin vmor.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmor_rodata_str1_8.bin vmor.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmor_sdata.bin vmor.riscv
@@ -290,7 +279,6 @@ cat vmor_rodata.temp vmor_rodata_str1_8.temp vmor_sdata.temp > vmor_data.hex
 cat vmor_text_init.temp vmor_text.temp vmor_text_startup.temp > vmor_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmxor.riscv ./vmxor/vmxor.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmxor.riscv > vmxor.dump
 riscv64-unknown-elf-objdump --disassemble-all vmxor.riscv > vmxor.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmxor_rodata.bin vmxor.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmxor_rodata_str1_8.bin vmxor.riscv
@@ -309,7 +297,6 @@ cat vmxor_text_init.temp vmxor_text.temp vmxor_text_startup.temp > vmxor_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vminmax.riscv ./vminmax/vminmax.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vminmax.riscv > vminmax.dump
-riscv64-unknown-elf-objdump --disassemble-all vminmax.riscv > vminmax.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vminmax_rodata.bin vminmax.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vminmax_rodata_str1_8.bin vminmax.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vminmax_sdata.bin vminmax.riscv
@@ -326,7 +313,6 @@ cat vminmax_rodata.temp vminmax_rodata_str1_8.temp vminmax_sdata.temp > vminmax_
 cat vminmax_text_init.temp vminmax_text.temp vminmax_text_startup.temp > vminmax_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmerge.riscv ./vmerge/vmerge.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmerge.riscv > vmerge.dump
 riscv64-unknown-elf-objdump --disassemble-all vmerge.riscv > vmerge.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmerge_rodata.bin vmerge.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmerge_rodata_str1_8.bin vmerge.riscv
@@ -345,7 +331,6 @@ cat vmerge_text_init.temp vmerge_text.temp vmerge_text_startup.temp > vmerge_ins
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmv.riscv ./vmv/vmv.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmv.riscv > vmv.dump
-riscv64-unknown-elf-objdump --disassemble-all vmv.riscv > vmv.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmv_rodata.bin vmv.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmv_rodata_str1_8.bin vmv.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmv_sdata.bin vmv.riscv
@@ -362,7 +347,6 @@ cat vmv_rodata.temp vmv_rodata_str1_8.temp vmv_sdata.temp > vmv_data.hex
 cat vmv_text_init.temp vmv_text.temp vmv_text_startup.temp > vmv_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vector_median.riscv ./vector_median/median.c ./vector_median/vector_median.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vector_median.riscv > vector_median.dump
 riscv64-unknown-elf-objdump --disassemble-all vector_median.riscv > vector_median.dump
 riscv64-unknown-elf-objcopy --dump-section .data=vector_median_data.bin vector_median.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata=vector_median_rodata.bin vector_median.riscv
@@ -383,7 +367,6 @@ cat vector_median_text_init.temp vector_median_text.temp vector_median_text_star
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmul.riscv ./vmul/vmul.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
-riscv64-unknown-elf-objdump --disassemble-all vmul.riscv > vmul.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmul_rodata.bin vmul.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmul_rodata_str1_8.bin vmul.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmul_sdata.bin vmul.riscv
@@ -400,7 +383,6 @@ cat vmul_rodata.temp vmul_rodata_str1_8.temp vmul_sdata.temp > vmul_data.hex
 cat vmul_text_init.temp vmul_text.temp vmul_text_startup.temp > vmul_inst.hex
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulh.riscv ./vmulh/vmulh.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
-riscv64-unknown-elf-objdump --disassemble-all vmulh.riscv > vmulh.dump
 riscv64-unknown-elf-objdump --disassemble-all vmulh.riscv > vmulh.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmulh_rodata.bin vmulh.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulh_rodata_str1_8.bin vmulh.riscv
@@ -419,7 +401,6 @@ cat vmulh_text_init.temp vmulh_text.temp vmulh_text_startup.temp > vmulh_inst.he
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulhu.riscv ./vmulhu/vmulhu.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmulhu.riscv > vmulhu.dump
-riscv64-unknown-elf-objdump --disassemble-all vmulhu.riscv > vmulhu.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmulhu_rodata.bin vmulhu.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulhu_rodata_str1_8.bin vmulhu.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmulhu_sdata.bin vmulhu.riscv
@@ -437,7 +418,6 @@ cat vmulhu_text_init.temp vmulhu_text.temp vmulhu_text_startup.temp > vmulhu_ins
 
 riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmulhsu.riscv ./vmulhsu/vmulhsu.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
 riscv64-unknown-elf-objdump --disassemble-all vmulhsu.riscv > vmulhsu.dump
-riscv64-unknown-elf-objdump --disassemble-all vmulhsu.riscv > vmulhsu.dump
 riscv64-unknown-elf-objcopy --dump-section .rodata=vmulhsu_rodata.bin vmulhsu.riscv
 riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmulhsu_rodata_str1_8.bin vmulhsu.riscv
 riscv64-unknown-elf-objcopy --dump-section .sdata=vmulhsu_sdata.bin vmulhsu.riscv
@@ -452,5 +432,90 @@ hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_text.bin > vmulhsu_text.temp
 hexdump -v -e '1/4 "%08x" "\n"' vmulhsu_text_startup.bin > vmulhsu_text_startup.temp
 cat vmulhsu_rodata.temp vmulhsu_rodata_str1_8.temp vmulhsu_sdata.temp > vmulhsu_data.hex
 cat vmulhsu_text_init.temp vmulhsu_text.temp vmulhsu_text_startup.temp > vmulhsu_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmacc.riscv ./vmacc/vmacc.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmacc.riscv > vmacc.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmacc_rodata.bin vmacc.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmacc_rodata_str1_8.bin vmacc.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmacc_sdata.bin vmacc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmacc_text_init.bin vmacc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmacc_text.bin vmacc.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmacc_text_startup.bin vmacc.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_rodata.bin > vmacc_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_rodata_str1_8.bin > vmacc_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_sdata.bin > vmacc_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_text_init.bin > vmacc_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_text.bin > vmacc_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmacc_text_startup.bin > vmacc_text_startup.temp
+cat vmacc_rodata.temp vmacc_rodata_str1_8.temp vmacc_sdata.temp > vmacc_data.hex
+cat vmacc_text_init.temp vmacc_text.temp vmacc_text_startup.temp > vmacc_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vnmsac.riscv ./vnmsac/vnmsac.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vnmsac.riscv > vnmsac.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vnmsac_rodata.bin vnmsac.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vnmsac_rodata_str1_8.bin vnmsac.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vnmsac_sdata.bin vnmsac.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vnmsac_text_init.bin vnmsac.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vnmsac_text.bin vnmsac.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vnmsac_text_startup.bin vnmsac.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_rodata.bin > vnmsac_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_rodata_str1_8.bin > vnmsac_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_sdata.bin > vnmsac_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_text_init.bin > vnmsac_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_text.bin > vnmsac_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsac_text_startup.bin > vnmsac_text_startup.temp
+cat vnmsac_rodata.temp vnmsac_rodata_str1_8.temp vnmsac_sdata.temp > vnmsac_data.hex
+cat vnmsac_text_init.temp vnmsac_text.temp vnmsac_text_startup.temp > vnmsac_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vmadd.riscv ./vmadd/vmadd.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vmadd.riscv > vmadd.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vmadd_rodata.bin vmadd.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vmadd_rodata_str1_8.bin vmadd.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vmadd_sdata.bin vmadd.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vmadd_text_init.bin vmadd.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vmadd_text.bin vmadd.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vmadd_text_startup.bin vmadd.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_rodata.bin > vmadd_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_rodata_str1_8.bin > vmadd_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_sdata.bin > vmadd_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_text_init.bin > vmadd_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_text.bin > vmadd_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vmadd_text_startup.bin > vmadd_text_startup.temp
+cat vmadd_rodata.temp vmadd_rodata_str1_8.temp vmadd_sdata.temp > vmadd_data.hex
+cat vmadd_text_init.temp vmadd_text.temp vmadd_text_startup.temp > vmadd_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vnmsub.riscv ./vnmsub/vnmsub.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vnmsub.riscv > vnmsub.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vnmsub_rodata.bin vnmsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vnmsub_rodata_str1_8.bin vnmsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vnmsub_sdata.bin vnmsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vnmsub_text_init.bin vnmsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vnmsub_text.bin vnmsub.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vnmsub_text_startup.bin vnmsub.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_rodata.bin > vnmsub_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_rodata_str1_8.bin > vnmsub_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_sdata.bin > vnmsub_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_text_init.bin > vnmsub_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_text.bin > vnmsub_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vnmsub_text_startup.bin > vnmsub_text_startup.temp
+cat vnmsub_rodata.temp vnmsub_rodata_str1_8.temp vnmsub_sdata.temp > vnmsub_data.hex
+cat vnmsub_text_init.temp vnmsub_text.temp vnmsub_text_startup.temp > vnmsub_inst.hex
+
+riscv64-unknown-elf-gcc -I ../application_headers -DPREALLOCATE=1 -mcmodel=medany -static -std=gnu99 -O2 -fno-common -fno-builtin-printf -fno-tree-loop-distribute-patterns -march=rv64im_zicsr_zve64x -mabi=lp64 -o vredsum.riscv ./vredsum/vredsum.c ../application_headers/syscalls.c ../application_headers/crt.S -static -nostdlib -nostartfiles -T ../application_headers/test.ld
+riscv64-unknown-elf-objdump --disassemble-all vredsum.riscv > vredsum.dump
+riscv64-unknown-elf-objcopy --dump-section .rodata=vredsum_rodata.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .rodata.str1.8=vredsum_rodata_str1_8.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .sdata=vredsum_sdata.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.init=vredsum_text_init.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text=vredsum_text.bin vredsum.riscv
+riscv64-unknown-elf-objcopy --dump-section .text.startup=vredsum_text_startup.bin vredsum.riscv
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_rodata.bin > vredsum_rodata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_rodata_str1_8.bin > vredsum_rodata_str1_8.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_sdata.bin > vredsum_sdata.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text_init.bin > vredsum_text_init.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text.bin > vredsum_text.temp
+hexdump -v -e '1/4 "%08x" "\n"' vredsum_text_startup.bin > vredsum_text_startup.temp
+cat vredsum_rodata.temp vredsum_rodata_str1_8.temp vredsum_sdata.temp > vredsum_data.hex
+cat vredsum_text_init.temp vredsum_text.temp vredsum_text_startup.temp > vredsum_inst.hex
 
 rm *.riscv *.bin *.temp

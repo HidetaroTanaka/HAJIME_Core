@@ -23,12 +23,17 @@ object RandomArrayWithElenGen extends App {
   private def function(): Boolean = {
     (0 until 4).map(_ => Random.nextBoolean()).reduce(_ && _)
   }
+  val randomArray = (0 until 3).map(
+    _ => (0 until 48).map(_ => Random.nextInt(0xFFFF) - 0x8000)
+  )
   val randomArray0 = (0 until 48).map(_ => Random.nextInt(0xFFFF) - 0x8000)
   val randomArray1 = (0 until 48).map(_ => Random.nextInt(0xFFFF) - 0x8000)
+  val randomArray2 = (0 until 48).map(_ => Random.nextInt(0xFFFF) - 0x8000)
   val boolArray = (0 until 48).map(_ => function())
   val hasEqualArray = randomArray0.lazyZip(randomArray1).lazyZip(boolArray).map {
     case (v1, v2, b) => if(b) v1 else v2
   }
-  println(randomArray0.mkString("{", ", ", "};"))
-  println(randomArray1.mkString("{", ", ", "};"))
+  randomArray.foreach(
+    l => println(l.mkString("{", ", ", "};"))
+  )
 }
