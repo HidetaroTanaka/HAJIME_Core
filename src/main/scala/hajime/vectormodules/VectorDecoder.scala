@@ -3,6 +3,7 @@ package hajime.vectormodules
 import chisel3._
 import circt.stage.ChiselStage
 import chisel3.util._
+import hajime.common.Functions.lsHasElementEquivalentToUInt
 import hajime.common.VectorInstructions._
 import hajime.common._
 import hajime.publicmodules._
@@ -47,6 +48,18 @@ object VDecode extends DecodeConstants with VectorOpConstants {
       case "vmulh" => MULH
       case "vmulhu" => MULHU
       case "vmulhsu" => MULHSU
+      case "vmacc" => MACC
+      case "vnmsac" => NMSAC
+      case "vmadd" => MADD
+      case "vnmsub" => NMSUB
+      case "vredsum" => REDSUM
+      case "vredmaxu" => REDMAXU
+      case "vredmax" => REDMAX
+      case "vredminu" => REDMINU
+      case "vredmin" => REDMIN
+      case "vredand" => REDAND
+      case "vredor" => REDOR
+      case "vredxor" => REDXOR
       case "vmand" => MAND
       case "vmnand" => MNAND
       case "vmandn" => MANDN
@@ -57,7 +70,7 @@ object VDecode extends DecodeConstants with VectorOpConstants {
       case "vmxnor" => MXNOR
       case _ => throw new Exception("fuck")
     }
-    List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NORMAL, Y, veuFunSel, vSource)
+    List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, Y, veuFunSel, vSource)
   }
 
   val table: Array[(BitPat, List[EnumType])] = Array(
@@ -180,7 +193,25 @@ object VDecode extends DecodeConstants with VectorOpConstants {
     VMULHU_VV -> amogus("vmulhu", VSOURCE.VV),
     VMULHU_VX -> amogus("vmulhu", VSOURCE.VX),
     VMULHSU_VV -> amogus("vmulhsu", VSOURCE.VV),
-    VMULHSU_VX -> amogus("vmulhsu", VSOURCE.VX)
+    VMULHSU_VX -> amogus("vmulhsu", VSOURCE.VX),
+    VMACC_VV -> amogus("vmacc", VSOURCE.VV),
+    VMACC_VX -> amogus("vmacc", VSOURCE.VX),
+    VNMSAC_VV -> amogus("vnmsac", VSOURCE.VV),
+    VNMSAC_VX -> amogus("vnmsac", VSOURCE.VX),
+    VMADD_VV -> amogus("vmadd", VSOURCE.VV),
+    VMADD_VX -> amogus("vmadd", VSOURCE.VX),
+    VNMSUB_VV -> amogus("vnmsub", VSOURCE.VV),
+    VNMSUB_VX -> amogus("vnmsub", VSOURCE.VX),
+    VREDSUM_VS -> amogus("vredsum", VSOURCE.VV),
+    VREDMAXU_VS -> amogus("vredmaxu", VSOURCE.VV),
+    VREDMAX_VS -> amogus("vredmax", VSOURCE.VV),
+    VREDMINU_VS -> amogus("vredminu", VSOURCE.VV),
+    VREDMIN_VS -> amogus("vredmin", VSOURCE.VV),
+    VREDAND_VS -> amogus("vredand", VSOURCE.VV),
+    VREDOR_VS -> amogus("vredor", VSOURCE.VV),
+    VREDXOR_VS -> amogus("vredxor", VSOURCE.VV),
+    VMV_X_S -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, Y, VEU_FUN.MV_X_S, VSOURCE.VV),
+    VMV_S_X -> List(N, AVL_SEL.NONE, VTYPE_SEL.NONE, MOP.NONE, UMOP.NONE, Y, VEU_FUN.MV_S_X, VSOURCE.VX),
   )
 }
 
@@ -202,6 +233,7 @@ class VectorDecoderResp extends Bundle with ScalarOpConstants with VectorOpConst
   def toList: List[UInt] = List(isConfsetInst, avl_sel, vtype_sel, mop, umop, vrfWrite, veuFun, vSource)
   def useVecAluExec: Bool = !isConfsetInst && (mop === MOP.NONE.asUInt)
   def useVecLdstExec: Bool = !isConfsetInst && (mop =/= MOP.NONE.asUInt)
+  def vecPermutation: Bool = Seq(VEU_FUN.MV_X_S, VEU_FUN.MV_S_X).map(_.asUInt).has(veuFun)
 }
 
 class VectorDecoderIO(implicit params: HajimeCoreParams) extends Bundle {
