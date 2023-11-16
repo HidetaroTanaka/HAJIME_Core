@@ -30,6 +30,32 @@ const int array2[12][12] = {{-47, 82, -37, -16, -35, 5, -124, 95, -54, 89, -85, 
 int resultArray[12][12] = {0};
 int answerArray[12][12] = {0};
 
+extern void printstr(char* str);
+extern void int64ToHex(long num, char* str);
+
+void clrCounters(void) {
+  asm volatile ("csrw minstret, x0; csrw mcycle, x0; csrw mhpmcounter3, x0");
+}
+
+void showCounters(void) {
+  char string[19];
+  unsigned long instret, cycle, mhpmcounter3;
+  asm volatile ("rdinstret %0":"=r"(instret));
+  asm volatile ("rdcycle %0":"=r"(cycle));
+  asm volatile ("csrr %0, mhpmcounter3":"=r"(mhpmcounter3));
+
+  printstr("CYCLE: ");
+  int64ToHex(cycle, string);
+  printstr(string);
+  printstr("\nINSTRET: ");
+  int64ToHex(instret, string);
+  printstr(string);
+  printstr("\nMHPMCOUNTER3: ");
+  int64ToHex(mhpmcounter3, string);
+  printstr(string);
+  printstr("\n");
+}
+
 /// <summary>
 /// vec1を横ベクトル，vec2を縦ベクトルとした内積
 /// </summary>
@@ -62,12 +88,17 @@ int innerProd(const int* vec1, const int* vec2, int n) {
 
 int main(int argc, char** argv) {
   int i, j, k;
+
+  clrCounters();
   for(i=0; i<12; i++) {
     for(j=0; j<12; j++) {
       // resultArray[i][j] = array1[i][*] * array2[*][j]
       resultArray[i][j] = innerProd(&(array1[i][0]), &(array2[0][j]), 12);
     }
   }
+  showCounters();
+
+  clrCounters();
   for(i=0; i<12; i++) {
     for(j=0; j<12; j++) {
       int sum = 0;
@@ -77,6 +108,7 @@ int main(int argc, char** argv) {
       answerArray[i][j] = sum;
     }
   }
+  showCounters();
   _Bool correct = 1;
   for(i=0; i<12; i++) {
     for(j=0; j<12; j++) {
