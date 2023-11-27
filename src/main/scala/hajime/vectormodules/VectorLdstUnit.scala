@@ -87,15 +87,11 @@ class VectorLdstUnit(implicit params: HajimeCoreParams) extends Module with Scal
     // sew=2 -> accumulator += 4
     // sew=3 -> accumulator += 8
     // stride:
-    // stride * (8 << sew)
-    // sew=0 -> stride << 0
-    // sew=1 -> stride << 1
-    // sew=2 -> stride << 2
-    // sew=3 -> stride << 3
+    // accumulator += stride
     accumulator := accumulator + Mux(vectorReqReg.vectorDecode.mop === MOP.UNIT_STRIDE.asUInt, MuxLookup(vectorReqReg.vecConf.vtype.vsew, 1.U)(
       (0 until 4).map(i => i.U -> (1 << i).U)
     ), MuxLookup(vectorReqReg.vecConf.vtype.vsew, scalarReqReg.bits.rs2Value)(
-      (0 until 4).map(i => i.U -> (scalarReqReg.bits.rs2Value << i).asUInt)
+      (0 until 4).map(_.U -> scalarReqReg.bits.rs2Value)
     ))
     executedNum := (executedNum + (vectorReqReg.vectorDecode.vm || io.readVrf.resp.vm).asUInt)
   } .otherwise {

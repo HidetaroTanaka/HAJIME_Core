@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   : "r"(6));
   asm volatile ("vlse16.v v6, (%0), %1"
   :
-  : "r"(charArray0), "r"(3));
+  : "r"(charArray0), "r"(3*sizeof(short)));
   asm volatile ("vse16.v v6, (%0)"
   :
   : "r"(charArray1)
