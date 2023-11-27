@@ -142,7 +142,8 @@ class VectorLdstUnitSpec extends AnyFlatSpec with ChiselScalatestTester with Sca
     dut.io.signalIn.bits.vector.vecConf.vtype.vlmul.poke(0.U)
     dut.io.signalIn.bits.vector.vecConf.vl.poke(vl)
   }
-  it should "vector memory access correctly" in {
+  // We dont need this test as we already have Vector CPU
+  ignore should "vector memory access correctly" in {
     implicit val params: HajimeCoreParams = HajimeCoreParams()
     test(new VectorLdstUnitWithDcache()).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       MemInitializer.initialiseMemWithAxi("src/main/resources/applications_rv64i/median_data.hex", dut.dCacheInitialiseIO.bits, dut.dCacheInitialiseIO.valid, dut.clock, 0x4000)
