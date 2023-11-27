@@ -696,7 +696,7 @@ Disassembly of section .text.startup:
  a20:	fe0718e3          	bnez	a4,a10 <main+0x100>
  a24:	00600713          	li	a4,6
  a28:	0c877057          	vsetvli	zero,a4,e16,m1,ta,ma
- a2c:	00300713          	li	a4,3
+ a2c:	00600713          	li	a4,6
  a30:	0aeb5307          	vlse16.v	v6,(s6),a4
  a34:	020bd327          	vse16.v	v6,(s7)
  a38:	00004917          	auipc	s2,0x4

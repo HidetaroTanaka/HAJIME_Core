@@ -74,7 +74,7 @@ int innerProd(const int* vec1, const int* vec2, int n) {
     : "r"(vec1));
     asm volatile ("vlse32.v v2, (%0), %1"
     :
-    : "r"(vec2), "r"(n));
+    : "r"(vec2), "r"(n*sizeof(int)));
     asm volatile ("vmul.vv v1, v1, v2");
     asm volatile ("vredsum.vs v1, v1, v3");
     asm volatile ("vmv.x.s %0, v1"
