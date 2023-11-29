@@ -32,6 +32,7 @@ case class HajimeCoreParams(
   useVector: Boolean = true,
   usePackedSIMD: Boolean = false,
   debug: Boolean = true,
+  fpga: Boolean = false,
   vlen: Int = 256,
   vecAluExecUnitNum: Int = 2,
 ) {

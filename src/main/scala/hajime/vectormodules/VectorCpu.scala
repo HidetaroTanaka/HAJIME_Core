@@ -62,8 +62,12 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
 
   val decoded_inst = Wire(new InstBundle())
   decoded_inst := io.frontend.resp.bits.inst
-  val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
-  val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
+  val ID_EX_REG = RegInit(Valid(new ID_EX_IO()).Lit(
+    _.valid -> false.B,
+  ))
+  val EX_WB_REG = RegInit(Valid(new EX_WB_IO()).Lit(
+    _.valid -> false.B,
+  ))
 
   // これらがtrueならばベクトル命令を発行できる
   val vs1NonRequiredOrReady = !vrfReadyTable.io.vs1Check.valid || vrfReadyTable.io.vs1Check.ready
