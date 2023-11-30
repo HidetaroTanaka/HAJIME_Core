@@ -163,7 +163,10 @@ int main(int argc, char** argv) {
     for(j=0; j<32; j++) {
       signed char sum = 0;
       for(k=0; k<32; k++) {
-        sum += array1[i][k] * array2[k][j];
+        signed char temp;
+        asm volatile ("mulw %0, %1, %2":"=r"(temp):"r"(array1[i][k]), "r"(array2[k][j]));
+        asm volatile ("addw %0, %1, %2":"=r"(sum):"r"(sum), "r"(temp));
+        // sum += array1[i][k] * array2[k][j];
       }
       answerArray[i][j] = sum;
     }

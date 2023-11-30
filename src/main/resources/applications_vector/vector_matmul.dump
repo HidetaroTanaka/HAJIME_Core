@@ -719,16 +719,16 @@ Disassembly of section .text.startup:
  a6c:	01e888b3          	add	a7,a7,t5
  a70:	000e8813          	mv	a6,t4
  a74:	c0050713          	add	a4,a0,-1024
- a78:	00088613          	mv	a2,a7
- a7c:	00000793          	li	a5,0
- a80:	00064683          	lbu	a3,0(a2)
+ a78:	00088693          	mv	a3,a7
+ a7c:	00000613          	li	a2,0
+ a80:	0006c783          	lbu	a5,0(a3)
  a84:	00074583          	lbu	a1,0(a4)
- a88:	02070713          	add	a4,a4,32
- a8c:	00160613          	add	a2,a2,1
- a90:	02b686bb          	mulw	a3,a3,a1
- a94:	00f687bb          	addw	a5,a3,a5
- a98:	0187979b          	sllw	a5,a5,0x18
- a9c:	4187d79b          	sraw	a5,a5,0x18
+ a88:	02b787bb          	mulw	a5,a5,a1
+ a8c:	00f607bb          	addw	a5,a2,a5
+ a90:	0187961b          	sllw	a2,a5,0x18
+ a94:	02070713          	add	a4,a4,32
+ a98:	4186561b          	sraw	a2,a2,0x18
+ a9c:	00168693          	add	a3,a3,1
  aa0:	fea710e3          	bne	a4,a0,a80 <main+0x80>
  aa4:	00f80023          	sb	a5,0(a6)
  aa8:	00170513          	add	a0,a4,1
