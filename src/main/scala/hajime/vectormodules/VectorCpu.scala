@@ -427,6 +427,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ))
   Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
+  // EX_WB_REGに信号自体がvalidかを覚えさせておく
   when(vecCtrlUnit.io.resp.valid) {
     EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.io.resp.bits
   }
