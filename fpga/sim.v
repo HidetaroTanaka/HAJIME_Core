@@ -36,7 +36,7 @@ module sim();
 
     #256 RST = 0;
     #256 RST = 1;
-    #1024 $finish;
+    #1048576 $finish;
   end
 
   always begin

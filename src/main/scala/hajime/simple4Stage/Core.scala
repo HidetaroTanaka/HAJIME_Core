@@ -47,7 +47,7 @@ class Core[T <: CpuModule](cpu: Class[T])(implicit params: HajimeCoreParams) ext
 }
 
 object Core extends App {
-  implicit val params = HajimeCoreParams(useException = false, useVector = true, debug = false)
+  implicit val params = HajimeCoreParams(useException = false, useVector = true, debug = false, fpga = true)
   def apply[T <: CpuModule](cpu: Class[T])(implicit params: HajimeCoreParams): Core[T] = {
     if(cpu == classOf[VectorCpu] && !params.useVector) {
       throw new Exception("useVector is false")

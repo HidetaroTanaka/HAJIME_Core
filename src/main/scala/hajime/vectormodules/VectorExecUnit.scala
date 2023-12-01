@@ -71,6 +71,8 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
     instInfoReg := instInfoReg
   }
 
+  assert(!(instInfoReg.valid && instInfoReg.bits.vecConf.vl === 0.U), "Zero vl instruction in VectorExecUnit")
+
   import VEU_FUN._
   // TODO: vs1Outの判定はMVVではなくベクトルマスク命令か否かで
   io.readVrf.req.idx := Mux(instInfoReg.bits.vectorDecode.vSource === VSOURCE.MVV.asUInt, idx.head(idx.getWidth-3), idx)

@@ -1,0 +1,1339 @@
+
+vector_matmul.riscv:     file format elf64-littleriscv
+
+
+Disassembly of section .text.init:
+
+0000000000000000 <_start>:
+   0:	00000093          	li	ra,0
+   4:	00000113          	li	sp,0
+   8:	00000193          	li	gp,0
+   c:	00000213          	li	tp,0
+  10:	00000293          	li	t0,0
+  14:	00000313          	li	t1,0
+  18:	00000393          	li	t2,0
+  1c:	00000413          	li	s0,0
+  20:	00000493          	li	s1,0
+  24:	00000513          	li	a0,0
+  28:	00000593          	li	a1,0
+  2c:	00000613          	li	a2,0
+  30:	00000693          	li	a3,0
+  34:	00000713          	li	a4,0
+  38:	00000793          	li	a5,0
+  3c:	00000813          	li	a6,0
+  40:	00000893          	li	a7,0
+  44:	00000913          	li	s2,0
+  48:	00000993          	li	s3,0
+  4c:	00000a13          	li	s4,0
+  50:	00000a93          	li	s5,0
+  54:	00000b13          	li	s6,0
+  58:	00000b93          	li	s7,0
+  5c:	00000c13          	li	s8,0
+  60:	00000c93          	li	s9,0
+  64:	00000d13          	li	s10,0
+  68:	00000d93          	li	s11,0
+  6c:	00000e13          	li	t3,0
+  70:	00000e93          	li	t4,0
+  74:	00000f13          	li	t5,0
+  78:	00000f93          	li	t6,0
+  7c:	00000297          	auipc	t0,0x0
+  80:	03828293          	add	t0,t0,56 # b4 <trap_entry>
+  84:	30529073          	csrw	mtvec,t0
+  88:	00005197          	auipc	gp,0x5
+  8c:	f7818193          	add	gp,gp,-136 # 5000 <__global_pointer$>
+  90:	10000217          	auipc	tp,0x10000
+  94:	ff720213          	add	tp,tp,-9 # 10000087 <_end+0x3f>
+  98:	fc027213          	and	tp,tp,-64
+  9c:	f1402573          	csrr	a0,mhartid
+  a0:	00100593          	li	a1,1
+  a4:	00b57063          	bgeu	a0,a1,a4 <_start+0xa4>
+  a8:	00006137          	lui	sp,0x6
+  ac:	ff01011b          	addw	sp,sp,-16 # 5ff0 <_tbss_end+0xfe8>
+  b0:	1d00006f          	j	280 <_init>
+
+00000000000000b4 <trap_entry>:
+  b4:	ef010113          	add	sp,sp,-272
+  b8:	00113423          	sd	ra,8(sp)
+  bc:	00213823          	sd	sp,16(sp)
+  c0:	00313c23          	sd	gp,24(sp)
+  c4:	02413023          	sd	tp,32(sp)
+  c8:	02513423          	sd	t0,40(sp)
+  cc:	02613823          	sd	t1,48(sp)
+  d0:	02713c23          	sd	t2,56(sp)
+  d4:	04813023          	sd	s0,64(sp)
+  d8:	04913423          	sd	s1,72(sp)
+  dc:	04a13823          	sd	a0,80(sp)
+  e0:	04b13c23          	sd	a1,88(sp)
+  e4:	06c13023          	sd	a2,96(sp)
+  e8:	06d13423          	sd	a3,104(sp)
+  ec:	06e13823          	sd	a4,112(sp)
+  f0:	06f13c23          	sd	a5,120(sp)
+  f4:	09013023          	sd	a6,128(sp)
+  f8:	09113423          	sd	a7,136(sp)
+  fc:	09213823          	sd	s2,144(sp)
+ 100:	09313c23          	sd	s3,152(sp)
+ 104:	0b413023          	sd	s4,160(sp)
+ 108:	0b513423          	sd	s5,168(sp)
+ 10c:	0b613823          	sd	s6,176(sp)
+ 110:	0b713c23          	sd	s7,184(sp)
+ 114:	0d813023          	sd	s8,192(sp)
+ 118:	0d913423          	sd	s9,200(sp)
+ 11c:	0da13823          	sd	s10,208(sp)
+ 120:	0db13c23          	sd	s11,216(sp)
+ 124:	0fc13023          	sd	t3,224(sp)
+ 128:	0fd13423          	sd	t4,232(sp)
+ 12c:	0fe13823          	sd	t5,240(sp)
+ 130:	0ff13c23          	sd	t6,248(sp)
+ 134:	34202573          	csrr	a0,mcause
+ 138:	341025f3          	csrr	a1,mepc
+ 13c:	00010613          	mv	a2,sp
+ 140:	120000ef          	jal	260 <handle_trap>
+ 144:	34151073          	csrw	mepc,a0
+ 148:	000022b7          	lui	t0,0x2
+ 14c:	8002829b          	addw	t0,t0,-2048 # 1800 <main+0x1390>
+ 150:	3002a073          	csrs	mstatus,t0
+ 154:	00813083          	ld	ra,8(sp)
+ 158:	01013103          	ld	sp,16(sp)
+ 15c:	01813183          	ld	gp,24(sp)
+ 160:	02013203          	ld	tp,32(sp)
+ 164:	02813283          	ld	t0,40(sp)
+ 168:	03013303          	ld	t1,48(sp)
+ 16c:	03813383          	ld	t2,56(sp)
+ 170:	04013403          	ld	s0,64(sp)
+ 174:	04813483          	ld	s1,72(sp)
+ 178:	05013503          	ld	a0,80(sp)
+ 17c:	05813583          	ld	a1,88(sp)
+ 180:	06013603          	ld	a2,96(sp)
+ 184:	06813683          	ld	a3,104(sp)
+ 188:	07013703          	ld	a4,112(sp)
+ 18c:	07813783          	ld	a5,120(sp)
+ 190:	08013803          	ld	a6,128(sp)
+ 194:	08813883          	ld	a7,136(sp)
+ 198:	09013903          	ld	s2,144(sp)
+ 19c:	09813983          	ld	s3,152(sp)
+ 1a0:	0a013a03          	ld	s4,160(sp)
+ 1a4:	0a813a83          	ld	s5,168(sp)
+ 1a8:	0b013b03          	ld	s6,176(sp)
+ 1ac:	0b813b83          	ld	s7,184(sp)
+ 1b0:	0c013c03          	ld	s8,192(sp)
+ 1b4:	0c813c83          	ld	s9,200(sp)
+ 1b8:	0d013d03          	ld	s10,208(sp)
+ 1bc:	0d813d83          	ld	s11,216(sp)
+ 1c0:	0e013e03          	ld	t3,224(sp)
+ 1c4:	0e813e83          	ld	t4,232(sp)
+ 1c8:	0f013f03          	ld	t5,240(sp)
+ 1cc:	0f813f83          	ld	t6,248(sp)
+ 1d0:	11010113          	add	sp,sp,272
+ 1d4:	30200073          	mret
+
+Disassembly of section .text:
+
+00000000000001d8 <_e8_32x32_matmul>:
+ 1d8:	02000793          	li	a5,32
+ 1dc:	0c07f057          	vsetvli	zero,a5,e8,m1,ta,ma
+ 1e0:	02000813          	li	a6,32
+ 1e4:	00050893          	mv	a7,a0
+ 1e8:	40050313          	add	t1,a0,1024
+ 1ec:	02000513          	li	a0,32
+ 1f0:	02088087          	vle8.v	v1,(a7)
+ 1f4:	42006257          	vmv.s.x	v4,zero
+ 1f8:	00000793          	li	a5,0
+ 1fc:	00f58733          	add	a4,a1,a5
+ 200:	0b070107          	vlse8.v	v2,(a4),a6
+ 204:	961121d7          	vmul.vv	v3,v1,v2
+ 208:	023221d7          	vredsum.vs	v3,v3,v4
+ 20c:	423026d7          	vmv.x.s	a3,v3
+ 210:	0007871b          	sext.w	a4,a5
+ 214:	00e60733          	add	a4,a2,a4
+ 218:	00d70023          	sb	a3,0(a4)
+ 21c:	00178793          	add	a5,a5,1
+ 220:	fca79ee3          	bne	a5,a0,1fc <_e8_32x32_matmul+0x24>
+ 224:	02088893          	add	a7,a7,32
+ 228:	02060613          	add	a2,a2,32
+ 22c:	fc6892e3          	bne	a7,t1,1f0 <_e8_32x32_matmul+0x18>
+ 230:	00008067          	ret
+
+0000000000000234 <clearCounters>:
+ 234:	b0201073          	csrw	minstret,zero
+ 238:	b0001073          	csrw	mcycle,zero
+ 23c:	00008067          	ret
+
+0000000000000240 <getCounters>:
+ 240:	c02027f3          	rdinstret	a5
+ 244:	00f53023          	sd	a5,0(a0)
+ 248:	c00027f3          	rdcycle	a5
+ 24c:	00f5b023          	sd	a5,0(a1)
+ 250:	00008067          	ret
+
+0000000000000254 <exit>:
+ 254:	100007b7          	lui	a5,0x10000
+ 258:	00a7a023          	sw	a0,0(a5) # 10000000 <tohost>
+ 25c:	0000006f          	j	25c <exit+0x8>
+
+0000000000000260 <handle_trap>:
+ 260:	0105959b          	sllw	a1,a1,0x10
+ 264:	00b567b3          	or	a5,a0,a1
+ 268:	0007879b          	sext.w	a5,a5
+ 26c:	10000737          	lui	a4,0x10000
+ 270:	00f72023          	sw	a5,0(a4) # 10000000 <tohost>
+ 274:	0000006f          	j	274 <handle_trap+0x14>
+
+0000000000000278 <thread_entry>:
+ 278:	00051063          	bnez	a0,278 <thread_entry>
+ 27c:	00008067          	ret
+
+0000000000000280 <_init>:
+ 280:	ff010113          	add	sp,sp,-16
+ 284:	00000593          	li	a1,0
+ 288:	00000513          	li	a0,0
+ 28c:	00113423          	sd	ra,8(sp)
+ 290:	1e0000ef          	jal	470 <main>
+ 294:	100007b7          	lui	a5,0x10000
+ 298:	00a7a023          	sw	a0,0(a5) # 10000000 <tohost>
+ 29c:	0000006f          	j	29c <_init+0x1c>
+
+00000000000002a0 <memcpy>:
+ 2a0:	00b567b3          	or	a5,a0,a1
+ 2a4:	00c7e7b3          	or	a5,a5,a2
+ 2a8:	0077f793          	and	a5,a5,7
+ 2ac:	00c50833          	add	a6,a0,a2
+ 2b0:	02078463          	beqz	a5,2d8 <memcpy+0x38>
+ 2b4:	00c58633          	add	a2,a1,a2
+ 2b8:	00050793          	mv	a5,a0
+ 2bc:	0b057663          	bgeu	a0,a6,368 <memcpy+0xc8>
+ 2c0:	0005c703          	lbu	a4,0(a1)
+ 2c4:	00158593          	add	a1,a1,1
+ 2c8:	00178793          	add	a5,a5,1
+ 2cc:	fee78fa3          	sb	a4,-1(a5)
+ 2d0:	fec598e3          	bne	a1,a2,2c0 <memcpy+0x20>
+ 2d4:	00008067          	ret
+ 2d8:	04050693          	add	a3,a0,64
+ 2dc:	0906f863          	bgeu	a3,a6,36c <memcpy+0xcc>
+ 2e0:	00058713          	mv	a4,a1
+ 2e4:	00068793          	mv	a5,a3
+ 2e8:	00073383          	ld	t2,0(a4)
+ 2ec:	00873283          	ld	t0,8(a4)
+ 2f0:	01073f83          	ld	t6,16(a4)
+ 2f4:	01873f03          	ld	t5,24(a4)
+ 2f8:	02073e83          	ld	t4,32(a4)
+ 2fc:	02873e03          	ld	t3,40(a4)
+ 300:	03073303          	ld	t1,48(a4)
+ 304:	03873883          	ld	a7,56(a4)
+ 308:	04078793          	add	a5,a5,64
+ 30c:	f877b023          	sd	t2,-128(a5)
+ 310:	f857b423          	sd	t0,-120(a5)
+ 314:	f9f7b823          	sd	t6,-112(a5)
+ 318:	f9e7bc23          	sd	t5,-104(a5)
+ 31c:	fbd7b023          	sd	t4,-96(a5)
+ 320:	fbc7b423          	sd	t3,-88(a5)
+ 324:	fa67b823          	sd	t1,-80(a5)
+ 328:	fb17bc23          	sd	a7,-72(a5)
+ 32c:	04070713          	add	a4,a4,64
+ 330:	fb07ece3          	bltu	a5,a6,2e8 <memcpy+0x48>
+ 334:	fbf60613          	add	a2,a2,-65
+ 338:	fc067793          	and	a5,a2,-64
+ 33c:	04078793          	add	a5,a5,64
+ 340:	fc067613          	and	a2,a2,-64
+ 344:	00f585b3          	add	a1,a1,a5
+ 348:	00c687b3          	add	a5,a3,a2
+ 34c:	f907f4e3          	bgeu	a5,a6,2d4 <memcpy+0x34>
+ 350:	0005b703          	ld	a4,0(a1)
+ 354:	00878793          	add	a5,a5,8
+ 358:	00858593          	add	a1,a1,8
+ 35c:	fee7bc23          	sd	a4,-8(a5)
+ 360:	ff07e8e3          	bltu	a5,a6,350 <memcpy+0xb0>
+ 364:	00008067          	ret
+ 368:	00008067          	ret
+ 36c:	00050793          	mv	a5,a0
+ 370:	fddff06f          	j	34c <memcpy+0xac>
+
+0000000000000374 <memset>:
+ 374:	00c567b3          	or	a5,a0,a2
+ 378:	0077f793          	and	a5,a5,7
+ 37c:	00c50633          	add	a2,a0,a2
+ 380:	0ff5f713          	zext.b	a4,a1
+ 384:	00078e63          	beqz	a5,3a0 <memset+0x2c>
+ 388:	00050793          	mv	a5,a0
+ 38c:	02c57c63          	bgeu	a0,a2,3c4 <memset+0x50>
+ 390:	00178793          	add	a5,a5,1
+ 394:	fee78fa3          	sb	a4,-1(a5)
+ 398:	fef61ce3          	bne	a2,a5,390 <memset+0x1c>
+ 39c:	00008067          	ret
+ 3a0:	00004797          	auipc	a5,0x4
+ 3a4:	4607b783          	ld	a5,1120(a5) # 4800 <array1+0x400>
+ 3a8:	02f70733          	mul	a4,a4,a5
+ 3ac:	fec578e3          	bgeu	a0,a2,39c <memset+0x28>
+ 3b0:	00050793          	mv	a5,a0
+ 3b4:	00878793          	add	a5,a5,8
+ 3b8:	fee7bc23          	sd	a4,-8(a5)
+ 3bc:	fec7ece3          	bltu	a5,a2,3b4 <memset+0x40>
+ 3c0:	00008067          	ret
+ 3c4:	00008067          	ret
+
+00000000000003c8 <strlen>:
+ 3c8:	00054783          	lbu	a5,0(a0)
+ 3cc:	00078e63          	beqz	a5,3e8 <strlen+0x20>
+ 3d0:	00050793          	mv	a5,a0
+ 3d4:	0017c703          	lbu	a4,1(a5)
+ 3d8:	00178793          	add	a5,a5,1
+ 3dc:	fe071ce3          	bnez	a4,3d4 <strlen+0xc>
+ 3e0:	40a78533          	sub	a0,a5,a0
+ 3e4:	00008067          	ret
+ 3e8:	00000513          	li	a0,0
+ 3ec:	00008067          	ret
+
+00000000000003f0 <strnlen>:
+ 3f0:	00b506b3          	add	a3,a0,a1
+ 3f4:	00050793          	mv	a5,a0
+ 3f8:	00059863          	bnez	a1,408 <strnlen+0x18>
+ 3fc:	0240006f          	j	420 <strnlen+0x30>
+ 400:	00178793          	add	a5,a5,1
+ 404:	00f68a63          	beq	a3,a5,418 <strnlen+0x28>
+ 408:	0007c703          	lbu	a4,0(a5)
+ 40c:	fe071ae3          	bnez	a4,400 <strnlen+0x10>
+ 410:	40a78533          	sub	a0,a5,a0
+ 414:	00008067          	ret
+ 418:	40a68533          	sub	a0,a3,a0
+ 41c:	00008067          	ret
+ 420:	00000513          	li	a0,0
+ 424:	00008067          	ret
+
+0000000000000428 <strcmp>:
+ 428:	00054783          	lbu	a5,0(a0)
+ 42c:	00158593          	add	a1,a1,1
+ 430:	00150513          	add	a0,a0,1
+ 434:	fff5c703          	lbu	a4,-1(a1)
+ 438:	00078a63          	beqz	a5,44c <strcmp+0x24>
+ 43c:	fee786e3          	beq	a5,a4,428 <strcmp>
+ 440:	0007851b          	sext.w	a0,a5
+ 444:	40e5053b          	subw	a0,a0,a4
+ 448:	00008067          	ret
+ 44c:	00000513          	li	a0,0
+ 450:	ff5ff06f          	j	444 <strcmp+0x1c>
+
+0000000000000454 <strcpy>:
+ 454:	00050793          	mv	a5,a0
+ 458:	0005c703          	lbu	a4,0(a1)
+ 45c:	00178793          	add	a5,a5,1
+ 460:	00158593          	add	a1,a1,1
+ 464:	fee78fa3          	sb	a4,-1(a5)
+ 468:	fe0718e3          	bnez	a4,458 <strcpy+0x4>
+ 46c:	00008067          	ret
+
+Disassembly of section .text.startup:
+
+0000000000000470 <main>:
+ 470:	ff010113          	add	sp,sp,-16
+ 474:	00004617          	auipc	a2,0x4
+ 478:	39460613          	add	a2,a2,916 # 4808 <resultArray>
+ 47c:	00004597          	auipc	a1,0x4
+ 480:	b8458593          	add	a1,a1,-1148 # 4000 <array2>
+ 484:	00004517          	auipc	a0,0x4
+ 488:	f7c50513          	add	a0,a0,-132 # 4400 <array1>
+ 48c:	00113423          	sd	ra,8(sp)
+ 490:	d49ff0ef          	jal	1d8 <_e8_32x32_matmul>
+ 494:	c0818e13          	add	t3,gp,-1016 # 4c08 <answerArray>
+ 498:	000e0f13          	mv	t5,t3
+ 49c:	00000e93          	li	t4,0
+ 4a0:	00004f97          	auipc	t6,0x4
+ 4a4:	f60f8f93          	add	t6,t6,-160 # 4400 <array1>
+ 4a8:	00004317          	auipc	t1,0x4
+ 4ac:	f7830313          	add	t1,t1,-136 # 4420 <array1+0x20>
+ 4b0:	02000293          	li	t0,32
+ 4b4:	005e9893          	sll	a7,t4,0x5
+ 4b8:	000f8513          	mv	a0,t6
+ 4bc:	01f888b3          	add	a7,a7,t6
+ 4c0:	000f0813          	mv	a6,t5
+ 4c4:	c0050713          	add	a4,a0,-1024
+ 4c8:	00088693          	mv	a3,a7
+ 4cc:	00000613          	li	a2,0
+ 4d0:	0006c783          	lbu	a5,0(a3)
+ 4d4:	00074583          	lbu	a1,0(a4)
+ 4d8:	02b787bb          	mulw	a5,a5,a1
+ 4dc:	00f607bb          	addw	a5,a2,a5
+ 4e0:	0187961b          	sllw	a2,a5,0x18
+ 4e4:	02070713          	add	a4,a4,32
+ 4e8:	4186561b          	sraw	a2,a2,0x18
+ 4ec:	00168693          	add	a3,a3,1
+ 4f0:	fea710e3          	bne	a4,a0,4d0 <main+0x60>
+ 4f4:	00f80023          	sb	a5,0(a6)
+ 4f8:	00170513          	add	a0,a4,1
+ 4fc:	00180813          	add	a6,a6,1
+ 500:	fca312e3          	bne	t1,a0,4c4 <main+0x54>
+ 504:	001e8e93          	add	t4,t4,1
+ 508:	020f0f13          	add	t5,t5,32
+ 50c:	fa5e94e3          	bne	t4,t0,4b4 <main+0x44>
+ 510:	00004617          	auipc	a2,0x4
+ 514:	31860613          	add	a2,a2,792 # 4828 <resultArray+0x20>
+ 518:	c2818513          	add	a0,gp,-984 # 4c28 <answerArray+0x20>
+ 51c:	00100793          	li	a5,1
+ 520:	fe060713          	add	a4,a2,-32
+ 524:	000e0693          	mv	a3,t3
+ 528:	00078a63          	beqz	a5,53c <main+0xcc>
+ 52c:	00070783          	lb	a5,0(a4)
+ 530:	00068583          	lb	a1,0(a3)
+ 534:	40b787b3          	sub	a5,a5,a1
+ 538:	0017b793          	seqz	a5,a5
+ 53c:	00170713          	add	a4,a4,1
+ 540:	00168693          	add	a3,a3,1
+ 544:	fec712e3          	bne	a4,a2,528 <main+0xb8>
+ 548:	02070613          	add	a2,a4,32
+ 54c:	020e0e13          	add	t3,t3,32
+ 550:	fca618e3          	bne	a2,a0,520 <main+0xb0>
+ 554:	00078c63          	beqz	a5,56c <main+0xfc>
+ 558:	00114537          	lui	a0,0x114
+ 55c:	51450513          	add	a0,a0,1300 # 114514 <_tbss_end+0x10f50c>
+ 560:	00813083          	ld	ra,8(sp)
+ 564:	01010113          	add	sp,sp,16
+ 568:	00008067          	ret
+ 56c:	deadc537          	lui	a0,0xdeadc
+ 570:	eef50513          	add	a0,a0,-273 # ffffffffdeadbeef <_end+0xffffffffceadbea7>
+ 574:	fedff06f          	j	560 <main+0xf0>
+ 578:	fff00513          	li	a0,-1
+ 57c:	00008067          	ret
+
+Disassembly of section .rodata:
+
+0000000000004000 <array2>:
+    4000:	fdff                	.2byte	0xfdff
+    4002:	fd04                	.2byte	0xfd04
+    4004:	0501                	vmsge.vx	v10,v0,zero,v0.t
+    4006:	fcfe                	.2byte	0xfcfe
+    4008:	06fa                	.2byte	0x6fa
+    400a:	fd04                	.2byte	0xfd04
+    400c:	fffa                	.2byte	0xfffa
+    400e:	0305                	.2byte	0x305
+    4010:	0600                	vmsge.vx	v12,v0,zero,v0.t
+    4012:	02f8                	.2byte	0x2f8
+    4014:	fefc                	.2byte	0xfefc
+    4016:	fafd                	.2byte	0xfafd
+    4018:	04f8                	.2byte	0x4f8
+    401a:	fa02fb03          	vmsge.vx	v22,v0,t0
+    401e:	0206                	.2byte	0x206
+    4020:	fdfc                	.2byte	0xfdfc
+    4022:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    4024:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    4026:	00fe                	.2byte	0xfe
+    4028:	01fe                	.2byte	0x1fe
+    402a:	fe04                	.2byte	0xfe04
+    402c:	05f9fa03          	vmsge.vx	v20,v31,s3,v0.t
+    4030:	06f8                	.2byte	0x6f8
+    4032:	0601                	vmsge.vx	v12,v0,zero,v0.t
+    4034:	fefc                	.2byte	0xfefc
+    4036:	03fd                	.2byte	0x3fd
+    4038:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    403a:	ff05                	.2byte	0xff05
+    403c:	fc04                	.2byte	0xfc04
+    403e:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    4040:	fcff                	.2byte	0xfcff
+    4042:	0505                	.2byte	0x505
+    4044:	0005                	.2byte	0x5
+    4046:	04fe                	.2byte	0x4fe
+    4048:	0406                	.2byte	0x406
+    404a:	fcfc                	.2byte	0xfcfc
+    404c:	f902                	vmsge.vx	v18,v0,ra,v0.t
+    404e:	fa06                	.2byte	0xfa06
+    4050:	fdf8                	.2byte	0xfdf8
+    4052:	06fdf9fb          	.4byte	0x6fdf9fb
+    4056:	05fd                	.2byte	0x5fd
+    4058:	0105                	.2byte	0x105
+    405a:	05fc0403          	lb	s0,95(s8)
+    405e:	fd05                	.2byte	0xfd05
+    4060:	f905                	.2byte	0xf905
+    4062:	0605                	.2byte	0x605
+    4064:	0405                	.2byte	0x405
+    4066:	fb02                	vmsge.vx	v22,v0,ra,v0.t
+    4068:	0000                	vmsge.vx	v0,v0,zero,v0.t
+    406a:	fafcf803          	vmsge.vx	v16,v15,s9
+    406e:	fbf9                	.2byte	0xfbf9
+    4070:	03fd                	.2byte	0x3fd
+    4072:	0204                	.2byte	0x204
+    4074:	fef8                	.2byte	0xfef8
+    4076:	f90205fb          	.4byte	0xf90205fb
+    407a:	fff8                	.2byte	0xfff8
+    407c:	06fe                	.2byte	0x6fe
+    407e:	fbfa                	.2byte	0xfbfa
+    4080:	fa06                	.2byte	0xfa06
+    4082:	fafd                	.2byte	0xfafd
+    4084:	0106                	.2byte	0x106
+    4086:	0404                	.2byte	0x404
+    4088:	05fc                	.2byte	0x5fc
+    408a:	fa00f8fb          	.4byte	0xfa00f8fb
+    408e:	01fc                	.2byte	0x1fc
+    4090:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    4092:	03fa                	.2byte	0x3fa
+    4094:	fdfc                	.2byte	0xfdfc
+    4096:	0304                	.2byte	0x304
+    4098:	f802                	vmsge.vx	v16,v0,ra,v0.t
+    409a:	00fa                	.2byte	0xfa
+    409c:	f8f8                	.2byte	0xf8f8
+    409e:	0202                	vmsge.vx	v4,v0,zero,v0.t
+    40a0:	fb02f803          	vmsge.vx	v16,v16,t0
+    40a4:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    40a6:	fbff                	.2byte	0xfbff
+    40a8:	f9fe                	.2byte	0xf9fe
+    40aa:	0506                	.2byte	0x506
+    40ac:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    40ae:	0205                	.2byte	0x205
+    40b0:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    40b2:	02f9                	.2byte	0x2f9
+    40b4:	0304                	.2byte	0x304
+    40b6:	fefa                	.2byte	0xfefa
+    40b8:	fd05                	.2byte	0xfd05
+    40ba:	0405                	.2byte	0x405
+    40bc:	01fc                	.2byte	0x1fc
+    40be:	030001fb          	.4byte	0x30001fb
+    40c2:	fdff                	.2byte	0xfdff
+    40c4:	0200                	vmsge.vx	v4,v0,zero,v0.t
+    40c6:	0602f9fb          	.4byte	0x602f9fb
+    40ca:	fbfa                	.2byte	0xfbfa
+    40cc:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    40ce:	ff06                	.2byte	0xff06
+    40d0:	0405                	.2byte	0x405
+    40d2:	0400                	vmsge.vx	v8,v0,zero,v0.t
+    40d4:	f8fa                	.2byte	0xf8fa
+    40d6:	01fc03fb          	.4byte	0x1fc03fb
+    40da:	03ff 0302 fbfa fffd 	.byte	0xff, 0x03, 0x02, 0x03, 0xfa, 0xfb, 0xfd, 0xff, 0xf9, 0xff
+    40e2:	fff9 
+    40e4:	03f8                	.2byte	0x3f8
+    40e6:	faf8                	.2byte	0xfaf8
+    40e8:	ffff                	.2byte	0xffff
+    40ea:	0104                	.2byte	0x104
+    40ec:	fbfcf903          	vmsge.vx	v18,v31,s9
+    40f0:	fffc                	.2byte	0xfffc
+    40f2:	0204f903          	vmsge.vx	v18,v0,s1
+    40f6:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    40f8:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    40fa:	06ff 04fa fc02 0106 	.byte	0xff, 0x06, 0xfa, 0x04, 0x02, 0xfc, 0x06, 0x01, 0x05, 0xf8
+    4102:	f805 
+    4104:	fafe                	.2byte	0xfafe
+    4106:	01fe                	.2byte	0x1fe
+    4108:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    410a:	04fd                	.2byte	0x4fd
+    410c:	f8ff                	.2byte	0xf8ff
+    410e:	fe05                	.2byte	0xfe05
+    4110:	fbfcfefb          	.4byte	0xfbfcfefb
+    4114:	03ff fffd 01fd 02fd 	.byte	0xff, 0x03, 0xfd, 0xff, 0xfd, 0x01, 0xfd, 0x02, 0xfc, 0xfb
+    411c:	fbfc 
+    411e:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    4120:	0500                	vmsge.vx	v10,v0,zero,v0.t
+    4122:	fcff                	.2byte	0xfcff
+    4124:	fbfd                	.2byte	0xfbfd
+    4126:	04fb0203          	lb	tp,79(s6)
+    412a:	05fe                	.2byte	0x5fe
+    412c:	00f9                	.2byte	0xf9
+    412e:	04ff fbfc 0203 ff06 	.byte	0xff, 0x04, 0xfc, 0xfb, 0x03, 0x02, 0x06, 0xff, 0xfb, 0x06
+    4136:	06fb 
+    4138:	f804                	.2byte	0xf804
+    413a:	01f8                	.2byte	0x1f8
+    413c:	fdfe                	.2byte	0xfdfe
+    413e:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    4140:	f801                	vmsge.vx	v16,v0,ra,v0.t
+    4142:	0505                	.2byte	0x505
+    4144:	0400                	vmsge.vx	v8,v0,zero,v0.t
+    4146:	fe04                	.2byte	0xfe04
+    4148:	fc05                	.2byte	0xfc05
+    414a:	fcf9fbfb          	.4byte	0xfcf9fbfb
+    414e:	fe00                	vmsge.vx	v28,v0,ra,v0.t
+    4150:	0500                	vmsge.vx	v10,v0,zero,v0.t
+    4152:	fafc                	.2byte	0xfafc
+    4154:	01fe                	.2byte	0x1fe
+    4156:	0205                	.2byte	0x205
+    4158:	0602                	vmsge.vx	v12,v0,zero,v0.t
+    415a:	0305                	.2byte	0x305
+    415c:	fe05                	.2byte	0xfe05
+    415e:	0604                	.2byte	0x604
+    4160:	0600                	vmsge.vx	v12,v0,zero,v0.t
+    4162:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    4164:	f9fa                	.2byte	0xf9fa
+    4166:	0604                	.2byte	0x604
+    4168:	faf9                	.2byte	0xfaf9
+    416a:	0506                	.2byte	0x506
+    416c:	03f8                	.2byte	0x3f8
+    416e:	fc06                	.2byte	0xfc06
+    4170:	fb040203          	lb	tp,-80(s0)
+    4174:	fcfc                	.2byte	0xfcfc
+    4176:	03f8                	.2byte	0x3f8
+    4178:	04fc                	.2byte	0x4fc
+    417a:	fcfa                	.2byte	0xfcfa
+    417c:	04fe                	.2byte	0x4fe
+    417e:	06fd                	.2byte	0x6fd
+    4180:	f805                	.2byte	0xf805
+    4182:	fafd                	.2byte	0xfafd
+    4184:	00f8                	.2byte	0xf8
+    4186:	00fa                	.2byte	0xfa
+    4188:	03fc                	.2byte	0x3fc
+    418a:	fb05                	.2byte	0xfb05
+    418c:	f804                	.2byte	0xf804
+    418e:	06fd                	.2byte	0x6fd
+    4190:	fa06                	.2byte	0xfa06
+    4192:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    4194:	fa00fc03          	vmsge.vx	v24,v0,ra
+    4198:	fdfd                	.2byte	0xfdfd
+    419a:	0406                	.2byte	0x406
+    419c:	00fc                	.2byte	0xfc
+    419e:	05f801fb          	.4byte	0x5f801fb
+    41a2:	ffff                	.2byte	0xffff
+    41a4:	f801                	vmsge.vx	v16,v0,ra,v0.t
+    41a6:	fdfa                	.2byte	0xfdfa
+    41a8:	fafd00fb          	.4byte	0xfafd00fb
+    41ac:	02fc                	.2byte	0x2fc
+    41ae:	fcf9                	.2byte	0xfcf9
+    41b0:	0305                	.2byte	0x305
+    41b2:	0602                	vmsge.vx	v12,v0,zero,v0.t
+    41b4:	fbfc                	.2byte	0xfbfc
+    41b6:	fafd                	.2byte	0xfafd
+    41b8:	020205fb          	.4byte	0x20205fb
+    41bc:	fa05                	.2byte	0xfa05
+    41be:	fa04                	.2byte	0xfa04
+    41c0:	03fdfb03          	vmsge.vx	v22,v31,s11
+    41c4:	0404                	.2byte	0x404
+    41c6:	06fe                	.2byte	0x6fe
+    41c8:	fc04                	.2byte	0xfc04
+    41ca:	fa01                	vmsge.vx	v20,v0,ra,v0.t
+    41cc:	f8ff                	.2byte	0xf8ff
+    41ce:	f9f8                	.2byte	0xf9f8
+    41d0:	f8fdfdfb          	.4byte	0xf8fdfdfb
+    41d4:	fd01                	vmsge.vx	v26,v0,ra,v0.t
+    41d6:	fcff                	.2byte	0xfcff
+    41d8:	00fa                	.2byte	0xfa
+    41da:	0606fc03          	vmsge.vx	v24,v0,a3
+    41de:	fc02                	vmsge.vx	v24,v0,ra,v0.t
+    41e0:	00fa                	.2byte	0xfa
+    41e2:	fdf8                	.2byte	0xfdf8
+    41e4:	0205                	.2byte	0x205
+    41e6:	fe01                	vmsge.vx	v28,v0,ra,v0.t
+    41e8:	06f8                	.2byte	0x6f8
+    41ea:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    41ec:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    41ee:	0001                	vmsge.vx	v0,v0,zero,v0.t
+    41f0:	f8ff                	.2byte	0xf8ff
+    41f2:	fe030503          	lb	a0,-32(t1)
+    41f6:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    41f8:	fb00                	vmsge.vx	v22,v0,ra,v0.t
+    41fa:	05fe                	.2byte	0x5fe
+    41fc:	fcfa                	.2byte	0xfcfa
+    41fe:	0402                	vmsge.vx	v8,v0,zero,v0.t
+    4200:	04ff fe05 f8f8 fd01 	.byte	0xff, 0x04, 0x05, 0xfe, 0xf8, 0xf8, 0x01, 0xfd, 0x01, 0x05
+    4208:	0501 
+    420a:	02fa                	.2byte	0x2fa
+    420c:	0601                	vmsge.vx	v12,v0,zero,v0.t
+    420e:	fa01                	vmsge.vx	v20,v0,ra,v0.t
+    4210:	05ff 03f8 fe05 f8fd 	.byte	0xff, 0x05, 0xf8, 0x03, 0x05, 0xfe, 0xfd, 0xf8, 0x00, 0xf8
+    4218:	f800 
+    421a:	fffd                	.2byte	0xfffd
+    421c:	fa04                	.2byte	0xfa04
+    421e:	0402                	vmsge.vx	v8,v0,zero,v0.t
+    4220:	fdfef903          	vmsge.vx	v18,v31,t4,v0.t
+    4224:	0504                	.2byte	0x504
+    4226:	0606                	.2byte	0x606
+    4228:	f9fb0003          	lb	zero,-97(s6)
+    422c:	f8fa                	.2byte	0xf8fa
+    422e:	06fc                	.2byte	0x6fc
+    4230:	02fa                	.2byte	0x2fa
+    4232:	fa05                	.2byte	0xfa05
+    4234:	f9fa                	.2byte	0xf9fa
+    4236:	0304                	.2byte	0x304
+    4238:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    423a:	0601                	vmsge.vx	v12,v0,zero,v0.t
+    423c:	02fefefb          	.4byte	0x2fefefb
+    4240:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    4242:	fcfe                	.2byte	0xfcfe
+    4244:	0602                	vmsge.vx	v12,v0,zero,v0.t
+    4246:	05f9                	.2byte	0x5f9
+    4248:	fe01                	vmsge.vx	v28,v0,ra,v0.t
+    424a:	faf8                	.2byte	0xfaf8
+    424c:	fbf8                	.2byte	0xfbf8
+    424e:	03ff fbf8 fd03 fe02 	.byte	0xff, 0x03, 0xf8, 0xfb, 0x03, 0xfd, 0x02, 0xfe, 0xf9, 0x05
+    4256:	05f9 
+    4258:	05ff 00fd 02fc 04fb 	.byte	0xff, 0x05, 0xfd, 0x00, 0xfc, 0x02, 0xfb, 0x04, 0x02, 0x01
+    4260:	0102 
+    4262:	fa05                	.2byte	0xfa05
+    4264:	fa05                	.2byte	0xfa05
+    4266:	0206                	.2byte	0x206
+    4268:	f804                	.2byte	0xf804
+    426a:	fa06                	.2byte	0xfa06
+    426c:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    426e:	fffb01fb          	.4byte	0xfffb01fb
+    4272:	0206                	.2byte	0x206
+    4274:	05fc                	.2byte	0x5fc
+    4276:	f902                	vmsge.vx	v18,v0,ra,v0.t
+    4278:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    427a:	ff06                	.2byte	0xff06
+    427c:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    427e:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    4280:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    4282:	fe06                	.2byte	0xfe06
+    4284:	f9ff                	.2byte	0xf9ff
+    4286:	faf8                	.2byte	0xfaf8
+    4288:	06f9                	.2byte	0x6f9
+    428a:	fb00fafb          	.4byte	0xfb00fafb
+    428e:	fb05                	.2byte	0xfb05
+    4290:	fbfa                	.2byte	0xfbfa
+    4292:	fe02                	vmsge.vx	v28,v0,ra,v0.t
+    4294:	0202                	vmsge.vx	v4,v0,zero,v0.t
+    4296:	f802                	vmsge.vx	v16,v0,ra,v0.t
+    4298:	fcfc                	.2byte	0xfcfc
+    429a:	0401                	vmsge.vx	v8,v0,zero,v0.t
+    429c:	05ff 0205 0103 0603 	.byte	0xff, 0x05, 0x05, 0x02, 0x03, 0x01, 0x03, 0x06, 0x06, 0xfb
+    42a4:	fb06 
+    42a6:	0401                	vmsge.vx	v8,v0,zero,v0.t
+    42a8:	fa06                	.2byte	0xfa06
+    42aa:	03f8                	.2byte	0x3f8
+    42ac:	04fa                	.2byte	0x4fa
+    42ae:	0201                	vmsge.vx	v4,v0,zero,v0.t
+    42b0:	fa05fdfb          	.4byte	0xfa05fdfb
+    42b4:	04fe                	.2byte	0x4fe
+    42b6:	00f8                	.2byte	0xf8
+    42b8:	0405                	.2byte	0x405
+    42ba:	fafc                	.2byte	0xfafc
+    42bc:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    42be:	06fa                	.2byte	0x6fa
+    42c0:	0404                	.2byte	0x404
+    42c2:	fff8                	.2byte	0xfff8
+    42c4:	05fc                	.2byte	0x5fc
+    42c6:	00fa                	.2byte	0xfa
+    42c8:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    42ca:	04fd                	.2byte	0x4fd
+    42cc:	f806fdfb          	.4byte	0xf806fdfb
+    42d0:	0004                	.2byte	0x4
+    42d2:	05f8                	.2byte	0x5f8
+    42d4:	01f9                	.2byte	0x1f9
+    42d6:	02f8                	.2byte	0x2f8
+    42d8:	04fe                	.2byte	0x4fe
+    42da:	fbf8                	.2byte	0xfbf8
+    42dc:	03ff 0501 f900 fffc 	.byte	0xff, 0x03, 0x01, 0x05, 0x00, 0xf9, 0xfc, 0xff, 0x03, 0xf9
+    42e4:	f903 
+    42e6:	fffffc03          	vmsge.vx	v24,v31,t6
+    42ea:	06f8                	.2byte	0x6f8
+    42ec:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    42ee:	fcf9                	.2byte	0xfcf9
+    42f0:	fafd                	.2byte	0xfafd
+    42f2:	03fcff03          	vmsge.vx	v30,v31,s9
+    42f6:	0206                	.2byte	0x206
+    42f8:	0205                	.2byte	0x205
+    42fa:	0505                	.2byte	0x505
+    42fc:	fefc                	.2byte	0xfefc
+    42fe:	f9fc                	.2byte	0xf9fc
+    4300:	0506                	.2byte	0x506
+    4302:	fdfc                	.2byte	0xfdfc
+    4304:	04fc                	.2byte	0x4fc
+    4306:	fe01                	vmsge.vx	v28,v0,ra,v0.t
+    4308:	03fa                	.2byte	0x3fa
+    430a:	fa02                	vmsge.vx	v20,v0,ra,v0.t
+    430c:	02ff0103          	lb	sp,47(t5)
+    4310:	03f9                	.2byte	0x3f9
+    4312:	f9f8                	.2byte	0xf9f8
+    4314:	fafe                	.2byte	0xfafe
+    4316:	f800                	vmsge.vx	v16,v0,ra,v0.t
+    4318:	0405                	.2byte	0x405
+    431a:	fbfa                	.2byte	0xfbfa
+    431c:	f906fd03          	vmsge.vx	v26,v16,a3,v0.t
+    4320:	05fc                	.2byte	0x5fc
+    4322:	0102                	vmsge.vx	v2,v0,zero,v0.t
+    4324:	fbfe                	.2byte	0xfbfe
+    4326:	0502                	vmsge.vx	v10,v0,zero,v0.t
+    4328:	0604                	.2byte	0x604
+    432a:	0305                	.2byte	0x305
+    432c:	f804                	.2byte	0xf804
+    432e:	02050003          	lb	zero,32(a0)
+    4332:	00f9                	.2byte	0xf9
+    4334:	06fa                	.2byte	0x6fa
+    4336:	0504                	.2byte	0x504
+    4338:	fb06                	.2byte	0xfb06
+    433a:	0500                	vmsge.vx	v10,v0,zero,v0.t
+    433c:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    433e:	00fc                	.2byte	0xfc
+    4340:	fffe                	.2byte	0xfffe
+    4342:	fefc0003          	lb	zero,-17(s8)
+    4346:	0402                	vmsge.vx	v8,v0,zero,v0.t
+    4348:	f9fc                	.2byte	0xf9fc
+    434a:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    434c:	fffd                	.2byte	0xfffd
+    434e:	fa05                	.2byte	0xfa05
+    4350:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    4352:	01f9                	.2byte	0x1f9
+    4354:	0202                	vmsge.vx	v4,v0,zero,v0.t
+    4356:	f806                	.2byte	0xf806
+    4358:	0400                	vmsge.vx	v8,v0,zero,v0.t
+    435a:	fe00                	vmsge.vx	v28,v0,ra,v0.t
+    435c:	fffcfafb          	.4byte	0xfffcfafb
+    4360:	fb02                	vmsge.vx	v22,v0,ra,v0.t
+    4362:	fdfd                	.2byte	0xfdfd
+    4364:	fffe                	.2byte	0xfffe
+    4366:	02fbf903          	vmsge.vx	v18,v15,s7
+    436a:	0501                	vmsge.vx	v10,v0,zero,v0.t
+    436c:	00f8                	.2byte	0xf8
+    436e:	fd04                	.2byte	0xfd04
+    4370:	fdfe                	.2byte	0xfdfe
+    4372:	fdf8f8fb          	.4byte	0xfdf8f8fb
+    4376:	f804                	.2byte	0xf804
+    4378:	06ff f802 0303 feff 	.byte	0xff, 0x06, 0x02, 0xf8, 0x03, 0x03, 0xff, 0xfe, 0xfb, 0x02
+    4380:	02fb 
+    4382:	f9fe                	.2byte	0xf9fe
+    4384:	00ff 00fe 0505 fcfe 	.byte	0xff, 0x00, 0xfe, 0x00, 0x05, 0x05, 0xfe, 0xfc, 0x06, 0xf8
+    438c:	f806 
+    438e:	00fdfbfb          	.4byte	0xfdfbfb
+    4392:	fd01                	vmsge.vx	v26,v0,ra,v0.t
+    4394:	ff06                	.2byte	0xff06
+    4396:	06fc                	.2byte	0x6fc
+    4398:	0106                	.2byte	0x106
+    439a:	f9fa                	.2byte	0xf9fa
+    439c:	ff04                	.2byte	0xff04
+    439e:	feff                	.2byte	0xfeff
+    43a0:	04030103          	lb	sp,64(t1)
+    43a4:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    43a6:	0000                	vmsge.vx	v0,v0,zero,v0.t
+    43a8:	f9fa                	.2byte	0xf9fa
+    43aa:	ffff                	.2byte	0xffff
+    43ac:	ff06                	.2byte	0xff06
+    43ae:	01fa                	.2byte	0x1fa
+    43b0:	0201fafb          	.4byte	0x201fafb
+    43b4:	f9fa                	.2byte	0xf9fa
+    43b6:	0102                	vmsge.vx	v2,v0,zero,v0.t
+    43b8:	f906                	.2byte	0xf906
+    43ba:	03fc                	.2byte	0x3fc
+    43bc:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    43be:	fffd                	.2byte	0xfffd
+    43c0:	fef8                	.2byte	0xfef8
+    43c2:	fe06                	.2byte	0xfe06
+    43c4:	fff8                	.2byte	0xfff8
+    43c6:	02fd                	.2byte	0x2fd
+    43c8:	fffc                	.2byte	0xfffc
+    43ca:	f8fa                	.2byte	0xf8fa
+    43cc:	f905                	.2byte	0xf905
+    43ce:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    43d0:	f906                	.2byte	0xf906
+    43d2:	fdf9                	.2byte	0xfdf9
+    43d4:	06fa                	.2byte	0x6fa
+    43d6:	f8fe                	.2byte	0xf8fe
+    43d8:	fafc                	.2byte	0xfafc
+    43da:	fdff                	.2byte	0xfdff
+    43dc:	fe02                	vmsge.vx	v28,v0,ra,v0.t
+    43de:	05fa                	.2byte	0x5fa
+    43e0:	01fd                	.2byte	0x1fd
+    43e2:	0604                	.2byte	0x604
+    43e4:	01fc                	.2byte	0x1fc
+    43e6:	ffff                	.2byte	0xffff
+    43e8:	06fa                	.2byte	0x6fa
+    43ea:	fcfd                	.2byte	0xfcfd
+    43ec:	fdfe0203          	lb	tp,-33(t3)
+    43f0:	fefa                	.2byte	0xfefa
+    43f2:	fe05                	.2byte	0xfe05
+    43f4:	fb06                	.2byte	0xfb06
+    43f6:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    43f8:	fefd                	.2byte	0xfefd
+    43fa:	01ff fd03 0605  	.byte	0xff, 0x01, 0x03, 0xfd, 0x05, 0x06, 0xfe, 0x00, 0xfe, 0xfe
+    4402:	 
+
+0000000000004400 <array1>:
+    4400:	00fe                	.2byte	0xfe
+    4402:	fefe                	.2byte	0xfefe
+    4404:	fffa                	.2byte	0xfffa
+    4406:	04f8                	.2byte	0x4f8
+    4408:	02f806fb          	.4byte	0x2f806fb
+    440c:	fe00                	vmsge.vx	v28,v0,ra,v0.t
+    440e:	0000                	vmsge.vx	v0,v0,zero,v0.t
+    4410:	fbf8                	.2byte	0xfbf8
+    4412:	0505                	.2byte	0x505
+    4414:	0002                	vmsge.vx	v0,v0,zero,v0.t
+    4416:	fbfc                	.2byte	0xfbfc
+    4418:	f904                	.2byte	0xf904
+    441a:	00f9                	.2byte	0xf9
+    441c:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    441e:	fefa                	.2byte	0xfefa
+    4420:	f9f9                	.2byte	0xf9f9
+    4422:	fd02                	vmsge.vx	v26,v0,ra,v0.t
+    4424:	fafbfc03          	vmsge.vx	v24,v15,s7
+    4428:	f9fe                	.2byte	0xf9fe
+    442a:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    442c:	fdfe                	.2byte	0xfdfe
+    442e:	05fe                	.2byte	0x5fe
+    4430:	00fe                	.2byte	0xfe
+    4432:	0404                	.2byte	0x404
+    4434:	f9f9                	.2byte	0xf9f9
+    4436:	fcff                	.2byte	0xfcff
+    4438:	fef8fbfb          	.4byte	0xfef8fbfb
+    443c:	f9ff                	.2byte	0xf9ff
+    443e:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    4440:	0204                	.2byte	0x204
+    4442:	f906                	.2byte	0xf906
+    4444:	fbfc                	.2byte	0xfbfc
+    4446:	0200                	vmsge.vx	v4,v0,zero,v0.t
+    4448:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    444a:	01fb0103          	lb	sp,31(s6)
+    444e:	fef9                	.2byte	0xfef9
+    4450:	faf9                	.2byte	0xfaf9
+    4452:	fef9                	.2byte	0xfef9
+    4454:	06ff fbf8 0106 0004 	.byte	0xff, 0x06, 0xf8, 0xfb, 0x06, 0x01, 0x04, 0x00, 0x01, 0x00
+    445c:	0001 
+    445e:	0505                	.2byte	0x505
+    4460:	f806                	.2byte	0xf806
+    4462:	fa01                	vmsge.vx	v20,v0,ra,v0.t
+    4464:	0404                	.2byte	0x404
+    4466:	03fa                	.2byte	0x3fa
+    4468:	fbfa                	.2byte	0xfbfa
+    446a:	f9ff                	.2byte	0xf9ff
+    446c:	f9ff                	.2byte	0xf9ff
+    446e:	f900                	vmsge.vx	v18,v0,ra,v0.t
+    4470:	0005                	.2byte	0x5
+    4472:	fafc                	.2byte	0xfafc
+    4474:	fffa                	.2byte	0xfffa
+    4476:	fbfe                	.2byte	0xfbfe
+    4478:	0405                	.2byte	0x405
+    447a:	04f9                	.2byte	0x4f9
+    447c:	0600                	vmsge.vx	v12,v0,zero,v0.t
+    447e:	f8030403          	lb	s0,-128(t1)
+    4482:	05f9                	.2byte	0x5f9
+    4484:	f802                	vmsge.vx	v16,v0,ra,v0.t
+    4486:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    4488:	0606fe03          	vmsge.vx	v28,v0,a3
+    448c:	06f9                	.2byte	0x6f9
+    448e:	0106                	.2byte	0x106
+    4490:	02fdf903          	vmsge.vx	v18,v15,s11
+    4494:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    4496:	ffff                	.2byte	0xffff
+    4498:	f8fe                	.2byte	0xf8fe
+    449a:	fd02                	vmsge.vx	v26,v0,ra,v0.t
+    449c:	fbff                	.2byte	0xfbff
+    449e:	fc04                	.2byte	0xfc04
+    44a0:	02ff 06fa 01fc fe03 	.byte	0xff, 0x02, 0xfa, 0x06, 0xfc, 0x01, 0x03, 0xfe, 0x05, 0x05
+    44a8:	0505 
+    44aa:	03fc                	.2byte	0x3fc
+    44ac:	faff                	.2byte	0xfaff
+    44ae:	f8fa                	.2byte	0xf8fa
+    44b0:	0201                	vmsge.vx	v4,v0,zero,v0.t
+    44b2:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    44b4:	01ff 0301 0306 fb00 	.byte	0xff, 0x01, 0x01, 0x03, 0x06, 0x03, 0x00, 0xfb, 0xf9, 0xfe
+    44bc:	fef9 
+    44be:	fe01                	vmsge.vx	v28,v0,ra,v0.t
+    44c0:	fdfc                	.2byte	0xfdfc
+    44c2:	f8f8                	.2byte	0xf8f8
+    44c4:	04f8                	.2byte	0x4f8
+    44c6:	f805                	.2byte	0xf805
+    44c8:	f9fc                	.2byte	0xf9fc
+    44ca:	05fdfc03          	vmsge.vx	v24,v31,s11,v0.t
+    44ce:	06fc                	.2byte	0x6fc
+    44d0:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    44d2:	fdfd                	.2byte	0xfdfd
+    44d4:	f9f8                	.2byte	0xf9f8
+    44d6:	060400fb          	.4byte	0x60400fb
+    44da:	0305                	.2byte	0x305
+    44dc:	fdf9                	.2byte	0xfdf9
+    44de:	f804                	.2byte	0xf804
+    44e0:	03fb0403          	lb	s0,63(s6)
+    44e4:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    44e6:	fdf9                	.2byte	0xfdf9
+    44e8:	00ff 01fd 02fd 0204 	.byte	0xff, 0x00, 0xfd, 0x01, 0xfd, 0x02, 0x04, 0x02, 0xfc, 0xf9
+    44f0:	f9fc 
+    44f2:	04f9                	.2byte	0x4f9
+    44f4:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    44f6:	fa04                	.2byte	0xfa04
+    44f8:	00060303          	lb	t1,0(a2)
+    44fc:	fcff                	.2byte	0xfcff
+    44fe:	f9f9                	.2byte	0xf9f9
+    4500:	0506fc03          	vmsge.vx	v24,v16,a3,v0.t
+    4504:	f8f8                	.2byte	0xf8f8
+    4506:	fd05                	.2byte	0xfd05
+    4508:	04fd                	.2byte	0x4fd
+    450a:	03fd                	.2byte	0x3fd
+    450c:	fe02                	vmsge.vx	v28,v0,ra,v0.t
+    450e:	fdfbfafb          	.4byte	0xfdfbfafb
+    4512:	03fe                	.2byte	0x3fe
+    4514:	fa00                	vmsge.vx	v20,v0,ra,v0.t
+    4516:	f8f8                	.2byte	0xf8f8
+    4518:	fdfc                	.2byte	0xfdfc
+    451a:	fd02                	vmsge.vx	v26,v0,ra,v0.t
+    451c:	f906                	.2byte	0xf906
+    451e:	fdfd                	.2byte	0xfdfd
+    4520:	0502                	vmsge.vx	v10,v0,zero,v0.t
+    4522:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    4524:	05f8                	.2byte	0x5f8
+    4526:	fe020003          	lb	zero,-32(tp) # ffffffffffffffe0 <_end+0xffffffffefffff98>
+    452a:	fffe00fb          	.4byte	0xfffe00fb
+    452e:	fd03f9fb          	.4byte	0xfd03f9fb
+    4532:	ffff                	.2byte	0xffff
+    4534:	0205                	.2byte	0x205
+    4536:	03fe                	.2byte	0x3fe
+    4538:	0305                	.2byte	0x305
+    453a:	fbff0103          	lb	sp,-65(t5)
+    453e:	f906                	.2byte	0xf906
+    4540:	0204                	.2byte	0x204
+    4542:	0306                	.2byte	0x306
+    4544:	fb00                	vmsge.vx	v22,v0,ra,v0.t
+    4546:	faff                	.2byte	0xfaff
+    4548:	fdff                	.2byte	0xfdff
+    454a:	f8ff                	.2byte	0xf8ff
+    454c:	f8fc                	.2byte	0xf8fc
+    454e:	fff9                	.2byte	0xfff9
+    4550:	06fa                	.2byte	0x6fa
+    4552:	fc04                	.2byte	0xfc04
+    4554:	04f9                	.2byte	0x4f9
+    4556:	0206                	.2byte	0x206
+    4558:	fbfa                	.2byte	0xfbfa
+    455a:	f902                	vmsge.vx	v18,v0,ra,v0.t
+    455c:	fcfc                	.2byte	0xfcfc
+    455e:	0500                	vmsge.vx	v10,v0,zero,v0.t
+    4560:	04fc                	.2byte	0x4fc
+    4562:	0000                	vmsge.vx	v0,v0,zero,v0.t
+    4564:	fd05                	.2byte	0xfd05
+    4566:	0004                	.2byte	0x4
+    4568:	06fe                	.2byte	0x6fe
+    456a:	fcfa                	.2byte	0xfcfa
+    456c:	fb00                	vmsge.vx	v22,v0,ra,v0.t
+    456e:	f9fa                	.2byte	0xf9fa
+    4570:	faff                	.2byte	0xfaff
+    4572:	fdfd                	.2byte	0xfdfd
+    4574:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    4576:	fbfc0403          	lb	s0,-65(s8)
+    457a:	fb06                	.2byte	0xfb06
+    457c:	05fe                	.2byte	0x5fe
+    457e:	0005                	.2byte	0x5
+    4580:	fdf8                	.2byte	0xfdf8
+    4582:	06f8                	.2byte	0x6f8
+    4584:	03ff 05fb fcfb f8fa 	.byte	0xff, 0x03, 0xfb, 0x05, 0xfb, 0xfc, 0xfa, 0xf8, 0xf9, 0xf9
+    458c:	f9f9 
+    458e:	f9fcfa03          	vmsge.vx	v20,v31,s9,v0.t
+    4592:	0201                	vmsge.vx	v4,v0,zero,v0.t
+    4594:	fbf8                	.2byte	0xfbf8
+    4596:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    4598:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    459a:	05fa                	.2byte	0x5fa
+    459c:	05fa                	.2byte	0x5fa
+    459e:	fa05                	.2byte	0xfa05
+    45a0:	fd05                	.2byte	0xfd05
+    45a2:	fafa                	.2byte	0xfafa
+    45a4:	fffd                	.2byte	0xfffd
+    45a6:	fcf8                	.2byte	0xfcf8
+    45a8:	fd02                	vmsge.vx	v26,v0,ra,v0.t
+    45aa:	05fb05fb          	.4byte	0x5fb05fb
+    45ae:	f8fc                	.2byte	0xf8fc
+    45b0:	01f9                	.2byte	0x1f9
+    45b2:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    45b4:	0601                	vmsge.vx	v12,v0,zero,v0.t
+    45b6:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    45b8:	0501                	vmsge.vx	v10,v0,zero,v0.t
+    45ba:	0402                	vmsge.vx	v8,v0,zero,v0.t
+    45bc:	fe04                	.2byte	0xfe04
+    45be:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    45c0:	02fe                	.2byte	0x2fe
+    45c2:	fbff                	.2byte	0xfbff
+    45c4:	06f904fb          	.4byte	0x6f904fb
+    45c8:	01fc                	.2byte	0x1fc
+    45ca:	f801                	vmsge.vx	v16,v0,ra,v0.t
+    45cc:	0602                	vmsge.vx	v12,v0,zero,v0.t
+    45ce:	fff9                	.2byte	0xfff9
+    45d0:	05fcfb03          	vmsge.vx	v22,v31,s9,v0.t
+    45d4:	01f9                	.2byte	0x1f9
+    45d6:	01fc                	.2byte	0x1fc
+    45d8:	03fd                	.2byte	0x3fd
+    45da:	01fc                	.2byte	0x1fc
+    45dc:	0605                	.2byte	0x605
+    45de:	04fd                	.2byte	0x4fd
+    45e0:	00fa                	.2byte	0xfa
+    45e2:	06040203          	lb	tp,96(s0)
+    45e6:	04f8                	.2byte	0x4f8
+    45e8:	f9ff                	.2byte	0xf9ff
+    45ea:	fdfc                	.2byte	0xfdfc
+    45ec:	fefc                	.2byte	0xfefc
+    45ee:	ff000103          	lb	sp,-16(zero) # fffffffffffffff0 <_end+0xffffffffefffffa8>
+    45f2:	f802                	vmsge.vx	v16,v0,ra,v0.t
+    45f4:	06f903fb          	.4byte	0x6f903fb
+    45f8:	f905                	.2byte	0xf905
+    45fa:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    45fc:	fff8                	.2byte	0xfff8
+    45fe:	fbfc                	.2byte	0xfbfc
+    4600:	fb06                	.2byte	0xfb06
+    4602:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    4604:	0302                	vmsge.vx	v6,v0,zero,v0.t
+    4606:	fbff                	.2byte	0xfbff
+    4608:	00ff 03fd f9f9 fbf9 	.byte	0xff, 0x00, 0xfd, 0x03, 0xf9, 0xf9, 0xf9, 0xfb, 0x00, 0xf8
+    4610:	f800 
+    4612:	01fe                	.2byte	0x1fe
+    4614:	06fd                	.2byte	0x6fd
+    4616:	fefe                	.2byte	0xfefe
+    4618:	f8ff                	.2byte	0xf8ff
+    461a:	01fa                	.2byte	0x1fa
+    461c:	0501                	vmsge.vx	v10,v0,zero,v0.t
+    461e:	0205                	.2byte	0x205
+    4620:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    4622:	fafc                	.2byte	0xfafc
+    4624:	06ff 01f8 f803 f9f9 	.byte	0xff, 0x06, 0xf8, 0x01, 0x03, 0xf8, 0xf9, 0xf9, 0xff, 0xfb
+    462c:	fbff 
+    462e:	fc02fcfb          	.4byte	0xfc02fcfb
+    4632:	01fbfc03          	vmsge.vx	v24,v31,s7,v0.t
+    4636:	05ff 00fe 03f8 f8fe 	.byte	0xff, 0x05, 0xfe, 0x00, 0xf8, 0x03, 0xfe, 0xf8, 0xfb, 0x01
+    463e:	01fb 
+    4640:	fffa                	.2byte	0xfffa
+    4642:	0501                	vmsge.vx	v10,v0,zero,v0.t
+    4644:	ff06                	.2byte	0xff06
+    4646:	f9fd                	.2byte	0xf9fd
+    4648:	0106                	.2byte	0x106
+    464a:	0606                	.2byte	0x606
+    464c:	f8f8                	.2byte	0xf8f8
+    464e:	fefa                	.2byte	0xfefa
+    4650:	fe01                	vmsge.vx	v28,v0,ra,v0.t
+    4652:	06ff0103          	lb	sp,111(t5)
+    4656:	fe02f803          	vmsge.vx	v16,v0,t0
+    465a:	0601                	vmsge.vx	v12,v0,zero,v0.t
+    465c:	00ff fcf8 05fb 04ff 	.byte	0xff, 0x00, 0xf8, 0xfc, 0xfb, 0x05, 0xff, 0x04, 0x04, 0x02
+    4664:	0204 
+    4666:	06f8                	.2byte	0x6f8
+    4668:	f800                	vmsge.vx	v16,v0,ra,v0.t
+    466a:	fbfd                	.2byte	0xfbfd
+    466c:	fbff                	.2byte	0xfbff
+    466e:	05f9                	.2byte	0x5f9
+    4670:	fc04                	.2byte	0xfc04
+    4672:	0505                	.2byte	0x505
+    4674:	fafd                	.2byte	0xfafd
+    4676:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    4678:	fbfc                	.2byte	0xfbfc
+    467a:	06f8                	.2byte	0x6f8
+    467c:	fafc0203          	lb	tp,-81(s8)
+    4680:	f8000203          	lb	tp,-128(zero) # ffffffffffffff80 <_end+0xffffffffefffff38>
+    4684:	0102                	vmsge.vx	v2,v0,zero,v0.t
+    4686:	06fc                	.2byte	0x6fc
+    4688:	0306                	.2byte	0x306
+    468a:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    468c:	fd06                	.2byte	0xfd06
+    468e:	04fe                	.2byte	0x4fe
+    4690:	f9fa                	.2byte	0xf9fa
+    4692:	f8f8                	.2byte	0xf8f8
+    4694:	fcfa                	.2byte	0xfcfa
+    4696:	04f8                	.2byte	0x4f8
+    4698:	0100                	vmsge.vx	v2,v0,zero,v0.t
+    469a:	fa00                	vmsge.vx	v20,v0,ra,v0.t
+    469c:	fd02                	vmsge.vx	v26,v0,ra,v0.t
+    469e:	f900                	vmsge.vx	v18,v0,ra,v0.t
+    46a0:	03fa                	.2byte	0x3fa
+    46a2:	01fc                	.2byte	0x1fc
+    46a4:	0001                	vmsge.vx	v0,v0,zero,v0.t
+    46a6:	04fc                	.2byte	0x4fc
+    46a8:	f806                	.2byte	0xf806
+    46aa:	f804                	.2byte	0xf804
+    46ac:	f8fe                	.2byte	0xf8fe
+    46ae:	00fa                	.2byte	0xfa
+    46b0:	03fa                	.2byte	0x3fa
+    46b2:	06f8                	.2byte	0x6f8
+    46b4:	0301                	vmsge.vx	v6,v0,zero,v0.t
+    46b6:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    46b8:	fafc                	.2byte	0xfafc
+    46ba:	0002                	vmsge.vx	v0,v0,zero,v0.t
+    46bc:	f904                	.2byte	0xf904
+    46be:	ff06                	.2byte	0xff06
+    46c0:	01f9                	.2byte	0x1f9
+    46c2:	f8fc                	.2byte	0xf8fc
+    46c4:	05f9                	.2byte	0x5f9
+    46c6:	03f9fdfb          	.4byte	0x3f9fdfb
+    46ca:	00f9                	.2byte	0xf9
+    46cc:	0602                	vmsge.vx	v12,v0,zero,v0.t
+    46ce:	fbfa                	.2byte	0xfbfa
+    46d0:	fafc                	.2byte	0xfafc
+    46d2:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    46d4:	fb02                	vmsge.vx	v22,v0,ra,v0.t
+    46d6:	010504fb          	.4byte	0x10504fb
+    46da:	06fe                	.2byte	0x6fe
+    46dc:	f901                	vmsge.vx	v18,v0,ra,v0.t
+    46de:	fe02                	vmsge.vx	v28,v0,ra,v0.t
+    46e0:	fb04                	.2byte	0xfb04
+    46e2:	fc03fffb          	.4byte	0xfc03fffb
+    46e6:	fa06                	.2byte	0xfa06
+    46e8:	fc06                	.2byte	0xfc06
+    46ea:	fdff                	.2byte	0xfdff
+    46ec:	05fd                	.2byte	0x5fd
+    46ee:	06f8                	.2byte	0x6f8
+    46f0:	03fc                	.2byte	0x3fc
+    46f2:	03fd                	.2byte	0x3fd
+    46f4:	04f8                	.2byte	0x4f8
+    46f6:	0404                	.2byte	0x404
+    46f8:	fc00                	vmsge.vx	v24,v0,ra,v0.t
+    46fa:	fffa0203          	lb	tp,-1(s4)
+    46fe:	0405                	.2byte	0x405
+    4700:	fd04                	.2byte	0xfd04
+    4702:	05f9                	.2byte	0x5f9
+    4704:	05040203          	lb	tp,80(s0)
+    4708:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    470a:	0105fefb          	.4byte	0x105fefb
+    470e:	fcfa                	.2byte	0xfcfa
+    4710:	01fe0603          	lb	a2,31(t3)
+    4714:	0406                	.2byte	0x406
+    4716:	faf9                	.2byte	0xfaf9
+    4718:	f9fe                	.2byte	0xf9fe
+    471a:	f900                	vmsge.vx	v18,v0,ra,v0.t
+    471c:	fcfd                	.2byte	0xfcfd
+    471e:	fcfc                	.2byte	0xfcfc
+    4720:	f801                	vmsge.vx	v16,v0,ra,v0.t
+    4722:	01fe                	.2byte	0x1fe
+    4724:	fef9                	.2byte	0xfef9
+    4726:	01fa                	.2byte	0x1fa
+    4728:	0104                	.2byte	0x104
+    472a:	00f90203          	lb	tp,15(s2)
+    472e:	ff02                	vmsge.vx	v30,v0,ra,v0.t
+    4730:	0501f803          	vmsge.vx	v16,v16,gp,v0.t
+    4734:	0001                	vmsge.vx	v0,v0,zero,v0.t
+    4736:	06fa                	.2byte	0x6fa
+    4738:	fef9                	.2byte	0xfef9
+    473a:	fdf8                	.2byte	0xfdf8
+    473c:	0200fc03          	vmsge.vx	v24,v0,ra
+    4740:	fd01                	vmsge.vx	v26,v0,ra,v0.t
+    4742:	02fd                	.2byte	0x2fd
+    4744:	fa04                	.2byte	0xfa04
+    4746:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    4748:	f9f9                	.2byte	0xf9f9
+    474a:	ff00                	vmsge.vx	v30,v0,ra,v0.t
+    474c:	f904                	.2byte	0xf904
+    474e:	fd00                	vmsge.vx	v26,v0,ra,v0.t
+    4750:	f8fbfe03          	vmsge.vx	v28,v15,s7,v0.t
+    4754:	0305                	.2byte	0x305
+    4756:	05fc                	.2byte	0x5fc
+    4758:	0004fb03          	vmsge.vx	v22,v0,s1,v0.t
+    475c:	fbfd                	.2byte	0xfbfd
+    475e:	fd01                	vmsge.vx	v26,v0,ra,v0.t
+    4760:	0406                	.2byte	0x406
+    4762:	fbf8                	.2byte	0xfbf8
+    4764:	fb01                	vmsge.vx	v22,v0,ra,v0.t
+    4766:	03fa                	.2byte	0x3fa
+    4768:	fef9                	.2byte	0xfef9
+    476a:	0100                	vmsge.vx	v2,v0,zero,v0.t
+    476c:	03fc                	.2byte	0x3fc
+    476e:	05f8                	.2byte	0x5f8
+    4770:	fe02                	vmsge.vx	v28,v0,ra,v0.t
+    4772:	0100                	vmsge.vx	v2,v0,zero,v0.t
+    4774:	fbfe                	.2byte	0xfbfe
+    4776:	fe06                	.2byte	0xfe06
+    4778:	fffc01fb          	.4byte	0xfffc01fb
+    477c:	0104                	.2byte	0x104
+    477e:	f9fc                	.2byte	0xf9fc
+    4780:	f804                	.2byte	0xf804
+    4782:	00fe                	.2byte	0xfe
+    4784:	fe06f9fb          	.4byte	0xfe06f9fb
+    4788:	fa00                	vmsge.vx	v20,v0,ra,v0.t
+    478a:	0402                	vmsge.vx	v8,v0,zero,v0.t
+    478c:	fef9                	.2byte	0xfef9
+    478e:	0400                	vmsge.vx	v8,v0,zero,v0.t
+    4790:	ff01                	vmsge.vx	v30,v0,ra,v0.t
+    4792:	0005                	.2byte	0x5
+    4794:	0400f903          	vmsge.vx	v18,v0,ra,v0.t
+    4798:	04f9                	.2byte	0x4f9
+    479a:	f900                	vmsge.vx	v18,v0,ra,v0.t
+    479c:	0300                	vmsge.vx	v6,v0,zero,v0.t
+    479e:	fdf9                	.2byte	0xfdf9
+    47a0:	03030103          	lb	sp,48(t1)
+    47a4:	f9fb0603          	lb	a2,-97(s6)
+    47a8:	faf9                	.2byte	0xfaf9
+    47aa:	05f8                	.2byte	0x5f8
+    47ac:	01ff 0503 0201 fe03 	.byte	0xff, 0x01, 0x03, 0x05, 0x01, 0x02, 0x03, 0xfe, 0xfb, 0x01
+    47b4:	01fb 
+    47b6:	ffff                	.2byte	0xffff
+    47b8:	fc04                	.2byte	0xfc04
+    47ba:	fc06                	.2byte	0xfc06
+    47bc:	fd05                	.2byte	0xfd05
+    47be:	05fe                	.2byte	0x5fe
+    47c0:	fbfe                	.2byte	0xfbfe
+    47c2:	0000                	vmsge.vx	v0,v0,zero,v0.t
+    47c4:	fff9                	.2byte	0xfff9
+    47c6:	ffff                	.2byte	0xffff
+    47c8:	fc01                	vmsge.vx	v24,v0,ra,v0.t
+    47ca:	fb00                	vmsge.vx	v22,v0,ra,v0.t
+    47cc:	fd05                	.2byte	0xfd05
+    47ce:	fefa                	.2byte	0xfefa
+    47d0:	05ff f800 f801 fbfe 	.byte	0xff, 0x05, 0x00, 0xf8, 0x01, 0xf8, 0xfe, 0xfb, 0xf9, 0xfa
+    47d8:	faf9 
+    47da:	f802                	vmsge.vx	v16,v0,ra,v0.t
+    47dc:	04fe                	.2byte	0x4fe
+    47de:	01ff 00f8 fb03 fbff 	.byte	0xff, 0x01, 0xf8, 0x00, 0x03, 0xfb, 0xff, 0xfb, 0x01, 0xfc
+    47e6:	fc01 
+    47e8:	fe06                	.2byte	0xfe06
+    47ea:	03fd                	.2byte	0x3fd
+    47ec:	fdf9                	.2byte	0xfdf9
+    47ee:	fa00                	vmsge.vx	v20,v0,ra,v0.t
+    47f0:	fd02fb03          	vmsge.vx	v22,v16,t0,v0.t
+    47f4:	fef9                	.2byte	0xfef9
+    47f6:	06fe                	.2byte	0x6fe
+    47f8:	01f8                	.2byte	0x1f8
+    47fa:	fcf8                	.2byte	0xfcf8
+    47fc:	0205                	.2byte	0x205
+    47fe:	03 04             	Address 0x47fe is out of bounds.
+
+
+Disassembly of section .sdata:
+
+0000000000004800 <__global_pointer$-0x800>:
+    4800:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    4802:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    4804:	0101                	vmsge.vx	v2,v0,zero,v0.t
+    4806:	0101                	vmsge.vx	v2,v0,zero,v0.t
+
+Disassembly of section .bss:
+
+0000000000004808 <resultArray>:
+	...
+
+0000000000004c08 <answerArray>:
+	...
+
+Disassembly of section .tohost:
+
+0000000010000000 <tohost>:
+	...
+
+0000000010000040 <fromhost>:
+	...
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347          	.4byte	0x3a434347
+   4:	2820                	vmsge.vx	v16,v0,zero,v0.t
+   6:	65653267          	.4byte	0x65653267
+   a:	6535                	.2byte	0x6535
+   c:	3334                	.2byte	0x3334
+   e:	3030                	.2byte	0x3030
+  10:	3831                	.2byte	0x3831
+  12:	2029                	.2byte	0x2029
+  14:	3231                	.2byte	0x3231
+  16:	322e                	.2byte	0x322e
+  18:	302e                	.2byte	0x302e
+	...
+
+Disassembly of section .riscv.attributes:
+
+0000000000000000 <.riscv.attributes>:
+   0:	5e41                	vmsge.vx	v28,v0,zero,v0.t
+   2:	0000                	vmsge.vx	v0,v0,zero,v0.t
+   4:	7200                	vmsge.vx	v4,v0,zero,v0.t
+   6:	7369                	.2byte	0x7369
+   8:	01007663          	bgeu	zero,a6,14 <_start+0x14>
+   c:	0054                	.2byte	0x54
+   e:	0000                	vmsge.vx	v0,v0,zero,v0.t
+  10:	1004                	.2byte	0x1004
+  12:	7205                	.2byte	0x7205
+  14:	3676                	.2byte	0x3676
+  16:	6934                	.2byte	0x6934
+  18:	7032                	.2byte	0x7032
+  1a:	5f31                	.2byte	0x5f31
+  1c:	326d                	.2byte	0x326d
+  1e:	3070                	.2byte	0x3070
+  20:	7a5f 6369 7273      	.byte	0x5f, 0x7a, 0x69, 0x63, 0x73, 0x72
+  26:	7032                	.2byte	0x7032
+  28:	5f30                	.2byte	0x5f30
+  2a:	6d7a                	.2byte	0x6d7a
+  2c:	756d                	.2byte	0x756d
+  2e:	316c                	.2byte	0x316c
+  30:	3070                	.2byte	0x3070
+  32:	7a5f 6576 3233      	.byte	0x5f, 0x7a, 0x76, 0x65, 0x33, 0x32
+  38:	3178                	.2byte	0x3178
+  3a:	3070                	.2byte	0x3070
+  3c:	7a5f 6576 3436      	.byte	0x5f, 0x7a, 0x76, 0x65, 0x36, 0x34
+  42:	3178                	.2byte	0x3178
+  44:	3070                	.2byte	0x3070
+  46:	7a5f 6c76 3233      	.byte	0x5f, 0x7a, 0x76, 0x6c, 0x33, 0x32
+  4c:	3162                	vmsge.vx	v2,v0,zero,v0.t
+  4e:	3070                	.2byte	0x3070
+  50:	7a5f 6c76 3436      	.byte	0x5f, 0x7a, 0x76, 0x6c, 0x36, 0x34
+  56:	3162                	vmsge.vx	v2,v0,zero,v0.t
+  58:	3070                	.2byte	0x3070
+  5a:	0800                	vmsge.vx	v16,v0,zero,v0.t
+  5c:	0a01                	vmsge.vx	v20,v0,zero,v0.t
+  5e:	0b              	Address 0x5e is out of bounds.
+

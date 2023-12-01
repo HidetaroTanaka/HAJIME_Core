@@ -32,7 +32,7 @@ module top(
     wire io_icache_axi4lite_r_valid;
     wire [31:0] io_icache_axi4lite_r_bits_data;
     wire [2:0] io_icache_axi4lite_r_bits_resp;
-    wire io_icache_axi4lite_w_ready;
+    // wire io_icache_axi4lite_w_ready;
     wire io_dcache_axi4lite_ar_ready;
     wire io_dcache_axi4lite_aw_ready;
     wire io_dcache_axi4lite_b_valid;
@@ -41,8 +41,8 @@ module top(
     wire  [63:0] io_dcache_axi4lite_r_bits_data;
     wire  [2:0]  io_dcache_axi4lite_r_bits_resp;
     wire         io_dcache_axi4lite_w_ready;
-    wire  [63:0] io_reset_vector;
-    wire io_hartid;
+    // wire  [63:0] io_reset_vector;
+    // wire io_hartid;
     wire        io_icache_axi4lite_ar_valid;
     wire [63:0] io_icache_axi4lite_ar_bits_addr;
     wire [2:0]  io_icache_axi4lite_ar_bits_prot;
@@ -78,7 +78,7 @@ module top(
       .io_icache_axi4lite_r_valid(io_icache_axi4lite_r_valid),
       .io_icache_axi4lite_r_bits_data(io_icache_axi4lite_r_bits_data),
       .io_icache_axi4lite_r_bits_resp(io_icache_axi4lite_r_bits_resp),
-      .io_icache_axi4lite_w_ready(io_icache_axi4lite_w_ready),
+      .io_icache_axi4lite_w_ready(),
       .io_dcache_axi4lite_ar_ready(io_dcache_axi4lite_ar_ready),
       .io_dcache_axi4lite_aw_ready(io_dcache_axi4lite_aw_ready),
       .io_dcache_axi4lite_b_valid(io_dcache_axi4lite_b_valid),

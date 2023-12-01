@@ -22,8 +22,8 @@ void clearCounters(void) {
 }
 
 void getCounters(unsigned long* instret, unsigned long* cycle) {
-  asm volatile("rdinstret %0":"=r" (&instret));
-  asm volatile("rdcycle %0":"=r" (&cycle));
+  asm volatile("rdinstret %0":"=r" (*instret));
+  asm volatile("rdcycle %0":"=r" (*cycle));
   return;
 }
 
