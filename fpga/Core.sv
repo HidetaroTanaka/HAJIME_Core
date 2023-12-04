@@ -1846,11 +1846,7 @@ module VectorLdstUnit(
   input  [2:0]  io_signalIn_bits_vector_scalarDecode_csr_funct,
   input         io_signalIn_bits_vector_scalarDecode_fence,
                 io_signalIn_bits_vector_scalarDecode_vector,
-                io_signalIn_bits_vector_vecConf_vtype_vill,
-                io_signalIn_bits_vector_vecConf_vtype_vma,
-                io_signalIn_bits_vector_vecConf_vtype_vta,
   input  [2:0]  io_signalIn_bits_vector_vecConf_vtype_vsew,
-                io_signalIn_bits_vector_vecConf_vtype_vlmul,
   input  [5:0]  io_signalIn_bits_vector_vecConf_vl,
   input  [63:0] io_signalIn_bits_vector_pc_addr,
                 io_readVrf_resp_vs2Out,
@@ -1891,12 +1887,6 @@ module VectorLdstUnit(
   output [2:0]  io_toExWbReg_bits_ctrlSignals_decode_csr_funct,
   output        io_toExWbReg_bits_ctrlSignals_decode_fence,
   output [4:0]  io_toExWbReg_bits_ctrlSignals_rd_index,
-  output        io_toExWbReg_bits_vectorCsrPorts_vtype_vill,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vma,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vta,
-  output [2:0]  io_toExWbReg_bits_vectorCsrPorts_vtype_vsew,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul,
-  output [5:0]  io_toExWbReg_bits_vectorCsrPorts_vl,
   output        io_toExWbReg_bits_vectorExecNum_valid,
   output [4:0]  io_toExWbReg_bits_vectorExecNum_bits
 );
@@ -1919,11 +1909,7 @@ module VectorLdstUnit(
   reg  [2:0]       vectorReqReg_scalarDecode_csr_funct;
   reg              vectorReqReg_scalarDecode_fence;
   reg              vectorReqReg_scalarDecode_vector;
-  reg              vectorReqReg_vecConf_vtype_vill;
-  reg              vectorReqReg_vecConf_vtype_vma;
-  reg              vectorReqReg_vecConf_vtype_vta;
   reg  [2:0]       vectorReqReg_vecConf_vtype_vsew;
-  reg  [2:0]       vectorReqReg_vecConf_vtype_vlmul;
   reg  [5:0]       vectorReqReg_vecConf_vl;
   reg  [63:0]      vectorReqReg_pc_addr;
   reg              hasVectorInst;
@@ -2070,11 +2056,7 @@ module VectorLdstUnit(
         io_signalIn_bits_vector_scalarDecode_csr_funct;
       vectorReqReg_scalarDecode_fence <= io_signalIn_bits_vector_scalarDecode_fence;
       vectorReqReg_scalarDecode_vector <= io_signalIn_bits_vector_scalarDecode_vector;
-      vectorReqReg_vecConf_vtype_vill <= io_signalIn_bits_vector_vecConf_vtype_vill;
-      vectorReqReg_vecConf_vtype_vma <= io_signalIn_bits_vector_vecConf_vtype_vma;
-      vectorReqReg_vecConf_vtype_vta <= io_signalIn_bits_vector_vecConf_vtype_vta;
       vectorReqReg_vecConf_vtype_vsew <= io_signalIn_bits_vector_vecConf_vtype_vsew;
-      vectorReqReg_vecConf_vtype_vlmul <= io_signalIn_bits_vector_vecConf_vtype_vlmul;
       vectorReqReg_vecConf_vl <= io_signalIn_bits_vector_vecConf_vl;
       vectorReqReg_pc_addr <= io_signalIn_bits_vector_pc_addr;
     end
@@ -2137,12 +2119,6 @@ module VectorLdstUnit(
     vectorReqReg_scalarDecode_csr_funct;
   assign io_toExWbReg_bits_ctrlSignals_decode_fence = vectorReqReg_scalarDecode_fence;
   assign io_toExWbReg_bits_ctrlSignals_rd_index = scalarReqReg_bits_rdIndex;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vill = vectorReqReg_vecConf_vtype_vill;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vma = vectorReqReg_vecConf_vtype_vma;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vta = vectorReqReg_vecConf_vtype_vta;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vsew = vectorReqReg_vecConf_vtype_vsew;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul = vectorReqReg_vecConf_vtype_vlmul;
-  assign io_toExWbReg_bits_vectorCsrPorts_vl = vectorReqReg_vecConf_vl;
   assign io_toExWbReg_bits_vectorExecNum_valid =
     _io_toExWbReg_valid_output & vectorReqReg_scalarDecode_vector
     & (vectorReqReg_scalarDecode_memory_function == 2'h1
@@ -9771,11 +9747,7 @@ module IntegerAluExecUnit(
   input  [1:0]  io_signalIn_bits_scalarDecode_memory_function,
   input  [2:0]  io_signalIn_bits_scalarDecode_csr_funct,
   input         io_signalIn_bits_scalarDecode_fence,
-                io_signalIn_bits_vecConf_vtype_vill,
-                io_signalIn_bits_vecConf_vtype_vma,
-                io_signalIn_bits_vecConf_vtype_vta,
   input  [2:0]  io_signalIn_bits_vecConf_vtype_vsew,
-                io_signalIn_bits_vecConf_vtype_vlmul,
   input  [5:0]  io_signalIn_bits_vecConf_vl,
   input  [63:0] io_signalIn_bits_pc_addr,
                 io_readVrf_resp_vs1Out,
@@ -9806,12 +9778,6 @@ module IntegerAluExecUnit(
   output [2:0]  io_toExWbReg_bits_ctrlSignals_decode_csr_funct,
   output        io_toExWbReg_bits_ctrlSignals_decode_fence,
   output [4:0]  io_toExWbReg_bits_ctrlSignals_rd_index,
-  output        io_toExWbReg_bits_vectorCsrPorts_vtype_vill,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vma,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vta,
-  output [2:0]  io_toExWbReg_bits_vectorCsrPorts_vtype_vsew,
-                io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul,
-  output [5:0]  io_toExWbReg_bits_vectorCsrPorts_vl,
   output        io_toExWbReg_bits_vectorExecNum_valid,
   output [4:0]  io_toExWbReg_bits_vectorExecNum_bits
 );
@@ -9835,16 +9801,22 @@ module IntegerAluExecUnit(
   reg  [1:0]        instInfoReg_bits_scalarDecode_memory_function;
   reg  [2:0]        instInfoReg_bits_scalarDecode_csr_funct;
   reg               instInfoReg_bits_scalarDecode_fence;
-  reg               instInfoReg_bits_vecConf_vtype_vill;
-  reg               instInfoReg_bits_vecConf_vtype_vma;
-  reg               instInfoReg_bits_vecConf_vtype_vta;
   reg  [2:0]        instInfoReg_bits_vecConf_vtype_vsew;
-  reg  [2:0]        instInfoReg_bits_vecConf_vtype_vlmul;
   reg  [5:0]        instInfoReg_bits_vecConf_vl;
   reg  [63:0]       instInfoReg_bits_pc_addr;
   reg  [4:0]        idx;
   reg  [63:0]       reductionAccumulator;
   reg  [4:0]        executedNum;
+  `ifndef SYNTHESIS
+    always @(posedge clock) begin
+      if (~reset & instInfoReg_valid & instInfoReg_bits_vecConf_vl == 6'h0) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: Zero vl instruction in VectorExecUnit\n    at VectorExecUnit.scala:74 assert(!(instInfoReg.valid && instInfoReg.bits.vecConf.vl === 0.U), \"Zero vl instruction in VectorExecUnit\")\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+    end // always @(posedge)
+  `endif // not def SYNTHESIS
   wire [4:0]        _GEN = {3'h0, idx[4:3]};
   wire [63:0]       execValue1 =
     instInfoReg_bits_vectorDecode_vSource == 3'h0
@@ -10106,15 +10078,15 @@ module IntegerAluExecUnit(
         | instInfoReg_bits_vectorDecode_veuFun == 6'h1E
         | instInfoReg_bits_vectorDecode_veuFun == 6'h1F
         | instInfoReg_bits_vectorDecode_veuFun == 6'h20;
-  wire              _T_27 = instInfoReg_bits_vectorDecode_veuFun == 6'h31;
-  wire              _T_29 = instInfoReg_bits_vectorDecode_veuFun == 6'h32;
-  wire              _GEN_12 = instInfoReg_valid & (_T_27 | _T_29);
+  wire              _T_33 = instInfoReg_bits_vectorDecode_veuFun == 6'h31;
+  wire              _T_35 = instInfoReg_bits_vectorDecode_veuFun == 6'h32;
+  wire              _GEN_12 = instInfoReg_valid & (_T_33 | _T_35);
   assign _io_dataOut_toVRF_valid_output = _GEN_12 | instInfoReg_valid;
   assign _io_dataOut_toVRF_bits_last_output =
     _GEN_12 | {1'h0, idx} == instInfoReg_bits_vecConf_vl - 6'h1 & instInfoReg_valid;
   assign _io_dataOut_toVRF_bits_writeReq_output =
     instInfoReg_valid
-      ? ~_T_27 & (_T_29 | _io_dataOut_toVRF_bits_writeReq_T_63)
+      ? ~_T_33 & (_T_35 | _io_dataOut_toVRF_bits_writeReq_T_63)
       : _io_dataOut_toVRF_bits_writeReq_T_63;
   wire              _GEN_13 = _GEN_12 | _io_dataOut_toVRF_bits_last_output;
   always @(posedge clock) begin
@@ -10156,11 +10128,7 @@ module IntegerAluExecUnit(
         io_signalIn_bits_scalarDecode_memory_function;
       instInfoReg_bits_scalarDecode_csr_funct <= io_signalIn_bits_scalarDecode_csr_funct;
       instInfoReg_bits_scalarDecode_fence <= io_signalIn_bits_scalarDecode_fence;
-      instInfoReg_bits_vecConf_vtype_vill <= io_signalIn_bits_vecConf_vtype_vill;
-      instInfoReg_bits_vecConf_vtype_vma <= io_signalIn_bits_vecConf_vtype_vma;
-      instInfoReg_bits_vecConf_vtype_vta <= io_signalIn_bits_vecConf_vtype_vta;
       instInfoReg_bits_vecConf_vtype_vsew <= io_signalIn_bits_vecConf_vtype_vsew;
-      instInfoReg_bits_vecConf_vtype_vlmul <= io_signalIn_bits_vecConf_vtype_vlmul;
       instInfoReg_bits_vecConf_vl <= io_signalIn_bits_vecConf_vl;
       instInfoReg_bits_pc_addr <= io_signalIn_bits_pc_addr;
     end
@@ -10249,7 +10217,7 @@ module IntegerAluExecUnit(
           : idx;
   assign io_dataOut_toVRF_bits_last = _io_dataOut_toVRF_bits_last_output;
   assign io_dataOut_toVRF_bits_data =
-    ~instInfoReg_valid | _T_27 | ~_T_29
+    ~instInfoReg_valid | _T_33 | ~_T_35
       ? (instInfoReg_bits_vectorDecode_veuFun == 6'h8
          | instInfoReg_bits_vectorDecode_veuFun == 6'h9
          | instInfoReg_bits_vectorDecode_veuFun == 6'hA
@@ -10304,16 +10272,7 @@ module IntegerAluExecUnit(
     instInfoReg_bits_scalarDecode_csr_funct;
   assign io_toExWbReg_bits_ctrlSignals_decode_fence = instInfoReg_bits_scalarDecode_fence;
   assign io_toExWbReg_bits_ctrlSignals_rd_index =
-    instInfoReg_valid & _T_27 ? instInfoReg_bits_vd : 5'h0;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vill =
-    instInfoReg_bits_vecConf_vtype_vill;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vma = instInfoReg_bits_vecConf_vtype_vma;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vta = instInfoReg_bits_vecConf_vtype_vta;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vsew =
-    instInfoReg_bits_vecConf_vtype_vsew;
-  assign io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul =
-    instInfoReg_bits_vecConf_vtype_vlmul;
-  assign io_toExWbReg_bits_vectorCsrPorts_vl = instInfoReg_bits_vecConf_vl;
+    instInfoReg_valid & _T_33 ? instInfoReg_bits_vd : 5'h0;
   assign io_toExWbReg_bits_vectorExecNum_valid = _GEN_13;
   assign io_toExWbReg_bits_vectorExecNum_bits =
     _GEN_12
@@ -10388,12 +10347,6 @@ module VectorCpu(
   wire [2:0]       _vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_decode_csr_funct;
   wire             _vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_decode_fence;
   wire [4:0]       _vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_rd_index;
-  wire             _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-  wire             _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-  wire             _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-  wire [2:0]       _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-  wire [2:0]       _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-  wire [5:0]       _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vl;
   wire             _vecAluExecUnit_1_io_toExWbReg_bits_vectorExecNum_valid;
   wire [4:0]       _vecAluExecUnit_1_io_toExWbReg_bits_vectorExecNum_bits;
   wire             _vecAluExecUnit_0_io_signalIn_ready;
@@ -10421,12 +10374,6 @@ module VectorCpu(
   wire [2:0]       _vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_decode_csr_funct;
   wire             _vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_decode_fence;
   wire [4:0]       _vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_rd_index;
-  wire             _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-  wire             _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-  wire             _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-  wire [2:0]       _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-  wire [2:0]       _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-  wire [5:0]       _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vl;
   wire             _vecAluExecUnit_0_io_toExWbReg_bits_vectorExecNum_valid;
   wire [4:0]       _vecAluExecUnit_0_io_toExWbReg_bits_vectorExecNum_bits;
   wire             _vrfReadyTable_io_vs1Check_ready;
@@ -10484,12 +10431,6 @@ module VectorCpu(
   wire [2:0]       _vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_decode_csr_funct;
   wire             _vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_decode_fence;
   wire [4:0]       _vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_rd_index;
-  wire             _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-  wire             _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-  wire             _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-  wire [2:0]       _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-  wire [2:0]       _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-  wire [5:0]       _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vl;
   wire             _vectorLdstUnit_io_toExWbReg_bits_vectorExecNum_valid;
   wire [4:0]       _vectorLdstUnit_io_toExWbReg_bits_vectorExecNum_bits;
   wire             _bypassingUnit_io_ID_out_rs1_value_valid;
@@ -10607,26 +10548,10 @@ module VectorCpu(
       ? ~_bypassingUnit_io_EX_in_bits_rd_valid_T_31
       : _bypassingUnit_io_ID_out_rs2_bypassMatchAtWB
         & ~_bypassingUnit_io_WB_in_bits_rd_valid_T_4;
-  wire             vecConfBypass_vtype_vill =
-    _vecCtrlUnit_io_resp_valid
-      ? _vecCtrlUnit_io_resp_bits_vtype_vill
-      : EX_WB_REG_bits_vectorCsrPorts_vtype_vill;
-  wire             vecConfBypass_vtype_vma =
-    _vecCtrlUnit_io_resp_valid
-      ? _vecCtrlUnit_io_resp_bits_vtype_vma
-      : EX_WB_REG_bits_vectorCsrPorts_vtype_vma;
-  wire             vecConfBypass_vtype_vta =
-    _vecCtrlUnit_io_resp_valid
-      ? _vecCtrlUnit_io_resp_bits_vtype_vta
-      : EX_WB_REG_bits_vectorCsrPorts_vtype_vta;
   wire [2:0]       vecConfBypass_vtype_vsew =
     _vecCtrlUnit_io_resp_valid
       ? _vecCtrlUnit_io_resp_bits_vtype_vsew
       : EX_WB_REG_bits_vectorCsrPorts_vtype_vsew;
-  wire [2:0]       vecConfBypass_vtype_vlmul =
-    _vecCtrlUnit_io_resp_valid
-      ? _vecCtrlUnit_io_resp_bits_vtype_vlmul
-      : EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul;
   wire [5:0]       vecConfBypass_vl =
     _vecCtrlUnit_io_resp_valid
       ? _vecCtrlUnit_io_resp_bits_vl
@@ -10853,18 +10778,6 @@ module VectorCpu(
         _vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_decode_fence;
       EX_WB_REG_bits_ctrlSignals_rd_index <=
         _vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_rd_index;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vill <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vma <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vta <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vsew <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-      EX_WB_REG_bits_vectorCsrPorts_vl <=
-        _vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vl;
       EX_WB_REG_bits_vectorExecNum_valid <=
         _vectorLdstUnit_io_toExWbReg_bits_vectorExecNum_valid;
       EX_WB_REG_bits_vectorExecNum_bits <=
@@ -10887,18 +10800,6 @@ module VectorCpu(
         _vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_decode_fence;
       EX_WB_REG_bits_ctrlSignals_rd_index <=
         _vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_rd_index;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vill <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vma <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vta <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vsew <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-      EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-      EX_WB_REG_bits_vectorCsrPorts_vl <=
-        _vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vl;
       EX_WB_REG_bits_vectorExecNum_valid <=
         _vecAluExecUnit_1_io_toExWbReg_bits_vectorExecNum_valid;
       EX_WB_REG_bits_vectorExecNum_bits <=
@@ -10922,18 +10823,6 @@ module VectorCpu(
           _vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_decode_fence;
         EX_WB_REG_bits_ctrlSignals_rd_index <=
           _vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_rd_index;
-        EX_WB_REG_bits_vectorCsrPorts_vtype_vill <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vill;
-        EX_WB_REG_bits_vectorCsrPorts_vtype_vma <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vma;
-        EX_WB_REG_bits_vectorCsrPorts_vtype_vta <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vta;
-        EX_WB_REG_bits_vectorCsrPorts_vtype_vsew <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew;
-        EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul;
-        EX_WB_REG_bits_vectorCsrPorts_vl <=
-          _vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vl;
         EX_WB_REG_bits_vectorExecNum_bits <=
           _vecAluExecUnit_0_io_toExWbReg_bits_vectorExecNum_bits;
       end
@@ -10965,17 +10854,6 @@ module VectorCpu(
         EX_WB_REG_bits_ctrlSignals_decode_fence <=
           ID_EX_REG_bits_ctrlSignals_decode_fence;
         EX_WB_REG_bits_ctrlSignals_rd_index <= ID_EX_REG_bits_ctrlSignals_rd_index;
-        if (_vecCtrlUnit_io_resp_valid) begin
-          EX_WB_REG_bits_vectorCsrPorts_vtype_vill <=
-            _vecCtrlUnit_io_resp_bits_vtype_vill;
-          EX_WB_REG_bits_vectorCsrPorts_vtype_vma <= _vecCtrlUnit_io_resp_bits_vtype_vma;
-          EX_WB_REG_bits_vectorCsrPorts_vtype_vta <= _vecCtrlUnit_io_resp_bits_vtype_vta;
-          EX_WB_REG_bits_vectorCsrPorts_vtype_vsew <=
-            _vecCtrlUnit_io_resp_bits_vtype_vsew;
-          EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul <=
-            _vecCtrlUnit_io_resp_bits_vtype_vlmul;
-          EX_WB_REG_bits_vectorCsrPorts_vl <= _vecCtrlUnit_io_resp_bits_vl;
-        end
         EX_WB_REG_bits_vectorExecNum_bits <= 5'h0;
       end
       EX_WB_REG_bits_vectorExecNum_valid <=
@@ -11001,6 +10879,16 @@ module VectorCpu(
       EX_WB_REG_bits_exceptionSignals_bits <= 64'h0;
     else
       EX_WB_REG_bits_exceptionSignals_bits <= ID_EX_REG_bits_exceptionSignals_bits;
+    if (_GEN_2 | ~_vecCtrlUnit_io_resp_valid) begin
+    end
+    else begin
+      EX_WB_REG_bits_vectorCsrPorts_vtype_vill <= _vecCtrlUnit_io_resp_bits_vtype_vill;
+      EX_WB_REG_bits_vectorCsrPorts_vtype_vma <= _vecCtrlUnit_io_resp_bits_vtype_vma;
+      EX_WB_REG_bits_vectorCsrPorts_vtype_vta <= _vecCtrlUnit_io_resp_bits_vtype_vta;
+      EX_WB_REG_bits_vectorCsrPorts_vtype_vsew <= _vecCtrlUnit_io_resp_bits_vtype_vsew;
+      EX_WB_REG_bits_vectorCsrPorts_vtype_vlmul <= _vecCtrlUnit_io_resp_bits_vtype_vlmul;
+      EX_WB_REG_bits_vectorCsrPorts_vl <= _vecCtrlUnit_io_resp_bits_vl;
+    end
   end // always @(posedge)
   Decoder decoder (
     .io_inst_bits                   (io_frontend_resp_bits_inst_bits),
@@ -11172,18 +11060,8 @@ module VectorCpu(
     .io_signalIn_bits_vector_scalarDecode_fence              (_decoder_io_out_bits_fence),
     .io_signalIn_bits_vector_scalarDecode_vector
       (_decoder_io_out_bits_vector),
-    .io_signalIn_bits_vector_vecConf_vtype_vill
-      (_T_25 & vecConfBypass_vtype_vill),
-    .io_signalIn_bits_vector_vecConf_vtype_vma
-      (_T_25 & vecConfBypass_vtype_vma),
-    .io_signalIn_bits_vector_vecConf_vtype_vta
-      (_T_25 & vecConfBypass_vtype_vta),
-    .io_signalIn_bits_vector_vecConf_vtype_vsew
-      (_T_25 ? vecConfBypass_vtype_vsew : 3'h0),
-    .io_signalIn_bits_vector_vecConf_vtype_vlmul
-      (_T_25 ? vecConfBypass_vtype_vlmul : 3'h0),
-    .io_signalIn_bits_vector_vecConf_vl
-      (_T_25 ? vecConfBypass_vl : 6'h0),
+    .io_signalIn_bits_vector_vecConf_vtype_vsew              (vecConfBypass_vtype_vsew),
+    .io_signalIn_bits_vector_vecConf_vl                      (vecConfBypass_vl),
     .io_signalIn_bits_vector_pc_addr
       (io_frontend_resp_bits_pc_addr),
     .io_readVrf_resp_vs2Out
@@ -11258,18 +11136,6 @@ module VectorCpu(
       (_vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_decode_fence),
     .io_toExWbReg_bits_ctrlSignals_rd_index
       (_vectorLdstUnit_io_toExWbReg_bits_ctrlSignals_rd_index),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vill
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vill),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vma
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vma),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vta
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vta),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vsew
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul),
-    .io_toExWbReg_bits_vectorCsrPorts_vl
-      (_vectorLdstUnit_io_toExWbReg_bits_vectorCsrPorts_vl),
     .io_toExWbReg_bits_vectorExecNum_valid
       (_vectorLdstUnit_io_toExWbReg_bits_vectorExecNum_valid),
     .io_toExWbReg_bits_vectorExecNum_bits
@@ -11501,11 +11367,7 @@ module VectorCpu(
     .io_signalIn_bits_scalarDecode_csr_funct
       (_decoder_io_out_bits_csr_funct),
     .io_signalIn_bits_scalarDecode_fence                     (_decoder_io_out_bits_fence),
-    .io_signalIn_bits_vecConf_vtype_vill                     (vecConfBypass_vtype_vill),
-    .io_signalIn_bits_vecConf_vtype_vma                      (vecConfBypass_vtype_vma),
-    .io_signalIn_bits_vecConf_vtype_vta                      (vecConfBypass_vtype_vta),
     .io_signalIn_bits_vecConf_vtype_vsew                     (vecConfBypass_vtype_vsew),
-    .io_signalIn_bits_vecConf_vtype_vlmul                    (vecConfBypass_vtype_vlmul),
     .io_signalIn_bits_vecConf_vl                             (vecConfBypass_vl),
     .io_signalIn_bits_pc_addr
       (io_frontend_resp_bits_pc_addr),
@@ -11565,18 +11427,6 @@ module VectorCpu(
       (_vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_decode_fence),
     .io_toExWbReg_bits_ctrlSignals_rd_index
       (_vecAluExecUnit_0_io_toExWbReg_bits_ctrlSignals_rd_index),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vill
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vill),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vma
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vma),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vta
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vta),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vsew
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul),
-    .io_toExWbReg_bits_vectorCsrPorts_vl
-      (_vecAluExecUnit_0_io_toExWbReg_bits_vectorCsrPorts_vl),
     .io_toExWbReg_bits_vectorExecNum_valid
       (_vecAluExecUnit_0_io_toExWbReg_bits_vectorExecNum_valid),
     .io_toExWbReg_bits_vectorExecNum_bits
@@ -11611,11 +11461,7 @@ module VectorCpu(
     .io_signalIn_bits_scalarDecode_csr_funct
       (_decoder_io_out_bits_csr_funct),
     .io_signalIn_bits_scalarDecode_fence                     (_decoder_io_out_bits_fence),
-    .io_signalIn_bits_vecConf_vtype_vill                     (vecConfBypass_vtype_vill),
-    .io_signalIn_bits_vecConf_vtype_vma                      (vecConfBypass_vtype_vma),
-    .io_signalIn_bits_vecConf_vtype_vta                      (vecConfBypass_vtype_vta),
     .io_signalIn_bits_vecConf_vtype_vsew                     (vecConfBypass_vtype_vsew),
-    .io_signalIn_bits_vecConf_vtype_vlmul                    (vecConfBypass_vtype_vlmul),
     .io_signalIn_bits_vecConf_vl                             (vecConfBypass_vl),
     .io_signalIn_bits_pc_addr
       (io_frontend_resp_bits_pc_addr),
@@ -11675,18 +11521,6 @@ module VectorCpu(
       (_vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_decode_fence),
     .io_toExWbReg_bits_ctrlSignals_rd_index
       (_vecAluExecUnit_1_io_toExWbReg_bits_ctrlSignals_rd_index),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vill
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vill),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vma
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vma),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vta
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vta),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vsew
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vsew),
-    .io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vtype_vlmul),
-    .io_toExWbReg_bits_vectorCsrPorts_vl
-      (_vecAluExecUnit_1_io_toExWbReg_bits_vectorCsrPorts_vl),
     .io_toExWbReg_bits_vectorExecNum_valid
       (_vecAluExecUnit_1_io_toExWbReg_bits_vectorExecNum_valid),
     .io_toExWbReg_bits_vectorExecNum_bits

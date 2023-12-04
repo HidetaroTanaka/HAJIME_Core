@@ -291,6 +291,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     vectorLdstUnit.io.signalIn.bits.vector.scalarVal := rs1ValueToEX
     vectorLdstUnit.io.signalIn.bits.vector.scalarDecode := decoder.io.out.bits
     vectorLdstUnit.io.signalIn.bits.vector.pc := io.frontend.resp.bits.pc
+    vectorLdstUnit.io.signalIn.bits.vector.vecConf := vecConfBypass
   } .otherwise {
     vectorLdstUnit.io.signalIn := DontCare
     vectorLdstUnit.io.signalIn.valid := false.B
@@ -430,6 +431,8 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   // EX_WB_REGに信号自体がvalidかを覚えさせておく
   when(vecCtrlUnit.io.resp.valid) {
     EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.io.resp.bits
+  } .otherwise {
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   if (params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
@@ -449,14 +452,17 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   for(d <- vecAluExecUnit) {
     when(d.io.toExWbReg.valid) {
       EX_WB_REG := d.io.toExWbReg
+      EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
     }
   }
   when(vectorLdstUnit.io.toExWbReg.valid) {
     EX_WB_REG := vectorLdstUnit.io.toExWbReg
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   // flush the EX_WB register if ecall, mret or exception

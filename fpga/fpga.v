@@ -33,10 +33,10 @@ module fpga(
 
     BUFG iBUFG(.I(CLK_top), .O(CLK_25MHz));
     MMCME2_BASE #(
-        .CLKFBOUT_MULT_F(25.0),
+        .CLKFBOUT_MULT_F(50.0),
         .CLKFBOUT_PHASE(0.0),
         .CLKIN1_PERIOD(10.0), // 100Hz -> 10ns
-        .CLKOUT0_DIVIDE_F(20.0),
+        .CLKOUT0_DIVIDE_F(40.0),
         .CLKOUT1_DIVIDE(1),
         .CLKOUT2_DIVIDE(1),
         .CLKOUT3_DIVIDE(1),
