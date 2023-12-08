@@ -26,7 +26,7 @@ module fpga(
     output [6:0] SEG_0,
 	output [7:0] AN_0
     );
-    wire CLKFBOUT, iPCK;
+    wire CLKFBOUT;
 
     wire [31:0] check;
     wire CLK_top, CLK_25MHz;
