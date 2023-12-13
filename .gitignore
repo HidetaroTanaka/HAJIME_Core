@@ -132,7 +132,8 @@ local.properties
 # Chisel Outputs
 *.anno.json
 *.fir
-*.v
+# outputs only SystemVerilog
+# *.v
 *.sv
 
 # Debug files

@@ -1,4 +1,4 @@
-#include "util.h"
+// #include "util.h"
 
 #define size_t long
 #define N 32
@@ -101,32 +101,6 @@ signed char resultArray[32][32] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 signed char answerArray[32][32] = {0};
 
-extern void printstr(char* str);
-extern void int64ToHex(long num, char* str);
-
-void clrCounters(void) {
-  asm volatile ("csrw minstret, x0; csrw mcycle, x0; csrw mhpmcounter3, x0");
-}
-
-void showCounters(void) {
-  char string[19];
-  unsigned long instret, cycle, mhpmcounter3;
-  asm volatile ("rdinstret %0":"=r"(instret));
-  asm volatile ("rdcycle %0":"=r"(cycle));
-  asm volatile ("csrr %0, mhpmcounter3":"=r"(mhpmcounter3));
-
-  printstr("CYCLE: ");
-  int64ToHex(cycle, string);
-  printstr(string);
-  printstr("\nINSTRET: ");
-  int64ToHex(instret, string);
-  printstr(string);
-  printstr("\nMHPMCOUNTER3: ");
-  int64ToHex(mhpmcounter3, string);
-  printstr(string);
-  printstr("\n");
-}
-
 /// @brief 8bit幅の32*32行列乗算
 /// @param array1
 /// @param array2
@@ -154,11 +128,11 @@ void _e8_32x32_matmul(const signed char array1[32][32], const signed char array2
 int main(int argc, char** argv) {
   int i, j, k;
 
-  clrCounters();
+  // clrCounters();
   _e8_32x32_matmul(array1, array2, resultArray);
-  showCounters();
+  // showCounters();
 
-  clrCounters();
+  // clrCounters();
   for(i=0; i<32; i++) {
     for(j=0; j<32; j++) {
       signed char sum = 0;
@@ -171,12 +145,16 @@ int main(int argc, char** argv) {
       answerArray[i][j] = sum;
     }
   }
-  showCounters();
+  // showCounters();
   _Bool correct = 1;
   for(i=0; i<32; i++) {
     for(j=0; j<32; j++) {
       correct = correct && (resultArray[i][j] == answerArray[i][j]);
     }
   }
-  return !correct;
+  if(correct) {
+    return 0x00114514;
+  } else {
+    return 0xDEADBEEF;
+  }
 }

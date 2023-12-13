@@ -62,8 +62,12 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
 
   val decoded_inst = Wire(new InstBundle())
   decoded_inst := io.frontend.resp.bits.inst
-  val ID_EX_REG = Reg(Valid(new ID_EX_IO()))
-  val EX_WB_REG = Reg(Valid(new EX_WB_IO()))
+  val ID_EX_REG = RegInit(Valid(new ID_EX_IO()).Lit(
+    _.valid -> false.B,
+  ))
+  val EX_WB_REG = RegInit(Valid(new EX_WB_IO()).Lit(
+    _.valid -> false.B,
+  ))
 
   // これらがtrueならばベクトル命令を発行できる
   val vs1NonRequiredOrReady = !vrfReadyTable.io.vs1Check.valid || vrfReadyTable.io.vs1Check.ready
@@ -287,6 +291,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     vectorLdstUnit.io.signalIn.bits.vector.scalarVal := rs1ValueToEX
     vectorLdstUnit.io.signalIn.bits.vector.scalarDecode := decoder.io.out.bits
     vectorLdstUnit.io.signalIn.bits.vector.pc := io.frontend.resp.bits.pc
+    vectorLdstUnit.io.signalIn.bits.vector.vecConf := vecConfBypass
   } .otherwise {
     vectorLdstUnit.io.signalIn := DontCare
     vectorLdstUnit.io.signalIn.valid := false.B
@@ -419,8 +424,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ))
   Mux(ID_EX_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
+  // EX_WB_REGに信号自体がvalidかを覚えさせておく
   when(vecCtrlUnit.io.resp.valid) {
     EX_WB_REG.bits.vectorCsrPorts.get := vecCtrlUnit.io.resp.bits
+  } .otherwise {
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   if (params.debug) EX_WB_REG.bits.debug.get := ID_EX_REG.bits.debug.get
@@ -440,14 +448,17 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   for(d <- vecAluExecUnit) {
     when(d.io.toExWbReg.valid) {
       EX_WB_REG := d.io.toExWbReg
+      EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
     }
   }
   when(vectorLdstUnit.io.toExWbReg.valid) {
     EX_WB_REG := vectorLdstUnit.io.toExWbReg
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   when(WB_stall) {
     EX_WB_REG := EX_WB_REG
+    EX_WB_REG.bits.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
   }
 
   // flush the EX_WB register if ecall, mret or exception

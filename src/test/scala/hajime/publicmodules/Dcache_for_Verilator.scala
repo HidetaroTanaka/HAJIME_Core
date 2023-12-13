@@ -11,6 +11,7 @@ import org.scalatest.flatspec._
 import scala.io._
 
 // 命令キャッシュと異なりマスター側のreadyが下がることは無いので，出力のストールは考えない
+// TODO: FPGA用に例えばledへの出力を追加する，正常終了フラグや例外終了フラグなど
 class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp{
   require(memsize % 8 == 0, s"memsize $memsize is not multiple of 8")
 
@@ -79,5 +80,5 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
 
 object Dcache_for_Verilator extends App {
   def apply(dcacheBaseAddr: Int = 0x00004000, tohost: Int = 0x10000000, memsize: Int = 0x2000): Dcache_for_Verilator = new Dcache_for_Verilator(dcacheBaseAddr, tohost, memsize)
-  ChiselStage.emitSystemVerilogFile(Dcache_for_Verilator(), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+  ChiselStage.emitSystemVerilogFile(Dcache_for_Verilator(dcacheBaseAddr = 0x00004000, tohost = 0x10000000, memsize = 8192), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

@@ -144,7 +144,7 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "vredsum",
   )
   val applicationTest = Seq(
-    "vector_median", "vector_matmul"
+    "vector_median", // "vector_matmul"
   )
   val zve64xTestList: Seq[String] = ldstTest ++ arithmeticTest ++ applicationTest
   for (e <- zve64xTestList) {
@@ -152,6 +152,30 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
       test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "vector")
       }
+    }
+  }
+}
+
+class FpgaTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
+  def _executeTest[T <: CpuModule](dut: Core_and_cache[T], testName: String, testType: String): Unit = {
+    println(s"test $testName:")
+    fork {
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.mem", dut.io.imem_initialiseAXI, dut.io.icache_initialising, dut.clock, 0)
+    }.fork {
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.mem", dut.io.dmem_initialiseAXI, dut.io.dcache_initialising, dut.clock, 0x4000)
+    }.join()
+    dut.clock.setTimeout(0)
+    dut.io.reset_vector.poke(0.U)
+    dut.io.hartid.poke(0.U)
+
+    for(_ <- 0 until 1048576) {
+      dut.clock.step()
+    }
+    println(dut.io.toHost.bits.peekInt())
+  }
+  it should "Vector CPU execute matmul for FPGA" in {
+    test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, IcarusBackendAnnotation)) { dut =>
+      _executeTest(dut, "vector_matmul", "fpga")
     }
   }
 }

@@ -72,5 +72,5 @@ object UseRegisterAs extends ChiselEnum {
 
 object COMPILE_CONSTANTS {
   val CHISELSTAGE_ARGS = Array("--emission-options=disableMemRandomization,disableRegisterRandomization")
-  val FIRTOOLOPS = Array("-disable-all-randomization", "-strip-debug-info")
+  val FIRTOOLOPS = Array("-disable-all-randomization", "-strip-debug-info", "-add-vivado-ram-address-conflict-synthesis-bug-workaround")
 }
