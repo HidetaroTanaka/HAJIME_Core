@@ -36,6 +36,7 @@ case class HajimeCoreParams(
   vlen: Int = 256,
   vecAluExecUnitNum: Int = 2,
 ) {
+  require(isPow2(vlen), s"vlen(${vlen.toString}) is not power of 2. Please read BL Doujinshi for more details.")
   def robTagWidth: Int = log2Up(robEntries)
   def generateDefaultMISA: UInt = {
     Cat((xprlen match {
