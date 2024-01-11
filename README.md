@@ -21,6 +21,17 @@ $ cd HAJIME_Core
 $ git submodule update --init --recursive
 ```
 
+If above command doesn't work, run these commands to pull `riscv-tests` manually.
+
+```bash
+$ cd submodules
+# Run this command if `riscv-tests` directory exists.
+$ sudo rm -r ./riscv-tests
+$ git clone https://github.com/riscv-software-src/riscv-tests
+$ cd riscv-tests
+$ git submodule update --init --recursive
+```
+
 Firtool is also required to generate SystemVerilog file. Reference: https://github.com/chipsalliance/chisel/blob/main/SETUP.md
 
 ```bash
