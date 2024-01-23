@@ -5,7 +5,7 @@ HAJIME Core
 
 The core's goal is to provide some RISC-V implementation for embedded environment. It currently supports RV64IM_Zicsr (only multiply of M) and subset of Zve64x.
 
-This repository requires [`riscv-gnu-toolchain`](https://github.com/riscv-collab/riscv-gnu-toolchain) to be installed if you want to run your own RISC-V program.
+This repository requires [`riscv-gnu-toolchain`](https://github.com/riscv-collab/riscv-gnu-toolchain) with Vector Extension enabled (`-march=rv64gcv`) to be installed if you want to run your own RISC-V program.
 
 `verilator` and `iverilog` are also needed for some tests.
 
