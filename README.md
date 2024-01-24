@@ -5,7 +5,7 @@ HAJIME Core
 
 The core's goal is to provide some RISC-V implementation for embedded environment. It currently supports RV64IM_Zicsr (only multiply of M) and subset of Zve64x.
 
-This repository requires [`riscv-gnu-toolchain`](https://github.com/riscv-collab/riscv-gnu-toolchain) to be installed if you want to run your own RISC-V program.
+This repository requires [`riscv-gnu-toolchain`](https://github.com/riscv-collab/riscv-gnu-toolchain) with Vector Extension enabled (`-march=rv64gcv`) to be installed if you want to run your own RISC-V program.
 
 `verilator` and `iverilog` are also needed for some tests.
 
@@ -18,6 +18,17 @@ Use sbt (IntelliJ is recommended). And fetch submodules as this:
 ```bash
 $ git clone https://github.com/HidetaroTanaka/HAJIME_Core
 $ cd HAJIME_Core
+$ git submodule update --init --recursive
+```
+
+If above command doesn't work, run these commands to pull `riscv-tests` manually.
+
+```bash
+$ cd submodules
+# Run this command if `riscv-tests` directory exists.
+$ sudo rm -r ./riscv-tests
+$ git clone https://github.com/riscv-software-src/riscv-tests
+$ cd riscv-tests
 $ git submodule update --init --recursive
 ```
 
