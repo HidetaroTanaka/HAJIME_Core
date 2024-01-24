@@ -144,7 +144,7 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     "vredsum",
   )
   val applicationTest = Seq(
-    "vector_median", // "vector_matmul"
+    "vector_median", "vector_matmul"
   )
   val zve64xTestList: Seq[String] = ldstTest ++ arithmeticTest ++ applicationTest
   for (e <- zve64xTestList) {
