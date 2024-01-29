@@ -199,7 +199,7 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   io.frontend.req := Mux(branchEvaluator.io.out.valid && idExReg.valid, branchEvaluator.io.out, branchPredictor.io.out)
   io.frontend.req.valid := wbPcRedirect || (branchEvaluator.io.out.valid && idExReg.valid) || (branchPredictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
   branchPredictor.io.pc := io.frontend.resp.bits.pc
-  branchPredictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decodedInst.getImm(ImmediateEnum.B), decodedinst.getImm(ImmediateEnum.J))
+  branchPredictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decodedInst.getImm(ImmediateEnum.B), decodedInst.getImm(ImmediateEnum.J))
   branchPredictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decodedInst
@@ -220,7 +220,7 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     idEcall -> Causes.machine_ecall.U,
   ))
   idExReg.bits.dataSignals.pc := io.frontend.resp.bits.pc
-  idExReg.bits.dataSignals.bpDestPc := branchPredictor.io.out.bits.pc
+  idExReg.bits.dataSignals.bpDestPc := branchPredictor.io.out.bits.addr
   idExReg.bits.dataSignals.bpTaken := branchPredictor.io.out.valid
   idExReg.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decodedInst.getImm(ImmediateEnum.U),
@@ -313,8 +313,8 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   ldstUnit.io.cpu.req.bits.data := idExReg.bits.dataSignals.rs2
   ldstUnit.io.cpu.req.bits.funct := idExReg.bits.ctrlSignals.decode
 
-  bypassingUnit.io.EX.in.bits.rd.bits.index := idExReg.bits.ctrlSignals.rd_index
-  bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(idExReg.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+  bypassingUnit.io.EX.in.bits.rd.bits.index := idExReg.bits.ctrlSignals.rdIndex
+  bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(idExReg.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> idExReg.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> exArithmeticResult,
   ))
@@ -374,7 +374,7 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   val dmemoryAccessException = (exWbReg.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
   wbPcRedirect := exWbReg.valid && (exWbReg.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || exWbReg.bits.exceptionSignals.valid || dmemoryAccessException)
   when(wbPcRedirect) {
-    io.frontend.req.bits.pc := csrUnit.io.resp.data
+    io.frontend.req.bits.addr := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val wbInstCanRetire = exWbReg.valid && !(exWbReg.bits.exceptionSignals.valid || dmemoryAccessException) && !wbStall
