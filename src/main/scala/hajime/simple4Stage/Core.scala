@@ -18,7 +18,7 @@ class debugIO(implicit params: HajimeCoreParams) extends Bundle {
   })
   val debugAbiMap = new debug_map_physical_to_abi()
   val vrfMap = if(params.useVector) Some(Vec(32, UInt(params.vlen.W))) else None
-  // val ID_EX_Reg = Valid(new ID_EX_IO())
+  // val ID_EX_Reg = Valid(new idExIo())
 }
 
 object debugIO {
@@ -121,7 +121,7 @@ class VectorDataSignals(implicit params: HajimeCoreParams) extends Bundle {
   val vd = UInt(5.W)
 }
 
-class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
+class idExIo(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new ID_EX_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
@@ -130,7 +130,7 @@ class ID_EX_IO(implicit params: HajimeCoreParams) extends Bundle {
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
-class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
+class exWbIo(implicit params: HajimeCoreParams) extends Bundle {
   val dataSignals = new EX_WB_dataSignals()
   val ctrlSignals = new BasicCtrlSignals()
   val exceptionSignals = new Valid(UInt(params.xprlen.W))
@@ -139,7 +139,7 @@ class EX_WB_IO(implicit params: HajimeCoreParams) extends Bundle {
   val debug = if(params.debug) Some(new Debug_Info()) else None
 }
 
-class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpConstants with VectorOpConstants {
+class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpConstants with VectorOpConstants {
   // val io = IO(new CpuIo())
   io := DontCare
 
@@ -190,8 +190,8 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
 
   val decodedInst = Wire(new InstBundle())
   decodedInst := io.frontend.resp.bits.inst
-  val idExReg = Reg(Valid(new ID_EX_IO()))
-  val exWbReg = Reg(Valid(new EX_WB_IO()))
+  val idExReg = Reg(Valid(new idExIo()))
+  val exWbReg = Reg(Valid(new exWbIo()))
   // io.debugIo.get.ID_EX_Reg := idExReg
 
   // EXステージがvalidであり，かつEXステージが破棄できない場合，またはIDステージで必要なレジスタ値を取得できない場合，またはfence命令がある場合にreadyを下げる
@@ -518,6 +518,6 @@ class CPU(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   }
 }
 
-object CPU extends App {
-  def apply(implicit params: HajimeCoreParams): CPU = new CPU()
+object Cpu extends App {
+  def apply(implicit params: HajimeCoreParams): Cpu = new Cpu()
 }

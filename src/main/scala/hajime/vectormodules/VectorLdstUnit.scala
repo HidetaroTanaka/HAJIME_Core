@@ -28,7 +28,7 @@ class VectorLdstUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val scalarResp = ValidIO(new LDSTResp())
   val vectorResp = Output(new VectorExecUnitDataOut())
   val dcache = new AXI4liteIO(addrWidth = params.xprlen, dataWidth = params.xprlen)
-  val toExWbReg = Output(Valid(new EX_WB_IO()))
+  val toExWbReg = Output(Valid(new exWbIo()))
 }
 
 // TODO: VtypeのSEWと異なるEEWをillegalにする

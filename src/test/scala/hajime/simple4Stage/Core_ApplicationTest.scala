@@ -6,23 +6,23 @@ import org.scalatest.flatspec._
 import hajime.vectormodules.MemInitializer._
 
 object Core_ApplicationTest {
-  def get_toHostChar[T <: CpuModule](dut: Core_and_cache[T]): Char = {
+  def get_toHostChar[T <: CpuModule](dut: CoreAndCache[T]): Char = {
     dut.io.toHost.bits.peekInt().toChar
   }
 
-  def get_toHostValid[T <: CpuModule](dut: Core_and_cache[T]): Boolean = {
+  def get_toHostValid[T <: CpuModule](dut: CoreAndCache[T]): Boolean = {
     dut.io.toHost.valid.peekBoolean()
   }
 
-  def executeTest[T <: CpuModule](dut: Core_and_cache[T], testName: String, testType: String): Unit = {
+  def executeTest[T <: CpuModule](dut: CoreAndCache[T], testName: String, testType: String): Unit = {
     println(s"test $testName:")
     fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.hex", dut.io.imem_initialiseAXI, dut.io.icache_initialising, dut.clock, 0)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.hex", dut.io.iMemInitialiseAxi, dut.io.iCacheInitialising, dut.clock, 0)
     }.fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.hex", dut.io.dmem_initialiseAXI, dut.io.dcache_initialising, dut.clock, 0x4000)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.hex", dut.io.dmem_initialiseAXI, dut.io.dCacheInitialising, dut.clock, 0x4000)
     }.join()
     dut.clock.setTimeout(1048576)
-    dut.io.reset_vector.poke(0.U)
+    dut.io.resetVector.poke(0.U)
     dut.io.hartid.poke(0.U)
 
     var toHostWrittenChar: List[Char] = Nil
@@ -33,7 +33,7 @@ object Core_ApplicationTest {
         toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
       }
     }
-    dut.io.debug_io.debugAbiMap.a0.expect(0.U(64.W))
+    dut.io.debugIO.debugAbiMap.a0.expect(0.U(64.W))
     toHostWrittenChar.foreach(print)
     println()
   }
@@ -47,7 +47,7 @@ class Rv64iApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- rv64iTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64i")
       }
     }
@@ -60,7 +60,7 @@ class Rv64mApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- rv64mTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64m")
       }
     }
@@ -74,7 +74,7 @@ class ExceptionApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   )
   for(e <- exceptionTestList) {
     it should s"execute $e" in {
-      test(new Core_and_cache(cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "exceptions")
       }
     }

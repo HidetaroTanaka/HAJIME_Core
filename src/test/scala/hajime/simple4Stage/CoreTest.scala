@@ -9,12 +9,12 @@ import scala.sys.process._
 import scala.collection.parallel.CollectionConverters._
 
 class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
-  def initialiseImem[T <: CpuModule](filename: String, dut: Core_and_cache[T]): Unit = {
-    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.imem_initialiseAXI, dut.io.icache_initialising, dut.clock, 0)
+  def initialiseImem[T <: CpuModule](filename: String, dut: CoreAndCache[T]): Unit = {
+    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.iMemInitialiseAxi, dut.io.iCacheInitialising, dut.clock, 0)
   }
 
-  def initialiseDmem[T <: CpuModule](filename: String, dut: Core_and_cache[T]): Unit = {
-    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.dmem_initialiseAXI, dut.io.dcache_initialising, dut.clock, 0x4000)
+  def initialiseDmem[T <: CpuModule](filename: String, dut: CoreAndCache[T]): Unit = {
+    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.dmem_initialiseAXI, dut.io.dCacheInitialising, dut.clock, 0x4000)
   }
 
   val instList_noDmem = Seq(
@@ -37,9 +37,9 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
       // 0x0000_0000 ~ 0x0000_1FFF : icache
       // 0x0000_4000 ~ 0x0000_5FFF : dcache
       // 0x1000_0000               : tohost
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         initialiseImem(s"src/main/resources/rv64ui/${e}_inst.hex", dut)
         while (dut.io.toHost.peek().litValue == 0) {
@@ -65,9 +65,9 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   }
   for(e <- instList_withDmem) {
     it should s"pass the test ${e}" in {
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         fork {
           initialiseImem(s"src/main/resources/rv64ui/${e}_inst.hex", dut)
@@ -97,9 +97,9 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   }
   for(e <- instList_multiply) {
     it should s"pass the test ${e}" in {
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, cpu = classOf[CPU])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, cpu = classOf[Cpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         initialiseImem(s"src/main/resources/rv64um/${e}_inst.hex", dut)
 

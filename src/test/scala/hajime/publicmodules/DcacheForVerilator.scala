@@ -12,7 +12,7 @@ import scala.io._
 
 // 命令キャッシュと異なりマスター側のreadyが下がることは無いので，出力のストールは考えない
 // TODO: FPGA用に例えばledへの出力を追加する，正常終了フラグや例外終了フラグなど
-class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp{
+class DcacheForVerilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp{
   require(memsize % 8 == 0, s"memsize $memsize is not multiple of 8")
 
   val io = IO(Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64)))
@@ -55,17 +55,17 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
   io.r.valid := RegNext(io.ar.valid && io.ar.ready)
 
   // write
-  val writeData_asVec = Wire(Vec(8, UInt(8.W)))
+  val writeDataAsVec = Wire(Vec(8, UInt(8.W)))
   val shiftedData = MuxLookup(internalWriteAddr(2,0), io.w.bits.data)(
     (0 until 8).map(
       i => i.U -> (io.w.bits.data << (i*8).U).asUInt
     )
   )
-  for((w,i) <- writeData_asVec.zipWithIndex) {
+  for((w,i) <- writeDataAsVec.zipWithIndex) {
     w := shiftedData(8*i+7, 8*i)
   }
   when(io.aw.valid && io.w.valid && internalWriteAddr < 0x00001FFF.U) {
-    mem.write(internalWriteAddr.head(61), writeData_asVec, MuxLookup(internalWriteAddr(2,0), io.w.bits.strb)(
+    mem.write(internalWriteAddr.head(61), writeDataAsVec, MuxLookup(internalWriteAddr(2,0), io.w.bits.strb)(
       (0 until 8).map(
         i => i.U -> (io.w.bits.strb << i.U).asUInt(7,0)
       )
@@ -78,7 +78,7 @@ class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x20
   io.b.bits.resp := W_OKEY.U
 }
 
-object Dcache_for_Verilator extends App {
-  def apply(dcacheBaseAddr: Int = 0x00004000, tohost: Int = 0x10000000, memsize: Int = 0x2000): Dcache_for_Verilator = new Dcache_for_Verilator(dcacheBaseAddr, tohost, memsize)
-  ChiselStage.emitSystemVerilogFile(Dcache_for_Verilator(dcacheBaseAddr = 0x00004000, tohost = 0x10000000, memsize = 8192), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+object DcacheForVerilator extends App {
+  def apply(dcacheBaseAddr: Int = 0x00004000, tohost: Int = 0x10000000, memsize: Int = 0x2000): DcacheForVerilator = new DcacheForVerilator(dcacheBaseAddr, tohost, memsize)
+  ChiselStage.emitSystemVerilogFile(DcacheForVerilator(dcacheBaseAddr = 0x00004000, tohost = 0x10000000, memsize = 8192), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }

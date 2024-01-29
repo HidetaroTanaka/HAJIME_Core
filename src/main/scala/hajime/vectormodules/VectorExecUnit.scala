@@ -31,7 +31,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new VectorExecUnitSignalIn()))
   val readVrf = Flipped(new VecRegFileReadIO())
   val dataOut = Output(new VectorExecUnitDataOut())
-  val toExWbReg = Output(Valid(new EX_WB_IO()))
+  val toExWbReg = Output(Valid(new exWbIo()))
 }
 
 /**
