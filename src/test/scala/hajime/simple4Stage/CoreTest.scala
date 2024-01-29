@@ -14,7 +14,7 @@ class CoreTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   def initialiseDmem[T <: CpuModule](filename: String, dut: CoreAndCache[T]): Unit = {
-    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.dmem_initialiseAXI, dut.io.dCacheInitialising, dut.clock, 0x4000)
+    hajime.vectormodules.MemInitializer.initialiseMemWithAxi(filename, dut.io.dMemInitialiseAxi, dut.io.dCacheInitialising, dut.clock, 0x4000)
   }
 
   val instList_noDmem = Seq(

@@ -18,7 +18,7 @@ class CoreAndCache[T <: CpuModule](iCacheMemsize: Int = 8192, dCacheMemsize: Int
     val iCacheInitialising = Input(Bool())
     val dCacheInitialising = Input(Bool())
     val iMemInitialiseAxi = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 32))
-    val dmem_initialiseAXI = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64))
+    val dMemInitialiseAxi = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64))
   })
 
   val core = withReset(io.iCacheInitialising || io.dCacheInitialising || reset.asBool) {
@@ -31,7 +31,7 @@ class CoreAndCache[T <: CpuModule](iCacheMemsize: Int = 8192, dCacheMemsize: Int
   io.iMemInitialiseAxi := DontCare
   core.io.iCacheAxi4Lite := DontCare
   dcache.io := DontCare
-  io.dmem_initialiseAXI := DontCare
+  io.dMemInitialiseAxi := DontCare
   core.io.dCacheAxi4Lite := DontCare
 
   when(io.iCacheInitialising) {
@@ -47,15 +47,15 @@ class CoreAndCache[T <: CpuModule](iCacheMemsize: Int = 8192, dCacheMemsize: Int
   }
 
   when(io.dCacheInitialising) {
-    dcache.io <> io.dmem_initialiseAXI
+    dcache.io <> io.dMemInitialiseAxi
     core.io.dCacheAxi4Lite.ar.ready := false.B
     core.io.dCacheAxi4Lite.aw.ready := false.B
     core.io.dCacheAxi4Lite.w.ready := false.B
   } .otherwise {
     dcache.io <> core.io.dCacheAxi4Lite
-    io.dmem_initialiseAXI.ar.ready := false.B
-    io.dmem_initialiseAXI.aw.ready := false.B
-    io.dmem_initialiseAXI.w.ready := false.B
+    io.dMemInitialiseAxi.ar.ready := false.B
+    io.dMemInitialiseAxi.aw.ready := false.B
+    io.dMemInitialiseAxi.w.ready := false.B
   }
 
   core.io.resetVector := io.resetVector

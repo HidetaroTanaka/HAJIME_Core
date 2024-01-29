@@ -19,7 +19,7 @@ object Core_ApplicationTest {
     fork {
       initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.hex", dut.io.iMemInitialiseAxi, dut.io.iCacheInitialising, dut.clock, 0)
     }.fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.hex", dut.io.dmem_initialiseAXI, dut.io.dCacheInitialising, dut.clock, 0x4000)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.hex", dut.io.dMemInitialiseAxi, dut.io.dCacheInitialising, dut.clock, 0x4000)
     }.join()
     dut.clock.setTimeout(1048576)
     dut.io.resetVector.poke(0.U)

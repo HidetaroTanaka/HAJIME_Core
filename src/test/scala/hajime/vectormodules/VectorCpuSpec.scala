@@ -65,7 +65,7 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
         }.fork {
           initialiseMemWithAxi(
             filename = s"src/main/resources/rv64ui/${e}_data.hex",
-            axi = dut.io.dmem_initialiseAXI,
+            axi = dut.io.dMemInitialiseAxi,
             initialising = dut.io.dCacheInitialising,
             clock = dut.clock,
             baseAddr = 0x4000
@@ -162,7 +162,7 @@ class FpgaTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     fork {
       initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.mem", dut.io.iMemInitialiseAxi, dut.io.iCacheInitialising, dut.clock, 0)
     }.fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.mem", dut.io.dmem_initialiseAXI, dut.io.dCacheInitialising, dut.clock, 0x4000)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.mem", dut.io.dMemInitialiseAxi, dut.io.dCacheInitialising, dut.clock, 0x4000)
     }.join()
     dut.clock.setTimeout(0)
     dut.io.resetVector.poke(0.U)
