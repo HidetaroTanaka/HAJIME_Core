@@ -127,7 +127,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
   io.frontend.req.valid := WB_pc_redirect || (branch_evaluator.io.out.valid && ID_EX_REG.valid) || (branch_predictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
   branch_predictor.io.pc := io.frontend.resp.bits.pc
-  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
+  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.getImm(ImmediateEnum.B), decoded_inst.getImm(ImmediateEnum.J))
   branch_predictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decoded_inst
@@ -148,13 +148,13 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     ID_ecall -> Causes.machine_ecall.U,
   ))
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
-  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
+  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.addr
   ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
-    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
+    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.U),
     (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm19To15,
-    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.i_imm,
-    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.s_imm,
+    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.I),
+    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decoded_inst.getImm(ImmediateEnum.S),
   ))
 
   val rs1ValueToEX = Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
@@ -266,7 +266,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.vector.get && vectorDecoder.io.out.useVecLdstExec && vecLdstUnitReady) {
     vectorLdstUnit.io.signalIn.valid := true.B
     vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
-    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
+    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.getImm(ImmediateEnum.I), decoded_inst.getImm(ImmediateEnum.S))
     vectorLdstUnit.io.signalIn.bits.scalar.rdIndex := decoded_inst.rd
     val vecSigs = vectorLdstUnit.io.signalIn.bits.vector
     vecSigs.vs1 := decoded_inst.rs1
@@ -285,7 +285,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   } .elsewhen(io.frontend.resp.valid && decoder.io.out.valid && decoder.io.out.bits.memValid && vecLdstUnitReady) {
     vectorLdstUnit.io.signalIn.valid := true.B
     vectorLdstUnit.io.signalIn.bits.scalar.rs2Value := rs2ValueToEX
-    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.i_imm, decoded_inst.s_imm)
+    vectorLdstUnit.io.signalIn.bits.scalar.immediate := Mux(decoder.io.out.bits.memRead, decoded_inst.getImm(ImmediateEnum.I), decoded_inst.getImm(ImmediateEnum.S))
     vectorLdstUnit.io.signalIn.bits.scalar.rdIndex := decoded_inst.rd
     vectorLdstUnit.io.signalIn.bits.vector := DontCare
     vectorLdstUnit.io.signalIn.bits.vector.scalarVal := rs1ValueToEX
@@ -300,10 +300,6 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
     ID_EX_REG.bits.vectorCtrlSignals.get := vectorDecoder.io.out
   }
-  // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
-  // 1 -> マスクなし，全て書き込む
-  // （マスクを使わないベクタ命令は全てvm=1か？）
-  ID_EX_REG.bits.vectorDataSignals.get.mask := vectorDecoder.io.out.vm
   ID_EX_REG.bits.vectorDataSignals.get.vs1 := decoded_inst.rs1
   ID_EX_REG.bits.vectorDataSignals.get.vs2 := decoded_inst.rs2
   ID_EX_REG.bits.vectorDataSignals.get.vd := decoded_inst.rd
@@ -486,7 +482,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     || (if(params.useException) EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException else EX_WB_REG.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt))
 
   when(WB_pc_redirect) {
-    io.frontend.req.bits.pc := csrUnit.io.resp.data
+    io.frontend.req.bits.addr := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val WB_inst_can_retire = EX_WB_REG.valid && !(EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && !WB_stall

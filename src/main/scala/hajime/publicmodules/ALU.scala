@@ -1,11 +1,10 @@
 package hajime.publicmodules
 
-import circt.stage.ChiselStage
 import chisel3._
+import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.common.RISCV_Consts._
+import hajime.common.Functions._
 import hajime.common._
-import Functions._
 
 class ALUIO(implicit params: HajimeCoreParams) extends Bundle {
   import params._

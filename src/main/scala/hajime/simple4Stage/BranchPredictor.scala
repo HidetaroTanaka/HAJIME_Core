@@ -1,16 +1,15 @@
 package hajime.simple4Stage
 
-import circt.stage.ChiselStage
 import chisel3._
+import circt.stage.ChiselStage
 import chisel3.util._
-import hajime.common.{ScalarOpConstants, _}
-import hajime.common.RISCV_Consts._
+import hajime.common._
 
 class BranchPredictorIO(implicit params: HajimeCoreParams) extends Bundle with ScalarOpConstants {
   // 分岐成立予測であれば，io.out.validはtrue
   // （分岐不成立予測なら単にPC+4を入れるだけ）
   // 分岐先予測はio.out.bits.pc
-  val out = new ValidIO(new FrontEndReq())
+  val out = new ValidIO(new ProgramCounter())
   val pc = Input(new ProgramCounter())
   val imm = Input(UInt(params.xprlen.W))
   val BranchType = Input(UInt(Branch.getWidth.W))
@@ -49,7 +48,7 @@ class BranchPredictor(implicit params: HajimeCoreParams) extends Module with Sca
 
   io.out.valid := branch_predict_taken
   // JALRならばRAS、それ以外はpc+imm (branch, jal)
-  io.out.bits.pc := Mux(io.BranchType === Branch.JALR.asUInt, RAS_pop(), io.pc.addr + io.imm)
+  io.out.bits.addr := Mux(io.BranchType === Branch.JALR.asUInt, RAS_pop(), io.pc.addr + io.imm)
 }
 
 object BranchPredictor extends App {
