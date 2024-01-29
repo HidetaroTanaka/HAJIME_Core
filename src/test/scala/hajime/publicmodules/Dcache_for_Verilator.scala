@@ -15,7 +15,7 @@ import scala.io._
 class Dcache_for_Verilator(dcacheBaseAddr: Int, tohost: Int, memsize: Int = 0x2000) extends Module with ChecksAxiReadResp with ChecksAxiWriteResp{
   require(memsize % 8 == 0, s"memsize $memsize is not multiple of 8")
 
-  val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 64)))
+  val io = IO(Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64)))
   val debug = IO(ValidIO(UInt(32.W)))
 
   val debugToHost = RegInit(WireInit(Valid(UInt(32.W)).Lit(

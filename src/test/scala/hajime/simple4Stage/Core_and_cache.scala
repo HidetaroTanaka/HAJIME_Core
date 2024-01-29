@@ -17,8 +17,8 @@ class Core_and_cache[T <: CpuModule](icache_memsize: Int = 8192, dcache_memsize:
     val debug_io = Output(new debugIO())
     val icache_initialising = Input(Bool())
     val dcache_initialising = Input(Bool())
-    val imem_initialiseAXI = Flipped(new AXI4liteIO(addr_width = 64, data_width = 32))
-    val dmem_initialiseAXI = Flipped(new AXI4liteIO(addr_width = 64, data_width = 64))
+    val imem_initialiseAXI = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 32))
+    val dmem_initialiseAXI = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64))
   })
 
   val core = withReset(io.icache_initialising || io.dcache_initialising || reset.asBool) {
@@ -29,18 +29,18 @@ class Core_and_cache[T <: CpuModule](icache_memsize: Int = 8192, dcache_memsize:
 
   icache.io := DontCare
   io.imem_initialiseAXI := DontCare
-  core.io.icache_axi4lite := DontCare
+  core.io.iCacheAxi4Lite := DontCare
   dcache.io := DontCare
   io.dmem_initialiseAXI := DontCare
-  core.io.dcache_axi4lite := DontCare
+  core.io.dCacheAxi4Lite := DontCare
 
   when(io.icache_initialising) {
     icache.io <> io.imem_initialiseAXI
-    core.io.icache_axi4lite.ar.ready := false.B
-    core.io.icache_axi4lite.aw.ready := false.B
-    core.io.icache_axi4lite.w.ready := false.B
+    core.io.iCacheAxi4Lite.ar.ready := false.B
+    core.io.iCacheAxi4Lite.aw.ready := false.B
+    core.io.iCacheAxi4Lite.w.ready := false.B
   } .otherwise {
-    icache.io <> core.io.icache_axi4lite
+    icache.io <> core.io.iCacheAxi4Lite
     io.imem_initialiseAXI.ar.ready := false.B
     io.imem_initialiseAXI.aw.ready := false.B
     io.imem_initialiseAXI.w.ready := false.B
@@ -48,20 +48,20 @@ class Core_and_cache[T <: CpuModule](icache_memsize: Int = 8192, dcache_memsize:
 
   when(io.dcache_initialising) {
     dcache.io <> io.dmem_initialiseAXI
-    core.io.dcache_axi4lite.ar.ready := false.B
-    core.io.dcache_axi4lite.aw.ready := false.B
-    core.io.dcache_axi4lite.w.ready := false.B
+    core.io.dCacheAxi4Lite.ar.ready := false.B
+    core.io.dCacheAxi4Lite.aw.ready := false.B
+    core.io.dCacheAxi4Lite.w.ready := false.B
   } .otherwise {
-    dcache.io <> core.io.dcache_axi4lite
+    dcache.io <> core.io.dCacheAxi4Lite
     io.dmem_initialiseAXI.ar.ready := false.B
     io.dmem_initialiseAXI.aw.ready := false.B
     io.dmem_initialiseAXI.w.ready := false.B
   }
 
-  core.io.reset_vector := io.reset_vector
+  core.io.resetVector := io.reset_vector
   core.io.hartid := io.hartid
   io.toHost := dcache.debug
-  io.debug_io := core.io.debug_io.get
+  io.debug_io := core.io.debugIo.get
 }
 
 object Core_and_cache extends App {

@@ -36,8 +36,8 @@ class ALUTest extends AnyFlatSpec with ChiselScalatestTester with ScalarOpConsta
       def DO_TEST(testNum: BigInt, inst: String, out: String, in1: String, in2: String): Unit = {
         c.io.in1.poke(in1.U(RISCV_Consts.XLEN.W))
         c.io.in2.poke(in2.U(RISCV_Consts.XLEN.W))
-        c.io.funct.arithmetic_funct.poke((instDecode(inst)).head)
-        c.io.funct.alu_flag.poke((instDecode(inst)(1)))
+        c.io.funct.arithmeticFunct.poke((instDecode(inst)).head)
+        c.io.funct.aluFlag.poke((instDecode(inst)(1)))
         c.io.funct.op32.poke((instDecode(inst)(2)))
         c.io.out.expect(out.U(RISCV_Consts.XLEN.W))
         if(c.io.out.peekInt() == out.U.litValue) println(s"test $testNum for $inst passed")

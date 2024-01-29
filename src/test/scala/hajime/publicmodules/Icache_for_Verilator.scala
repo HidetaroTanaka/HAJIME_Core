@@ -12,7 +12,7 @@ import scala.io._
 
 // Should I check unaligned exception in Core or Cache?
 class Icache_for_Verilator(memsize: Int = 0x2000) extends Module {
-  val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
+  val io = IO(Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 32)))
   // AR channel
   io.ar.ready := true.B
   // AW channel

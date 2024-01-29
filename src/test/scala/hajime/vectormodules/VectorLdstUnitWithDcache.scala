@@ -21,7 +21,7 @@ class VectorLdstUnitWithDcache(dcache_memsize: Int = 8192, tohost: Int = 0x10000
   })
   val dCacheInitialiseIO = IO(new Bundle {
     val valid = Input(Bool())
-    val bits = Flipped(new AXI4liteIO(addr_width = 64, data_width = 64))
+    val bits = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64))
   })
 
   val vecLdstUnit = withReset(dCacheInitialiseIO.valid || reset.asBool) {

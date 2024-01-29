@@ -3,7 +3,6 @@ package hajime.vectormodules
 import circt.stage.ChiselStage
 import chisel3._
 import chisel3.util._
-import hajime.axiIO.AXI4liteIO
 import hajime.common._
 import hajime.publicmodules._
 import hajime.simple4Stage._
@@ -12,22 +11,22 @@ import chisel3.experimental.BundleLiterals._
 class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpConstants with VectorOpConstants {
   import VEU_FUN._
   require(params.useVector, "fuck")
-  // val io = IO(new CPUIO())
+  // val io = IO(new CpuIo())
   io := DontCare
 
   // fence, ecall, mretがEX、WBに存在する
   // ecallやmretがWBステージにあり，ジャンプ先PCがあるならばreadyを上げるが，IDにある命令は受け取らない
-  val sysInst_in_pipeline = WireInit(false.B)
+  val sysInstInPipeline = WireInit(false.B)
 
   // Modules
   val decoder = Module(new Decoder())
-  val branch_predictor = Module(new BranchPredictor())
+  val branchPredictor = Module(new BranchPredictor())
   val rf = Module(new RegFile())
   rf.io := DontCare
   val alu = Module(new ALU())
   alu.io := DontCare
-  val branch_evaluator = Module(new BranchEvaluator())
-  branch_evaluator.io := DontCare
+  val branchEvaluator = Module(new BranchEvaluator())
+  branchEvaluator.io := DontCare
   val bypassingUnit = Module(new BypassingUnit())
   bypassingUnit.io := DontCare
   val vectorLdstUnit = Module(new VectorLdstUnit())
@@ -43,11 +42,11 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
 
   if (params.useMulDiv) multiplier.get.io := DontCare
 
-  vectorLdstUnit.io.dcache <> io.dcache_axi4lite
+  vectorLdstUnit.io.dcache <> io.dCacheAxi4Lite
 
-  val cpu_operating = RegInit(false.B)
+  val cpuOperating = RegInit(false.B)
   when(!reset.asBool) {
-    cpu_operating := true.B
+    cpuOperating := true.B
   }
 
   val EX_stall = WireInit(false.B)
@@ -120,15 +119,15 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   // vecExecUnitのうちreadyでないものが存在する
   val vecInstInEx = !vecExecUnitsReady.reduce(_ && _)
   // flushならばストールさせる必要はない
-  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInst_in_pipeline || vectorInstStall
+  ID_stall := !ID_flush && ((ID_EX_REG.valid && EX_stall) || rs1_required_but_not_valid || rs2_required_but_not_valid || sysInstInPipeline || vectorInstStall
     || (vecInstInEx && decoder.io.out.valid && (!decoder.io.out.bits.vector.get || vectorDecoder.io.out.isConfsetInst || vectorDecoder.io.out.vecPermutation)))
-  io.frontend.resp.ready := cpu_operating && !ID_stall
+  io.frontend.resp.ready := cpuOperating && !ID_stall
 
-  io.frontend.req := Mux(branch_evaluator.io.out.valid && ID_EX_REG.valid, branch_evaluator.io.out, branch_predictor.io.out)
-  io.frontend.req.valid := WB_pc_redirect || (branch_evaluator.io.out.valid && ID_EX_REG.valid) || (branch_predictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
-  branch_predictor.io.pc := io.frontend.resp.bits.pc
-  branch_predictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
-  branch_predictor.io.BranchType := decoder.io.out.bits.branch
+  io.frontend.req := Mux(branchEvaluator.io.out.valid && ID_EX_REG.valid, branchEvaluator.io.out, branchPredictor.io.out)
+  io.frontend.req.valid := WB_pc_redirect || (branchEvaluator.io.out.valid && ID_EX_REG.valid) || (branchPredictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
+  branchPredictor.io.pc := io.frontend.resp.bits.pc
+  branchPredictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decoded_inst.b_imm, decoded_inst.j_imm)
+  branchPredictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decoded_inst
   rf.io.rs1 := decoded_inst.rs1
@@ -148,8 +147,8 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     ID_ecall -> Causes.machine_ecall.U,
   ))
   ID_EX_REG.bits.dataSignals.pc := io.frontend.resp.bits.pc
-  ID_EX_REG.bits.dataSignals.bp_destPC := branch_predictor.io.out.bits.pc
-  ID_EX_REG.bits.dataSignals.bp_taken := branch_predictor.io.out.valid
+  ID_EX_REG.bits.dataSignals.bpDestPc := branchPredictor.io.out.bits.pc
+  ID_EX_REG.bits.dataSignals.bpTaken := branchPredictor.io.out.valid
   ID_EX_REG.bits.dataSignals.imm := MuxCase(0.U, Seq(
     (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decoded_inst.u_imm,
     (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decoded_inst.uimm19To15,
@@ -164,14 +163,14 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ID_EX_REG.bits.dataSignals.rs2 := rs2ValueToEX
   ID_EX_REG.bits.dataSignals.zimm := decoded_inst.zimm
   ID_EX_REG.bits.ctrlSignals.decode := decoder.io.out.bits
-  ID_EX_REG.bits.ctrlSignals.rd_index := decoded_inst.rd
+  ID_EX_REG.bits.ctrlSignals.rdIndex := decoded_inst.rd
 
   // ベクトル命令を追加
   bypassingUnit.io.ID.in.rs1_index.bits := decoded_inst.rs1
   // exceptionの際にこれを下げる必要があるかもしれない
-  bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.use_RS1 && decoder.io.out.valid && io.frontend.resp.valid
+  bypassingUnit.io.ID.in.rs1_index.valid := decoder.io.out.bits.useRs1 && decoder.io.out.valid && io.frontend.resp.valid
   bypassingUnit.io.ID.in.rs2_index.bits := decoded_inst.rs2
-  bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.use_RS2 && decoder.io.out.valid && io.frontend.resp.valid
+  bypassingUnit.io.ID.in.rs2_index.valid := decoder.io.out.bits.useRs2 && decoder.io.out.valid && io.frontend.resp.valid
 
   rs1_required_but_not_valid := MuxCase(false.B, Seq(
     bypassingUnit.io.ID.out.rs1_bypassMatchAtEX -> (!bypassingUnit.io.EX.in.bits.rd.valid),
@@ -318,7 +317,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
     ID_EX_REG := ID_EX_REG
   }
   // flush the ID_EX register if branch miss, ecall, mret or exception
-  ID_flush := EX_flush || branch_evaluator.io.out.valid
+  ID_flush := EX_flush || branchEvaluator.io.out.valid
   when(ID_flush) {
     ID_EX_REG.valid := false.B
   }
@@ -339,7 +338,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   }
 
   if (params.debug) {
-    io.debug_io.get.vrfMap.get := vecRegFile.io.debug.get
+    io.debugIo.get.vrfMap.get := vecRegFile.io.debug.get
   }
 
   alu.io.in1 := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.value1, 0.U)(Seq(
@@ -354,22 +353,22 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ))
   alu.io.funct := ID_EX_REG.bits.ctrlSignals.decode
 
-  branch_evaluator.io.req.bits.ALU_Result := alu.io.out
-  branch_evaluator.io.req.bits.BranchType := ID_EX_REG.bits.ctrlSignals.decode.branch
-  branch_evaluator.io.req.bits.destPC := ID_EX_REG.bits.dataSignals.bp_destPC
-  branch_evaluator.io.req.bits.pc := ID_EX_REG.bits.dataSignals.pc
-  branch_evaluator.io.req.bits.bp_taken := ID_EX_REG.bits.dataSignals.bp_taken
-  branch_evaluator.io.req.valid := ID_EX_REG.valid
+  branchEvaluator.io.req.bits.ALU_Result := alu.io.out
+  branchEvaluator.io.req.bits.BranchType := ID_EX_REG.bits.ctrlSignals.decode.branch
+  branchEvaluator.io.req.bits.destPC := ID_EX_REG.bits.dataSignals.bpDestPc
+  branchEvaluator.io.req.bits.pc := ID_EX_REG.bits.dataSignals.pc
+  branchEvaluator.io.req.bits.bp_taken := ID_EX_REG.bits.dataSignals.bpTaken
+  branchEvaluator.io.req.valid := ID_EX_REG.valid
 
   if (params.useMulDiv) {
     val multiplier_hasValue = RegInit(false.B)
     // EXステージに有効な乗算命令があり，かつ乗算器の出力のvalidとreadyが共にtrueで無ければ乗算器に保持するべき情報（現在のEXステージの乗算命令）がある
-    multiplier_hasValue := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && ID_EX_REG.valid && !(multiplier.get.io.resp.ready && multiplier.get.io.resp.valid)
+    multiplier_hasValue := ID_EX_REG.bits.ctrlSignals.decode.useMul && ID_EX_REG.valid && !(multiplier.get.io.resp.ready && multiplier.get.io.resp.valid)
     multiplier.get.io.req.bits.rs1 := ID_EX_REG.bits.dataSignals.rs1
     multiplier.get.io.req.bits.rs2 := ID_EX_REG.bits.dataSignals.rs2
     multiplier.get.io.req.bits.funct := ID_EX_REG.bits.ctrlSignals.decode
     // 乗算器に保持するべき情報（現在のEXステージの乗算命令）があればvalidを下げる（乗算器が既に情報を受け取っているため）
-    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier_hasValue && ID_EX_REG.valid && !EX_flush
+    multiplier.get.io.req.valid := ID_EX_REG.bits.ctrlSignals.decode.useMul && !multiplier_hasValue && ID_EX_REG.valid && !EX_flush
     multiplier.get.io.resp.ready := !(EX_WB_REG.valid && WB_stall)
   }
 
@@ -382,7 +381,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   vecCtrlUnit.io.req.bits.uimm := ID_EX_REG.bits.dataSignals.imm
 
   val exScalarRes = if (params.useMulDiv) {
-    Mux(ID_EX_REG.bits.ctrlSignals.decode.use_MUL, multiplier.get.io.resp.bits, alu.io.out)
+    Mux(ID_EX_REG.bits.ctrlSignals.decode.useMul, multiplier.get.io.resp.bits, alu.io.out)
   } else {
     alu.io.out
   }
@@ -390,32 +389,32 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   // placefolder for vec->scalar inst (vcpop.m, vfirst.m, vmv.x.s)
   val exVectorRes = Mux(ID_EX_REG.bits.vectorCtrlSignals.get.vecPermutation, vecAluExecUnit(0).io.toExWbReg.bits.dataSignals.exResult, vecCtrlUnit.io.resp.bits.vl)
 
-  bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rd_index
-  bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+  bypassingUnit.io.EX.in.bits.rd.bits.index := ID_EX_REG.bits.ctrlSignals.rdIndex
+  bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> ID_EX_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> exScalarRes,
     WB_SEL.VECTOR.asUInt -> exVectorRes,
   ))
-  bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, false.B)(Seq(
+  bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeBackSelector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
-    WB_SEL.ARITH.asUInt -> (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B),
+    WB_SEL.ARITH.asUInt -> (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.useMul || multiplier.get.io.resp.valid else true.B),
     WB_SEL.CSR.asUInt -> false.B,
     WB_SEL.MEM.asUInt -> false.B,
     WB_SEL.NONE.asUInt -> false.B,
     WB_SEL.VECTOR.asUInt -> (if (params.useVector) true.B else false.B)
   )) && ID_EX_REG.valid
-  bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.write_to_rd && ID_EX_REG.valid
+  bypassingUnit.io.EX.in.valid := ID_EX_REG.bits.ctrlSignals.decode.writeToRd && ID_EX_REG.valid
 
   EX_WB_REG.valid := ID_EX_REG.valid && (!ID_EX_REG.bits.ctrlSignals.decode.memValid || vectorLdstUnit.io.signalIn.ready) &&
-    (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.use_MUL || multiplier.get.io.resp.valid else true.B) &&
+    (if (params.useMulDiv) !ID_EX_REG.bits.ctrlSignals.decode.useMul || multiplier.get.io.resp.valid else true.B) &&
     (!ID_EX_REG.bits.ctrlSignals.decode.vector.get || ID_EX_REG.bits.vectorCtrlSignals.get.isConfsetInst || vecExecUnitsToExWbRegValid.reduce(_ || _))
   EX_WB_REG.bits.dataSignals.pc := ID_EX_REG.bits.dataSignals.pc
-  EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+  EX_WB_REG.bits.dataSignals.exResult := MuxLookup(ID_EX_REG.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.ARITH.asUInt -> exScalarRes,
     WB_SEL.VECTOR.asUInt -> exVectorRes,
   ))
   EX_WB_REG.bits.dataSignals.datatoCSR := Mux(ID_EX_REG.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, ID_EX_REG.bits.dataSignals.rs1, ID_EX_REG.bits.dataSignals.imm)
-  EX_WB_REG.bits.dataSignals.csr_addr := ID_EX_REG.bits.dataSignals.zimm
+  EX_WB_REG.bits.dataSignals.csrAddr := ID_EX_REG.bits.dataSignals.zimm
 
   EX_WB_REG.bits.ctrlSignals := ID_EX_REG.bits.ctrlSignals
 
@@ -440,7 +439,7 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
   // またはベクタ命令実行完了前にスカラ命令がID_EXレジスタにある，またはチェイニング不可能なベクタ命令（構造ハザード・0要素目の値が用意できていないなど）
   EX_stall := ID_EX_REG.valid && ((EX_WB_REG.valid && WB_stall) || (if (params.useMulDiv) {
-    ID_EX_REG.bits.ctrlSignals.decode.use_MUL && !multiplier.get.io.resp.valid
+    ID_EX_REG.bits.ctrlSignals.decode.useMul && !multiplier.get.io.resp.valid
   } else false.B))
   // ベクトル命令がEXにある場合，IDがスカラ命令，またはIDのベクトル命令が発行できないならばIDの方でストールさせる
 
@@ -490,8 +489,8 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val WB_inst_can_retire = EX_WB_REG.valid && !(EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && !WB_stall
-  rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.write_to_rd
-  rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeback_selector, 0.U)(Seq(
+  rf.io.req.valid := WB_inst_can_retire && EX_WB_REG.bits.ctrlSignals.decode.writeToRd
+  rf.io.req.bits.data := MuxLookup(EX_WB_REG.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.PC4 -> EX_WB_REG.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH -> EX_WB_REG.bits.dataSignals.exResult,
     WB_SEL.CSR -> csrUnit.io.resp.data,
@@ -500,20 +499,20 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   ).map {
     case (wb_sel, data) => (wb_sel.asUInt, data)
   })
-  rf.io.req.bits.rd := EX_WB_REG.bits.ctrlSignals.rd_index
+  rf.io.req.bits.rd := EX_WB_REG.bits.ctrlSignals.rdIndex
 
   bypassingUnit.io.WB.in.bits.rd.valid := bypassingUnit.io.WB.in.valid && (!EX_WB_REG.bits.ctrlSignals.decode.memRead || vectorLdstUnit.io.scalarResp.valid)
-  bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rd_index
+  bypassingUnit.io.WB.in.bits.rd.bits.index := EX_WB_REG.bits.ctrlSignals.rdIndex
   bypassingUnit.io.WB.in.bits.rd.bits.value := rf.io.req.bits.data
-  bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.write_to_rd && WB_inst_can_retire
+  bypassingUnit.io.WB.in.valid := EX_WB_REG.bits.ctrlSignals.decode.writeToRd && WB_inst_can_retire
 
   csrUnit.io.req.valid := EX_WB_REG.valid
   // ecallやmretの処理はcsrUnit内で行われる
   csrUnit.io.req.bits.funct := EX_WB_REG.bits.ctrlSignals.decode
   csrUnit.io.req.bits.data := EX_WB_REG.bits.dataSignals.datatoCSR
-  csrUnit.io.req.bits.csr_addr := EX_WB_REG.bits.dataSignals.csr_addr
+  csrUnit.io.req.bits.csr_addr := EX_WB_REG.bits.dataSignals.csrAddr
   csrUnit.io.fromCPU.hartid := io.hartid
-  csrUnit.io.fromCPU.cpu_operating := cpu_operating
+  csrUnit.io.fromCPU.cpu_operating := cpuOperating
   csrUnit.io.fromCPU.inst_retire := WB_inst_can_retire
   csrUnit.io.fromCPU.vectorExecNum.get := EX_WB_REG.bits.vectorExecNum.get
   csrUnit.io.exception.valid := (EX_WB_REG.bits.exceptionSignals.valid || dmemoryAccessException) && EX_WB_REG.valid
@@ -523,13 +522,13 @@ class VectorCpu(implicit params: HajimeCoreParams) extends CpuModule with Scalar
   csrUnit.io.vectorCsrPorts.get := EX_WB_REG.bits.vectorCsrPorts.get
 
   // EXまたはWBステージにfence, ecall, mretがある
-  sysInst_in_pipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)
+  sysInstInPipeline := (ID_EX_REG.valid && ID_EX_REG.bits.ctrlSignals.decode.isSysInst) || (EX_WB_REG.valid && EX_WB_REG.bits.ctrlSignals.decode.isSysInst)
 
   if (params.debug) {
-    io.debug_io.get.debug_retired.bits.instruction.bits := EX_WB_REG.bits.debug.get.instruction & Fill(32, EX_WB_REG.valid)
-    io.debug_io.get.debug_retired.bits.pc.addr := EX_WB_REG.bits.debug.get.pc.addr & Fill(params.xprlen, EX_WB_REG.valid)
-    io.debug_io.get.debug_retired.valid := WB_inst_can_retire
-    io.debug_io.get.debug_abi_map := rf.io.debug_abi_map.get
+    io.debugIo.get.debugRetired.bits.instruction.bits := EX_WB_REG.bits.debug.get.instruction & Fill(32, EX_WB_REG.valid)
+    io.debugIo.get.debugRetired.bits.pc.addr := EX_WB_REG.bits.debug.get.pc.addr & Fill(params.xprlen, EX_WB_REG.valid)
+    io.debugIo.get.debugRetired.valid := WB_inst_can_retire
+    io.debugIo.get.debugAbiMap := rf.io.debug_abi_map.get
   }
 }
 

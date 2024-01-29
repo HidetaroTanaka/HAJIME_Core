@@ -67,9 +67,9 @@ object RV32IDecode extends DecodeConstants {
 
     // SYSTEM
     FENCE  -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, Y),
-    // csr_addr[mepc] = address of ECALL, csr_addr[mcause]=cause, pc=Cat(mtvec.head(xprlen-2), 0.U(2.W))
+    // csrAddr[mepc] = address of ECALL, csrAddr[mcause]=cause, pc=Cat(mtvec.head(xprlen-2), 0.U(2.W))
     ECALL  -> List(Y, Branch.ECALL, Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.I, N),
-    // pc=csr_addr[mepc]
+    // pc=csrAddr[mepc]
     MRET   -> List(Y, Branch.MRET,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.R, N),
     // ebreak is unimplemented
     EBREAK -> List(Y, Branch.NONE,  Value1.ZERO,  Value2.ZERO,  ARITHMETIC_FCN.NONE,    N, N, WB_SEL.NONE,  MEM_FCN.M_NONE, MEM_LEN.B, N, CSR_FCN.N, N),
@@ -288,30 +288,30 @@ class ID_output(implicit params: HajimeCoreParams) extends Bundle with ScalarOpC
   val branch = UInt(Branch.getWidth.W)
   val value1 = UInt(Value1.getWidth.W)
   val value2 = UInt(Value2.getWidth.W)
-  val arithmetic_funct = UInt(ARITHMETIC_FCN.getWidth.W)
-  val alu_flag = Bool()
+  val arithmeticFunct = UInt(ARITHMETIC_FCN.getWidth.W)
+  val aluFlag = Bool()
   val op32 = Bool()
-  val writeback_selector = UInt(WB_SEL.getWidth.W)
-  val memory_function = UInt(MEM_FCN.getWidth.W)
-  val memory_length = UInt(MEM_LEN.getWidth.W)
-  val mem_sext = Bool()
-  val csr_funct = UInt(CSR_FCN.getWidth.W)
+  val writeBackSelector = UInt(WB_SEL.getWidth.W)
+  val memoryFunction = UInt(MEM_FCN.getWidth.W)
+  val memoryLength = UInt(MEM_LEN.getWidth.W)
+  val memSExt = Bool()
+  val csrFunct = UInt(CSR_FCN.getWidth.W)
   val fence = Bool()
   val vector = if(params.useVector) Some(Bool()) else None
-  def toList: List[UInt] = (branch :: value1 :: value2 :: arithmetic_funct :: alu_flag :: op32 ::
-    writeback_selector :: memory_function :: memory_length :: mem_sext :: csr_funct :: fence ::
+  def toList: List[UInt] = (branch :: value1 :: value2 :: arithmeticFunct :: aluFlag :: op32 ::
+    writeBackSelector :: memoryFunction :: memoryLength :: memSExt :: csrFunct :: fence ::
     (if(params.useVector) vector.get :: Nil else Nil))
   def isCondBranch: Bool = Branch.isCondBranch(branch)
   def isJump: Bool = Branch.isJump(branch)
   // ALUへの値でrs1を使うまたはCSRでrs1レジスタを使う
-  def use_RS1: Bool = Value1.use_RS1(value1)
+  def useRs1: Bool = Value1.use_RS1(value1)
   // ALUへの値でrs2を使うまたはストア命令
-  def use_RS2: Bool = Value2.use_RS2(value2) || (memory_function === MEM_FCN.M_WR.asUInt)
-  def use_ALU: Bool = ARITHMETIC_FCN.use_ALU(arithmetic_funct)
-  def use_MUL: Bool = ARITHMETIC_FCN.use_MUL(arithmetic_funct)
-  def write_to_rd: Bool = WB_SEL.write_to_rd(writeback_selector)
-  def memRead: Bool = (memory_function === MEM_FCN.M_RD.asUInt)
-  def memWrite: Bool = (memory_function === MEM_FCN.M_WR.asUInt)
+  def useRs2: Bool = Value2.use_RS2(value2) || (memoryFunction === MEM_FCN.M_WR.asUInt)
+  def useAlu: Bool = ARITHMETIC_FCN.use_ALU(arithmeticFunct)
+  def useMul: Bool = ARITHMETIC_FCN.use_MUL(arithmeticFunct)
+  def writeToRd: Bool = WB_SEL.write_to_rd(writeBackSelector)
+  def memRead: Bool = (memoryFunction === MEM_FCN.M_RD.asUInt)
+  def memWrite: Bool = (memoryFunction === MEM_FCN.M_WR.asUInt)
   def memValid: Bool = memRead || memWrite
   def isSysInst: Bool = fence || (branch === Branch.ECALL.asUInt || branch === Branch.MRET.asUInt)
 }

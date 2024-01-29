@@ -20,7 +20,7 @@ class FrontEndCpuIO(implicit params: HajimeCoreParams) extends Bundle {
 
 class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
   val cpu = new FrontEndCpuIO()
-  val icache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = RISCV_Consts.INST_LEN * params.issue_width)
+  val icache_axi4lite = new AXI4liteIO(addrWidth = params.xprlen, dataWidth = RISCV_Consts.INST_LEN * params.issue_width)
   val reset_vector = Input(UInt(params.xprlen.W))
   val exception = Output(Bool())
 }
