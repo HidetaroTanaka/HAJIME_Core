@@ -29,7 +29,7 @@ trait ChecksAxiWriteResp {
   def writeErrorList: List[Int] = List(W_SLVERR, W_DECERR, W_DEFER, W_TRANSFAULT, W_UNSUPPORTED)
 }
 
-trait AXIlite_hasAddrChannel {
+trait AxiLiteHasAddrChannel {
   val addr: UInt
   def alignedTo(align: Int): Bool = addr.tail(addr.getWidth-align) === 0.U
 
@@ -40,24 +40,24 @@ trait AXIlite_hasAddrChannel {
 /**
  * AXIlite Read Request Channel
  * from master
- * @param addr_width address width
+ * @param addrWidth address width
  */
-class AXIlite_ARchannel(addr_width: Int) extends Bundle with AXIlite_hasAddrChannel {
-  val addr = Output(UInt(addr_width.W))
+class AxiLiteARchannel(addrWidth: Int) extends Bundle with AxiLiteHasAddrChannel {
+  val addr = Output(UInt(addrWidth.W))
   val prot = Output(UInt(3.W))
 }
 
 /**
  * AXIlite Write Address Request Channel
  * from master
- * @param addr_width address width
+ * @param addrWidth address width
  */
-class AXIlite_AWchannel(addr_width: Int) extends Bundle with AXIlite_hasAddrChannel {
-  val addr = Output(UInt(addr_width.W))
+class AxiLiteAWchannel(addrWidth: Int) extends Bundle with AxiLiteHasAddrChannel {
+  val addr = Output(UInt(addrWidth.W))
   val prot = Output(UInt(3.W))
 }
 
-trait AXIlite_isResponse {
+trait AxiLiteIsResponse {
   val resp: UInt
   def exception: Bool
 }
@@ -66,21 +66,21 @@ trait AXIlite_isResponse {
  * AXIlite Write Success Channel? idk
  * from slave
  */
-class AXIlite_Bchannel extends Bundle with AXIlite_isResponse with ChecksAxiWriteResp {
+class AxiLiteBchannel extends Bundle with AxiLiteIsResponse with ChecksAxiWriteResp {
   val resp = Output(UInt(3.W))
   override def exception: Bool = writeErrorList.map(x => x.U === resp).reduce(_ || _)
 }
 
-trait AXIlite_hasDataChannel {
+trait AxiLiteHasDataChannel {
   val data: UInt
 }
 
 /**
  * AXIlite Read Response Channel from slave
- * @param data_width
+ * @param dataWidth
  */
-class AXIlite_Rchannel(data_width: Int) extends Bundle with AXIlite_isResponse with AXIlite_hasDataChannel with ChecksAxiReadResp {
-  val data = Output(UInt(data_width.W))
+class AxiLiteRchannel(dataWidth: Int) extends Bundle with AxiLiteIsResponse with AxiLiteHasDataChannel with ChecksAxiReadResp {
+  val data = Output(UInt(dataWidth.W))
   val resp = Output(UInt(3.W))
 
   override def exception: Bool = readErrorList.map(x => x.U === resp).reduce(_ || _)
@@ -88,20 +88,20 @@ class AXIlite_Rchannel(data_width: Int) extends Bundle with AXIlite_isResponse w
 
 /**
  * AXIlite Write Data Request Channel from master
- * @param data_width
+ * @param dataWidth
  */
-class AXIlite_Wchannel(data_width: Int) extends Bundle with AXIlite_hasDataChannel {
-  require(data_width % 8 == 0, "data_width is not multiply of 8")
-  val data = Output(UInt(data_width.W))
+class AxiLiteWchannel(dataWidth: Int) extends Bundle with AxiLiteHasDataChannel {
+  require(dataWidth % 8 == 0, "dataWidth is not multiply of 8")
+  val data = Output(UInt(dataWidth.W))
   // val ready = Input(Bool())
-  val strb = Output(UInt((data_width/8).W))
+  val strb = Output(UInt((dataWidth/8).W))
   // val valid = Output(Bool())
 }
 
-class AXI4liteIO(addr_width: Int, data_width: Int) extends Bundle {
-  val ar = Irrevocable(new AXIlite_ARchannel(addr_width))
-  val aw = Irrevocable(new AXIlite_AWchannel(addr_width))
-  val b = Flipped(Irrevocable(new AXIlite_Bchannel))
-  val r = Flipped(Irrevocable(new AXIlite_Rchannel(data_width)))
-  val w = Irrevocable(new AXIlite_Wchannel(data_width))
+class AXI4liteIO(addrWidth: Int, dataWidth: Int) extends Bundle {
+  val ar = Irrevocable(new AxiLiteARchannel(addrWidth))
+  val aw = Irrevocable(new AxiLiteAWchannel(addrWidth))
+  val b = Flipped(Irrevocable(new AxiLiteBchannel))
+  val r = Flipped(Irrevocable(new AxiLiteRchannel(dataWidth)))
+  val w = Irrevocable(new AxiLiteWchannel(dataWidth))
 }

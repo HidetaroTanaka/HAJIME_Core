@@ -21,14 +21,14 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
       // 0x0000_0000 ~ 0x0000_1FFF : icache
       // 0x0000_4000 ~ 0x0000_5FFF : dcache
       // 0x1000_0000               : tohost
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         initialiseMemWithAxi(
           filename = s"src/main/resources/rv64ui/${e}_inst.hex",
-          axi = dut.io.imem_initialiseAXI,
-          initialising = dut.io.icache_initialising,
+          axi = dut.io.iMemInitialiseAxi,
+          initialising = dut.io.iCacheInitialising,
           clock = dut.clock,
           baseAddr = 0
         )
@@ -50,23 +50,23 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
   ) else Nil
   for (e <- instListWithDmem) {
     it should s"Vector CPU pass the test ${e}" in {
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         fork {
           initialiseMemWithAxi(
             filename = s"src/main/resources/rv64ui/${e}_inst.hex",
-            axi = dut.io.imem_initialiseAXI,
-            initialising = dut.io.icache_initialising,
+            axi = dut.io.iMemInitialiseAxi,
+            initialising = dut.io.iCacheInitialising,
             clock = dut.clock,
             baseAddr = 0
           )
         }.fork {
           initialiseMemWithAxi(
             filename = s"src/main/resources/rv64ui/${e}_data.hex",
-            axi = dut.io.dmem_initialiseAXI,
-            initialising = dut.io.dcache_initialising,
+            axi = dut.io.dMemInitialiseAxi,
+            initialising = dut.io.dCacheInitialising,
             clock = dut.clock,
             baseAddr = 0x4000
           )
@@ -86,14 +86,14 @@ class VectorCpuSpec extends AnyFlatSpec with ChiselScalatestTester {
   ) else Nil
   for (e <- instListMult) {
     it should s"Vector CPU pass the test ${e}" in {
-      test(new Core_and_cache(icache_memsize = 8192, dcache_memsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(iCacheMemsize = 8192, dCacheMemsize = 8192, tohost = 0x10000000, useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         dut.clock.setTimeout(1024)
-        dut.io.reset_vector.poke(0.U)
+        dut.io.resetVector.poke(0.U)
         dut.io.hartid.poke(0.U)
         initialiseMemWithAxi(
           filename = s"src/main/resources/rv64um/${e}_inst.hex",
-          axi = dut.io.imem_initialiseAXI,
-          initialising = dut.io.icache_initialising,
+          axi = dut.io.iMemInitialiseAxi,
+          initialising = dut.io.iCacheInitialising,
           clock = dut.clock,
           baseAddr = 0
         )
@@ -116,7 +116,7 @@ class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   )
   for (e <- rv64iTestList) {
     it should s"Vector CPU execute $e" in {
-      test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64i")
       }
     }
@@ -126,7 +126,7 @@ class Rv64imAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   )
   for (e <- rv64mTestList) {
     it should s"Vector CPU execute $e" in {
-      test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "rv64m")
       }
     }
@@ -149,7 +149,7 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
   val zve64xTestList: Seq[String] = ldstTest ++ arithmeticTest ++ applicationTest
   for (e <- zve64xTestList) {
     it should s"Vector CPU execute $e" in {
-      test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+      test(new CoreAndCache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
         executeTest(dut, e, "vector")
       }
     }
@@ -157,15 +157,15 @@ class Zve64xAppTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
 }
 
 class FpgaTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
-  def _executeTest[T <: CpuModule](dut: Core_and_cache[T], testName: String, testType: String): Unit = {
+  def _executeTest[T <: CpuModule](dut: CoreAndCache[T], testName: String, testType: String): Unit = {
     println(s"test $testName:")
     fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.mem", dut.io.imem_initialiseAXI, dut.io.icache_initialising, dut.clock, 0)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_inst.mem", dut.io.iMemInitialiseAxi, dut.io.iCacheInitialising, dut.clock, 0)
     }.fork {
-      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.mem", dut.io.dmem_initialiseAXI, dut.io.dcache_initialising, dut.clock, 0x4000)
+      initialiseMemWithAxi(s"src/main/resources/applications_${testType}/${testName}_data.mem", dut.io.dMemInitialiseAxi, dut.io.dCacheInitialising, dut.clock, 0x4000)
     }.join()
     dut.clock.setTimeout(0)
-    dut.io.reset_vector.poke(0.U)
+    dut.io.resetVector.poke(0.U)
     dut.io.hartid.poke(0.U)
 
     for(_ <- 0 until 1048576) {
@@ -174,7 +174,7 @@ class FpgaTestForVecCpu extends AnyFlatSpec with ChiselScalatestTester {
     println(dut.io.toHost.bits.peekInt())
   }
   it should "Vector CPU execute matmul for FPGA" in {
-    test(new Core_and_cache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, IcarusBackendAnnotation)) { dut =>
+    test(new CoreAndCache(useVector = true, cpu = classOf[VectorCpu])).withAnnotations(Seq(WriteVcdAnnotation, IcarusBackendAnnotation)) { dut =>
       _executeTest(dut, "vector_matmul", "fpga")
     }
   }

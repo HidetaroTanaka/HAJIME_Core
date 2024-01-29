@@ -11,8 +11,8 @@ import org.scalatest.flatspec._
 import scala.io._
 
 // Should I check unaligned exception in Core or Cache?
-class Icache_for_Verilator(memsize: Int = 0x2000) extends Module {
-  val io = IO(Flipped(new AXI4liteIO(addr_width = 64, data_width = 32)))
+class IcacheForVerilator(memsize: Int = 0x2000) extends Module {
+  val io = IO(Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 32)))
   // AR channel
   io.ar.ready := true.B
   // AW channel
@@ -33,50 +33,50 @@ class Icache_for_Verilator(memsize: Int = 0x2000) extends Module {
   readDataFromMem.data := Cat(mem.read(io.ar.bits.addr.head(62)).reverse)
   readDataFromMem.resp := 0.U
 
-  val r_channel_bits_reg = Reg(chiselTypeOf(io.r.bits))
-  val r_channel_valid_reg = Reg(Bool())
-  val r_stall = io.r.valid && !io.r.ready
-  val retain_r_channel = RegNext(r_stall)
-  when(r_stall) {
-    r_channel_bits_reg := io.r.bits
-    r_channel_valid_reg := io.r.valid
+  val rChannelBitsReg = Reg(chiselTypeOf(io.r.bits))
+  val rChannelValidReg = Reg(Bool())
+  val rStall = io.r.valid && !io.r.ready
+  val retainRchannel = RegNext(rStall)
+  when(rStall) {
+    rChannelBitsReg := io.r.bits
+    rChannelValidReg := io.r.valid
     io.ar.ready := false.B
   }.otherwise {
-    r_channel_bits_reg := readDataFromMem
-    r_channel_valid_reg := RegNext(io.ar.valid && io.ar.ready)
+    rChannelBitsReg := readDataFromMem
+    rChannelValidReg := RegNext(io.ar.valid && io.ar.ready)
   }
 
-  io.r.bits := Mux(retain_r_channel, r_channel_bits_reg, readDataFromMem)
-  io.r.valid := Mux(retain_r_channel, r_channel_valid_reg, RegNext(io.ar.valid && io.ar.ready))
+  io.r.bits := Mux(retainRchannel, rChannelBitsReg, readDataFromMem)
+  io.r.valid := Mux(retainRchannel, rChannelValidReg, RegNext(io.ar.valid && io.ar.ready))
 
   // write
   io.b.bits.resp := 0.U
-  val b_valid = RegInit(false.B)
-  val b_resp = RegInit(0.U(3.W))
-  val writeData_asVec = Wire(Vec(4, UInt(8.W)))
-  for((w,i) <- writeData_asVec.zipWithIndex) {
+  val bValid = RegInit(false.B)
+  val bResp = RegInit(0.U(3.W))
+  val writeDataAsVec = Wire(Vec(4, UInt(8.W)))
+  for((w,i) <- writeDataAsVec.zipWithIndex) {
     w := io.w.bits.data(8*i+7, 8*i)
   }
   when(io.aw.valid && io.w.valid) {
-    mem.write(io.aw.bits.addr.head(62), writeData_asVec, io.w.bits.strb.asBools)
-    b_valid := true.B
-    b_resp := 0.U
+    mem.write(io.aw.bits.addr.head(62), writeDataAsVec, io.w.bits.strb.asBools)
+    bValid := true.B
+    bResp := 0.U
   } .otherwise {
-    b_valid := false.B
-    b_resp := 0.U
+    bValid := false.B
+    bResp := 0.U
   }
-  io.b.valid := b_valid
-  io.b.bits.resp := b_resp
+  io.b.valid := bValid
+  io.b.bits.resp := bResp
 }
 
-object Icache_for_Verilator extends App {
-  def apply(memsize: Int = 8192): Icache_for_Verilator = new Icache_for_Verilator(memsize)
-  ChiselStage.emitSystemVerilogFile(Icache_for_Verilator(memsize = 8192), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
+object IcacheForVerilator extends App {
+  def apply(memsize: Int = 8192): IcacheForVerilator = new IcacheForVerilator(memsize)
+  ChiselStage.emitSystemVerilogFile(IcacheForVerilator(memsize = 8192), firtoolOpts = COMPILE_CONSTANTS.FIRTOOLOPS)
 }
 
-class Icache_for_VerilatorSpec extends AnyFlatSpec with ChiselScalatestTester {
+class IcacheForVerilatorSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "write and read correctly" in {
-    test(Icache_for_Verilator(memsize = 1024)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+    test(IcacheForVerilator(memsize = 1024)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       dut.io.ar.bits.addr.poke(0.U)
       dut.io.ar.bits.prot.poke(0.U)
       dut.io.ar.valid.poke(false.B)

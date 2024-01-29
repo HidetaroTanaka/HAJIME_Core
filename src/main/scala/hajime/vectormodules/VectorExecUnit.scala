@@ -31,7 +31,7 @@ class VectorExecUnitIO(implicit params: HajimeCoreParams) extends Bundle {
   val signalIn = Flipped(DecoupledIO(new VectorExecUnitSignalIn()))
   val readVrf = Flipped(new VecRegFileReadIO())
   val dataOut = Output(new VectorExecUnitDataOut())
-  val toExWbReg = Output(Valid(new EX_WB_IO()))
+  val toExWbReg = Output(Valid(new exWbIo()))
 }
 
 /**
@@ -110,7 +110,7 @@ abstract class VectorExecUnit(implicit params: HajimeCoreParams) extends Module 
   io.toExWbReg.bits.dataSignals := DontCare
   io.toExWbReg.bits.dataSignals.pc := instInfoReg.bits.pc
   io.toExWbReg.bits.ctrlSignals.decode := instInfoReg.bits.scalarDecode
-  io.toExWbReg.bits.ctrlSignals.rd_index := 0.U
+  io.toExWbReg.bits.ctrlSignals.rdIndex := 0.U
   io.toExWbReg.bits.exceptionSignals.valid := false.B
   io.toExWbReg.bits.exceptionSignals.bits := DontCare
   io.toExWbReg.bits.vectorCsrPorts.get := instInfoReg.bits.vecConf
@@ -251,7 +251,7 @@ class IntegerAluExecUnit(implicit params: HajimeCoreParams) extends VectorExecUn
       io.toExWbReg.valid := true.B
       io.toExWbReg.bits.vectorExecNum.get.bits := 1.U
       io.toExWbReg.bits.vectorExecNum.get.valid := true.B
-      io.toExWbReg.bits.ctrlSignals.rd_index := instInfoReg.bits.vd
+      io.toExWbReg.bits.ctrlSignals.rdIndex := instInfoReg.bits.vd
       io.toExWbReg.bits.dataSignals.exResult := io.readVrf.resp.vs2Out
     }.elsewhen(instInfoReg.bits.vectorDecode.veuFun === VEU_FUN.MV_S_X.asUInt) {
       // vmv.s.x

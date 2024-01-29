@@ -251,9 +251,9 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
 
   // rs1のMSBが1であり，かつrs1が符号付きであればrs1の符号を逆転させる
   val rs1_inverted = (io.req.bits.rs1.head(1).asBool &&
-    ((io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HISU.asUInt)))
+    ((io.req.bits.funct.arithmeticFunct === ARITHMETIC_FCN.MUL_HIGH.asUInt) || (io.req.bits.funct.arithmeticFunct === ARITHMETIC_FCN.MUL_HISU.asUInt)))
   // rs2に関しても同様
-  val rs2_inverted = (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmetic_funct === ARITHMETIC_FCN.MUL_HIGH.asUInt))
+  val rs2_inverted = (io.req.bits.rs2.head(1).asBool && (io.req.bits.funct.arithmeticFunct === ARITHMETIC_FCN.MUL_HIGH.asUInt))
 
   nonPipelinedMultiplier.io.req.valid := io.req.valid
   io.req.ready := nonPipelinedMultiplier.io.req.ready
@@ -278,6 +278,6 @@ class NonPipelinedMultiplierWrap(implicit params: HajimeCoreParams) extends Modu
   val result128 = Mux(nonPipelinedMultiplier.io.resp.bits.sign, -nonPipelinedMultiplier.io.resp.bits.result, nonPipelinedMultiplier.io.resp.bits.result)
   io.resp.bits := MuxCase(result128(127,64), Seq(
     nonPipelinedMultiplier.io.resp.bits.decode.op32 -> result128(31,0).ext(64),
-    (nonPipelinedMultiplier.io.resp.bits.decode.arithmetic_funct === ARITHMETIC_FCN.MUL_LOW.asUInt) -> result128(63,0),
+    (nonPipelinedMultiplier.io.resp.bits.decode.arithmeticFunct === ARITHMETIC_FCN.MUL_LOW.asUInt) -> result128(63,0),
   ))
 }
