@@ -17,17 +17,17 @@ class VectorLdstUnitWithDcache(dcache_memsize: Int = 8192, tohost: Int = 0x10000
     val readVrf = Flipped(new VecRegFileReadIO())
     val scalarResp = ValidIO(new LDSTResp())
     val vectorResp = Output(new VectorExecUnitDataOut())
-    val toExWbReg = Output(Valid(new EX_WB_IO()))
+    val toExWbReg = Output(Valid(new exWbIo()))
   })
   val dCacheInitialiseIO = IO(new Bundle {
     val valid = Input(Bool())
-    val bits = Flipped(new AXI4liteIO(addr_width = 64, data_width = 64))
+    val bits = Flipped(new AXI4liteIO(addrWidth = 64, dataWidth = 64))
   })
 
   val vecLdstUnit = withReset(dCacheInitialiseIO.valid || reset.asBool) {
     Module(new VectorLdstUnit())
   }
-  val dCache = Module(new Dcache_for_Verilator(dcacheBaseAddr = 0x00004000, tohost = tohost, memsize = dcache_memsize))
+  val dCache = Module(new DcacheForVerilator(dcacheBaseAddr = 0x00004000, tohost = tohost, memsize = dcache_memsize))
 
   dCacheInitialiseIO := DontCare
   vecLdstUnit.io := DontCare

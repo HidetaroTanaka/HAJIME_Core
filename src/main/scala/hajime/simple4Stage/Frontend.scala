@@ -23,7 +23,7 @@ class FrontEndCpuIO(implicit params: HajimeCoreParams) extends Bundle {
 
 class FrontEndIO(implicit params: HajimeCoreParams) extends Bundle {
   val cpu = new FrontEndCpuIO()
-  val icache_axi4lite = new AXI4liteIO(addr_width = params.xprlen, data_width = 32)
+  val icache_axi4lite = new AXI4liteIO(addrWidth = params.xprlen, dataWidth = 32)
   val reset_vector = Input(UInt(params.xprlen.W))
 }
 

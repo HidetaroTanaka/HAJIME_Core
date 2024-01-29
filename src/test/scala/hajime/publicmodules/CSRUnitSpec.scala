@@ -18,14 +18,14 @@ class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpCo
         _.branch -> 0.U,
         _.value1 -> Value1.RS1.litValue.U,
         _.value2 -> Value2.ZERO.litValue.U,
-        _.arithmetic_funct -> ARITHMETIC_FCN.NONE.litValue.U,
-        _.alu_flag -> false.B,
+        _.arithmeticFunct -> ARITHMETIC_FCN.NONE.litValue.U,
+        _.aluFlag -> false.B,
         _.op32 -> false.B,
-        _.writeback_selector -> WB_SEL.CSR.litValue.U,
-        _.memory_function -> MEM_FCN.M_NONE.litValue.U,
-        _.memory_length -> MEM_LEN.B.litValue.U,
-        _.mem_sext -> false.B,
-        _.csr_funct -> CSR_FCN.S.litValue.U,
+        _.writeBackSelector -> WB_SEL.CSR.litValue.U,
+        _.memoryFunction -> MEM_FCN.M_NONE.litValue.U,
+        _.memoryLength -> MEM_LEN.B.litValue.U,
+        _.memSExt -> false.B,
+        _.csrFunct -> CSR_FCN.S.litValue.U,
         _.fence -> false.B,
       ))
       dut.io.req.valid.poke(true.B)
@@ -43,7 +43,7 @@ class CSRUnitSpec extends AnyFlatSpec with ChiselScalatestTester with ScalarOpCo
       // write to mtvec test
       dut.io.req.bits.data.poke("h1919".U(xprlen.W))
       dut.io.req.bits.csr_addr.poke(CSRs.mtvec.U(12.W))
-      dut.io.req.bits.funct.csr_funct.poke(CSR_FCN.W.litValue.U) // CSR_WRITE
+      dut.io.req.bits.funct.csrFunct.poke(CSR_FCN.W.litValue.U) // CSR_WRITE
       dut.clock.step()
       dut.io.resp.data.expect("h1919".U(xprlen.W))
       dut.clock.step()
