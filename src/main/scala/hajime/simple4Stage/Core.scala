@@ -163,9 +163,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   val csrUnit = Module(new CSRUnit())
   csrUnit.io := DontCare
   val multiplier = if(params.useMulDiv) Some(Module(new NonPipelinedMultiplierWrap())) else None
-  val vectorDecoder = if(params.useVector) Some(Module(new VectorDecoder())) else None
-  val vecCtrlUnit = if(params.useVector) Some(Module(new VecCtrlUnit())) else None
-  val vecRegFile = if(params.useVector) Some(Module(new VecRegFile(vrfPortNum = 2))) else None
   if(params.useMulDiv) multiplier.get.io := DontCare
 
   ldstUnit.io.dCacheAxi4Lite <> io.dCacheAxi4Lite
@@ -202,7 +199,7 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   io.frontend.req := Mux(branchEvaluator.io.out.valid && idExReg.valid, branchEvaluator.io.out, branchPredictor.io.out)
   io.frontend.req.valid := wbPcRedirect || (branchEvaluator.io.out.valid && idExReg.valid) || (branchPredictor.io.out.valid && io.frontend.resp.valid && io.frontend.resp.ready)
   branchPredictor.io.pc := io.frontend.resp.bits.pc
-  branchPredictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decodedInst.b_imm, decodedInst.j_imm)
+  branchPredictor.io.imm := Mux(decoder.io.out.bits.isCondBranch, decodedInst.getImm(ImmediateEnum.B), decodedInst.getImm(ImmediateEnum.J))
   branchPredictor.io.BranchType := decoder.io.out.bits.branch
 
   decoder.io.inst := decodedInst
@@ -223,13 +220,13 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     idEcall -> Causes.machine_ecall.U,
   ))
   idExReg.bits.dataSignals.pc := io.frontend.resp.bits.pc
-  idExReg.bits.dataSignals.bpDestPc := branchPredictor.io.out.bits.pc
+  idExReg.bits.dataSignals.bpDestPc := branchPredictor.io.out.bits.addr
   idExReg.bits.dataSignals.bpTaken := branchPredictor.io.out.valid
   idExReg.bits.dataSignals.imm := MuxCase(0.U, Seq(
-    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decodedInst.u_imm,
+    (decoder.io.out.bits.value1 === Value1.U_IMM.asUInt) -> decodedInst.getImm(ImmediateEnum.U),
     (decoder.io.out.bits.value1 === Value1.UIMM19_15.asUInt) -> decodedInst.uimm19To15,
-    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decodedInst.i_imm,
-    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decodedInst.s_imm,
+    (decoder.io.out.bits.value2 === Value2.I_IMM.asUInt) -> decodedInst.getImm(ImmediateEnum.I),
+    (decoder.io.out.bits.value2 === Value2.S_IMM.asUInt) -> decodedInst.getImm(ImmediateEnum.S),
   ))
 
   val rs1ValueToEX = Mux(bypassingUnit.io.ID.out.rs1_value.valid, bypassingUnit.io.ID.out.rs1_value.bits, rf.io.rs1_out)
@@ -256,20 +253,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     bypassingUnit.io.ID.out.rs2_bypassMatchAtWB -> (!bypassingUnit.io.WB.in.bits.rd.valid),
   ))
 
-  if(params.useVector) {
-    vectorDecoder.get.io.inst := decodedInst
-    when(decoder.io.out.valid && decoder.io.out.bits.vector.get) {
-      idExReg.bits.vectorCtrlSignals.get := vectorDecoder.get.io.out
-    }
-    // 0 -> v0.mask[i]が1ならば書き込み，0ならば書き込まない
-    // 1 -> マスクなし，全て書き込む
-    // （マスクを使わないベクタ命令は全てvm=1か？）
-    idExReg.bits.vectorDataSignals.get.mask := decodedInst.bits(25)
-    idExReg.bits.vectorDataSignals.get.vs1 := decodedInst.rs1
-    idExReg.bits.vectorDataSignals.get.vs2 := decodedInst.rs2
-    idExReg.bits.vectorDataSignals.get.vd := decodedInst.rd
-  }
-
   if(params.debug) {
     idExReg.bits.debug.get.instruction := decodedInst.bits
     idExReg.bits.debug.get.pc := io.frontend.resp.bits.pc
@@ -286,44 +269,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   }
 
   // START OF EX STAGE
-  val idxReg = if(params.useVector) Some(RegInit(0.U(log2Up(params.vlen/8).W))) else None
-  val exWbIdxReg = if(params.useVector) Some(RegNext(idxReg.get)) else None
-  // TODO: ロードストアユニット内に入れる，他のベクタ実行ユニットも同様
-  val vecValid = if(params.useVector) Some(RegInit(false.B)) else None
-  val vecDataReg = if(params.useVector) Some(RegNext(idExReg.bits.vectorDataSignals.get)) else None
-  if (params.useVector) {
-    // ベクタ命令がベクタレジスタに書き込み，かつinst.vmが1またはv0.mask[i]=1ならば書き込み
-    val vecWriteBack = idExReg.bits.vectorCtrlSignals.get.vrfWrite && (idExReg.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm)
-    // vsetvli系でないベクタ命令が実行され，かつ最終要素でないならばインクリメント，それ以外ならばリセット
-    idxReg.get := MuxCase(0.U, Seq(
-      (idExReg.valid && idExReg.bits.ctrlSignals.decode.vector.get && !idExReg.bits.vectorCtrlSignals.get.isConfsetInst &&
-        ((idxReg.get + 1.U) < exWbReg.bits.vectorCsrPorts.get.vl)) -> (idxReg.get + 1.U)
-    ))
-    // Mux(!exStall && idInstValid && decoder.io.out.bits.vector.get && !vectorDecoder.get.io.out.isConfsetInst, 0.U, idxReg.get + 1.U)
-    vecValid.get := idExReg.valid && idExReg.bits.ctrlSignals.decode.vector.get && vecWriteBack
-
-    // vecRegFileへの入力
-    vecRegFile.get.io.readReq(1) := DontCare
-    vecRegFile.get.io.writeReq(1) := DontCare
-    vecRegFile.get.io.readReq(0).req.sew := exWbReg.bits.vectorCsrPorts.get.vtype.vsew
-    vecRegFile.get.io.readReq(0).req.idx := idxReg.get
-    vecRegFile.get.io.readReq(0).req.vs1 := idExReg.bits.vectorDataSignals.get.vs1
-    vecRegFile.get.io.readReq(0).req.vs2 := idExReg.bits.vectorDataSignals.get.vs2
-    vecRegFile.get.io.readReq(0).req.vd := idExReg.bits.vectorDataSignals.get.vd
-
-    vecRegFile.get.io.writeReq(0).valid := vecValid.get
-    vecRegFile.get.io.writeReq(0).bits.vd := vecDataReg.get.vd
-    vecRegFile.get.io.writeReq(0).bits.vtype := exWbReg.bits.vectorCsrPorts.get.vtype
-    vecRegFile.get.io.writeReq(0).bits.index := exWbIdxReg.get
-    vecRegFile.get.io.writeReq(0).bits.last := (exWbIdxReg.get-1.U) === exWbReg.bits.vectorCsrPorts.get.vl
-    vecRegFile.get.io.writeReq(0).bits.data := ldstUnit.io.cpu.resp.bits.data
-    vecRegFile.get.io.writeReq(0).bits.vm := false.B
-    vecRegFile.get.io.writeReq(0).bits.writeReq := vecValid.get
-
-    if(params.debug) {
-      io.debugIo.get.vrfMap.get := vecRegFile.get.io.debug.get
-    }
-  }
 
   alu.io.in1 := MuxLookup(idExReg.bits.ctrlSignals.decode.value1, 0.U)(Seq(
     Value1.RS1.asUInt -> idExReg.bits.dataSignals.rs1,
@@ -336,18 +281,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     Value2.PC.asUInt -> idExReg.bits.dataSignals.pc.addr,
   ))
 
-  if (params.useVector) {
-    // ベクタメモリアクセス命令が有効ならaluへの入力を上書き
-    // UNIT_STRIDEならrs1+index*elen
-    when(idExReg.valid && idExReg.bits.ctrlSignals.decode.vector.get && idExReg.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt) {
-      alu.io.in2 := idxReg.get << MuxLookup(idExReg.bits.ctrlSignals.decode.memoryLength, 0.U)(Seq(
-        MEM_LEN.B.asUInt -> 0.U,
-        MEM_LEN.H.asUInt -> 1.U,
-        MEM_LEN.W.asUInt -> 2.U,
-        MEM_LEN.D.asUInt -> 3.U,
-      ))
-    }
-  }
   alu.io.funct := idExReg.bits.ctrlSignals.decode
 
   branchEvaluator.io.req.bits.ALU_Result := alu.io.out
@@ -369,36 +302,21 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     multiplier.get.io.resp.ready := !(exWbReg.valid && wbStall)
   }
 
-  if(params.useVector) {
-    vecCtrlUnit.get.io.req.valid := idExReg.valid && idExReg.bits.ctrlSignals.decode.vector.get && idExReg.bits.vectorCtrlSignals.get.isConfsetInst
-    vecCtrlUnit.get.io.req.bits.vDecode := idExReg.bits.vectorCtrlSignals.get
-    vecCtrlUnit.get.io.req.bits.rs1_value := idExReg.bits.dataSignals.rs1
-    vecCtrlUnit.get.io.req.bits.rs2_value := idExReg.bits.dataSignals.rs2
-    vecCtrlUnit.get.io.req.bits.zimm := idExReg.bits.dataSignals.zimm
-    vecCtrlUnit.get.io.req.bits.uimm := idExReg.bits.dataSignals.imm
-  }
-
   val exArithmeticResult = if(params.useMulDiv) {
     Mux(idExReg.bits.ctrlSignals.decode.useMul, multiplier.get.io.resp.bits, alu.io.out)
   } else {
     alu.io.out
   }
 
-  val exVectorResult = if(params.useVector) Some(vecCtrlUnit.get.io.resp.bits.vl) else None
-
-  ldstUnit.io.cpu.req.valid := idExReg.valid && !exFlush && (idExReg.bits.ctrlSignals.decode.memValid || (if(params.useVector) {
-    // マスク無しまたは要素が有効な場合にのみtrue
-    idExReg.bits.vectorDataSignals.get.mask || vecRegFile.get.io.readReq(0).resp.vm
-  } else true.B))
+  ldstUnit.io.cpu.req.valid := idExReg.valid && !exFlush && (idExReg.bits.ctrlSignals.decode.memValid)
   ldstUnit.io.cpu.req.bits.addr := alu.io.out
-  ldstUnit.io.cpu.req.bits.data := (if(params.useVector) Mux(idExReg.bits.vectorCtrlSignals.get.mop === MOP.UNIT_STRIDE.asUInt, vecRegFile.get.io.readReq(0).resp.vdOut, idExReg.bits.dataSignals.rs2) else idExReg.bits.dataSignals.rs2)
+  ldstUnit.io.cpu.req.bits.data := idExReg.bits.dataSignals.rs2
   ldstUnit.io.cpu.req.bits.funct := idExReg.bits.ctrlSignals.decode
 
   bypassingUnit.io.EX.in.bits.rd.bits.index := idExReg.bits.ctrlSignals.rdIndex
   bypassingUnit.io.EX.in.bits.rd.bits.value := MuxLookup(idExReg.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.PC4.asUInt -> idExReg.bits.dataSignals.pc.nextPC,
     WB_SEL.ARITH.asUInt -> exArithmeticResult,
-    WB_SEL.VECTOR.asUInt -> (if(params.useVector) exVectorResult.get else 0.U)
   ))
   bypassingUnit.io.EX.in.bits.rd.valid := MuxLookup(idExReg.bits.ctrlSignals.decode.writeBackSelector, false.B)(Seq(
     WB_SEL.PC4.asUInt -> true.B,
@@ -406,7 +324,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     WB_SEL.CSR.asUInt -> false.B,
     WB_SEL.MEM.asUInt -> false.B,
     WB_SEL.NONE.asUInt -> false.B,
-    WB_SEL.VECTOR.asUInt -> (if(params.useVector) true.B else false.B)
   )) && idExReg.valid
   bypassingUnit.io.EX.in.valid := idExReg.bits.ctrlSignals.decode.writeToRd && idExReg.valid
 
@@ -414,12 +331,10 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   // 乗算命令であればmultiplier.respがvalidである必要がある
   // vsetvl系でないベクタ命令ならば最終要素の実行である必要がある(idxReg == vl)
   exWbReg.valid := idExReg.valid && (!idExReg.bits.ctrlSignals.decode.memValid || ldstUnit.io.cpu.req.ready) &&
-    (if(params.useMulDiv) !idExReg.bits.ctrlSignals.decode.useMul || multiplier.get.io.resp.valid else true.B) &&
-    (if(params.useVector) !idExReg.bits.ctrlSignals.decode.vector.get || idExReg.bits.vectorCtrlSignals.get.isConfsetInst || ((idxReg.get + 1.U((idxReg.get.getWidth+1).W)) === exWbReg.bits.vectorCsrPorts.get.vl) else true.B)
+    (if(params.useMulDiv) !idExReg.bits.ctrlSignals.decode.useMul || multiplier.get.io.resp.valid else true.B)
   exWbReg.bits.dataSignals.pc := idExReg.bits.dataSignals.pc
   exWbReg.bits.dataSignals.exResult := MuxLookup(idExReg.bits.ctrlSignals.decode.writeBackSelector, 0.U)(Seq(
     WB_SEL.ARITH.asUInt -> exArithmeticResult,
-    WB_SEL.VECTOR.asUInt -> (if(params.useVector) exVectorResult.get else 0.U),
   ))
   exWbReg.bits.dataSignals.datatoCSR := Mux(idExReg.bits.ctrlSignals.decode.value1 === Value1.RS1.asUInt, idExReg.bits.dataSignals.rs1, idExReg.bits.dataSignals.imm)
   exWbReg.bits.dataSignals.csrAddr := idExReg.bits.dataSignals.zimm
@@ -435,21 +350,12 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   ))
     Mux(idExReg.bits.ctrlSignals.decode.branch === Branch.ECALL.asUInt, 0xb.U(params.xprlen.W), 0.U)
 
-  if(params.useVector) {
-    when(vecCtrlUnit.get.io.resp.valid) {
-      exWbReg.bits.vectorCsrPorts.get := vecCtrlUnit.get.io.resp.bits
-    }
-    exWbReg.bits.vectorExecNum.get := 0.U
-  }
-
   if(params.debug) exWbReg.bits.debug.get := idExReg.bits.debug.get
 
   // WBステージがvalidかつ破棄できないかつEXステージに有効な値がある場合，またはメモリアクセス命令かつldstUnit.reqがreadyでない，または乗算命令で乗算器がvalidでない
   // またはベクタ命令実行完了前にスカラ命令がID_EXレジスタにある，またはチェイニング不可能なベクタ命令（構造ハザード・0要素目の値が用意できていないなど）
   exStall := idExReg.valid && ((exWbReg.valid && wbStall) || (idExReg.bits.ctrlSignals.decode.memValid && !ldstUnit.io.cpu.req.ready) || (if(params.useMulDiv) {
     idExReg.bits.ctrlSignals.decode.useMul && !multiplier.get.io.resp.valid
-  } else false.B) || (if(params.useVector) {
-    idExReg.bits.ctrlSignals.decode.vector.get && !idExReg.bits.vectorCtrlSignals.get.isConfsetInst && (idxReg.get < exWbReg.bits.vectorCsrPorts.get.vl-1.U)
   } else false.B))
 
   when(wbStall) {
@@ -468,7 +374,7 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   val dmemoryAccessException = (exWbReg.bits.ctrlSignals.decode.memValid && ldstUnit.io.cpu.resp.valid && ldstUnit.io.cpu.resp.bits.exceptionSignals.valid)
   wbPcRedirect := exWbReg.valid && (exWbReg.bits.ctrlSignals.decode.branch === Branch.MRET.asUInt || exWbReg.bits.exceptionSignals.valid || dmemoryAccessException)
   when(wbPcRedirect) {
-    io.frontend.req.bits.pc := csrUnit.io.resp.data
+    io.frontend.req.bits.addr := csrUnit.io.resp.data
   }
   // 割り込みまたは例外の場合は、PCのみ更新しリタイアしない（命令を破棄）
   val wbInstCanRetire = exWbReg.valid && !(exWbReg.bits.exceptionSignals.valid || dmemoryAccessException) && !wbStall
@@ -478,7 +384,6 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
     WB_SEL.ARITH -> exWbReg.bits.dataSignals.exResult,
     WB_SEL.CSR -> csrUnit.io.resp.data,
     WB_SEL.MEM -> ldstUnit.io.cpu.resp.bits.data,
-    WB_SEL.VECTOR -> (if(params.useVector) exWbReg.bits.dataSignals.exResult else 0.U)
   ).map{
     case (wb_sel, data) => (wb_sel.asUInt, data)
   })
@@ -497,15 +402,9 @@ class Cpu(implicit params: HajimeCoreParams) extends CpuModule with ScalarOpCons
   csrUnit.io.fromCPU.hartid := io.hartid
   csrUnit.io.fromCPU.cpu_operating := cpuOperating
   csrUnit.io.fromCPU.inst_retire := wbInstCanRetire
-  if(params.useVector) {
-    csrUnit.io.fromCPU.vectorExecNum.get.valid := false.B
-    csrUnit.io.fromCPU.vectorExecNum.get.bits := DontCare
-  }
   csrUnit.io.exception.valid := (exWbReg.bits.exceptionSignals.valid || dmemoryAccessException) && exWbReg.valid
   csrUnit.io.exception.bits.mepc_write := exWbReg.bits.dataSignals.pc.addr
   csrUnit.io.exception.bits.mcause_write := Mux(dmemoryAccessException, ldstUnit.io.cpu.resp.bits.exceptionSignals.bits, exWbReg.bits.exceptionSignals.bits)
-
-  if(params.useVector) csrUnit.io.vectorCsrPorts.get := exWbReg.bits.vectorCsrPorts.get
 
   // EXまたはWBステージにfence, ecall, mretがある
   sysInstInPipeline := (idExReg.valid && idExReg.bits.ctrlSignals.decode.isSysInst) || (exWbReg.valid && exWbReg.bits.ctrlSignals.decode.isSysInst)

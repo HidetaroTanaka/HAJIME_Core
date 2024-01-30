@@ -7,13 +7,6 @@ import hajime.axiIO.AXI4liteIO
 import hajime.common._
 
 /**
- * PC Update request from CPU
- */
-class FrontEndReq(implicit params: HajimeCoreParams) extends Bundle {
-  val pc = UInt(params.xprlen.W)
-}
-
-/**
  * send instruction from FrontEnd to CPU
  */
 class FrontEndResp(implicit params: HajimeCoreParams) extends Bundle {
@@ -24,7 +17,7 @@ class FrontEndResp(implicit params: HajimeCoreParams) extends Bundle {
 }
 
 class FrontEndCpuIO(implicit params: HajimeCoreParams) extends Bundle {
-  val req = Flipped(new ValidIO(new FrontEndReq()))
+  val req = Flipped(new ValidIO(new ProgramCounter()))
   val resp = Irrevocable(new FrontEndResp())
 }
 
@@ -41,7 +34,7 @@ class Frontend(implicit params: HajimeCoreParams) extends Module {
 
   val pc_reg = RegInit(new ProgramCounter().initialise(io.reset_vector))
   val addr_req_to_axi_ar = MuxCase(pc_reg.nextPC, Seq(
-    io.cpu.req.valid -> io.cpu.req.bits.pc,
+    io.cpu.req.valid -> io.cpu.req.bits.addr,
     // if AXI AR is not ready, or AXI R is not valid, or CPU is not ready, retain PC
     (!io.icache_axi4lite.ar.ready || !io.icache_axi4lite.r.valid || !io.cpu.resp.ready) -> pc_reg.addr,
   ))

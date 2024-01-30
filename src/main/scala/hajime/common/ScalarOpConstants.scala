@@ -1,12 +1,7 @@
 package hajime.common
 
 import chisel3._
-import chisel3.util._
-import Functions._
-
-object RISCV_Consts {
-  val INST_LEN: Int = 32
-}
+import hajime.common.Functions._
 
 trait ScalarOpConstants {
   object ContentValid extends ChiselEnum {
@@ -65,6 +60,14 @@ trait ScalarOpConstants {
   object CSR_FCN extends ChiselEnum {
     val N, C, S, W, R, I = Value
   }
+}
+
+object ImmediateEnum extends ChiselEnum {
+  val I, S, B, U, J = Value
+}
+
+object UseRegisterAs extends ChiselEnum {
+  val NONE, SCALAR, VECTOR = Value
 }
 
 object COMPILE_CONSTANTS {

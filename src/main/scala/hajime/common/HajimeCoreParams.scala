@@ -6,11 +6,10 @@ import chisel3.util._
 // TODO: add inst/data memory info
 // Do I even need multi issue? Vector and Multiply can overlap
 case class HajimeCoreParams(
-  issue_width: Int = 1,
   threads: Int = 1,
   xprlen: Int = 64,
   frequency: Int = 50*1000*1000, // x[MHz] = x * 1000 * 1000
-  physicalRegFileEntries: Int = 48,
+  physicalRegFileEntriesFor1Thread: Int = 48,
   ras_depth: Int = 8,
   robEntries: Int = 8,
   useException: Boolean = true,
@@ -37,6 +36,7 @@ case class HajimeCoreParams(
   vecAluExecUnitNum: Int = 2,
 ) {
   require(isPow2(vlen), s"vlen(${vlen.toString}) is not power of 2. Please read BL Doujinshi for more details.")
+  def physicalRegWidth: Int = log2Up(physicalRegFileEntriesFor1Thread)
   def robTagWidth: Int = log2Up(robEntries)
   def generateDefaultMISA: UInt = {
     Cat((xprlen match {
