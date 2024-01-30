@@ -2,7 +2,7 @@ package hajime.vectormodules
 
 import chisel3._
 import chiseltest._
-import hajime.simple4Stage.Core_ApplicationTest._
+import hajime.simple4Stage.CoreApplicationTest._
 import hajime.vectormodules.MemInitializer._
 import hajime.simple4Stage._
 import org.scalatest.flatspec._

@@ -5,12 +5,12 @@ import chiseltest._
 import org.scalatest.flatspec._
 import hajime.vectormodules.MemInitializer._
 
-object Core_ApplicationTest {
-  def get_toHostChar[T <: CpuModule](dut: CoreAndCache[T]): Char = {
+object CoreApplicationTest {
+  def getToHostChar[T <: CpuModule](dut: CoreAndCache[T]): Char = {
     dut.io.toHost.bits.peekInt().toChar
   }
 
-  def get_toHostValid[T <: CpuModule](dut: CoreAndCache[T]): Boolean = {
+  def getToHostValid[T <: CpuModule](dut: CoreAndCache[T]): Boolean = {
     dut.io.toHost.valid.peekBoolean()
   }
 
@@ -26,11 +26,11 @@ object Core_ApplicationTest {
     dut.io.hartid.poke(0.U)
 
     var toHostWrittenChar: List[Char] = Nil
-    while (!(get_toHostValid(dut) && (get_toHostChar(dut) == '\u0000'))) {
+    while (!(getToHostValid(dut) && (getToHostChar(dut) == '\u0000'))) {
       dut.clock.step()
-      if (get_toHostValid(dut)) {
-        // print(get_toHostChar())
-        toHostWrittenChar = toHostWrittenChar :+ get_toHostChar(dut)
+      if (getToHostValid(dut)) {
+        // print(getToHostChar())
+        toHostWrittenChar = toHostWrittenChar :+ getToHostChar(dut)
       }
     }
     dut.io.debugIO.debugAbiMap.a0.expect(0.U(64.W))
@@ -39,7 +39,7 @@ object Core_ApplicationTest {
   }
 }
 
-import Core_ApplicationTest._
+import CoreApplicationTest._
 
 class Rv64iApplicationTest extends AnyFlatSpec with ChiselScalatestTester {
   val rv64iTestList = Seq(
