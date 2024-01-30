@@ -11,7 +11,7 @@ HAJIME Coreとは，**H**ighly **A**d**J**usted **IM**plementation for **E**mbed
 - `src`: ソースファイル，テストファイル，テスト用RISC-Vプログラム等が入っている．
 - `submodule`: `riscv-tests`がサブモジュールとして入っている．README通りにpullすればよい．
 
-## コア共通仕様
+## [コア共通仕様](./ja-jp/common_spec.md)
 
 ## スカラコアの仕様
 WIP
