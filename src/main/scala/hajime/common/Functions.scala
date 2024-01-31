@@ -19,6 +19,19 @@ object Functions {
       ls.map(_ === elem).reduce(_ || _)
     }
   }
+  // rewrite contains function in List.scala, not tested
+  implicit class lsContainsElementEquivalentToUIntExperimental[T <: scala.collection.Iterable[UInt]](ls: T) {
+    def contains(elem: UInt): Bool = {
+      val these = ls.toList
+      var ans: List[Bool] = Nil
+      for(i <- these.indices) {
+        when(these(i) === elem) {
+          ans :+ true
+        }
+      }
+      ans.contains(true).B
+    }
+  }
   @deprecated("this only supports List, so use lsHasElementEquivalentToUInt instead as it supports everything Iterable")
   implicit class seqHasElementEquivalentToUInt(ls: List[UInt]) {
     def has(elem: UInt): Bool = {
